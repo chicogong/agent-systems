@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import base64
+from io import BytesIO
 from pathlib import Path
+import re
 from tempfile import TemporaryDirectory
 
 from PIL import Image
@@ -11,6 +14,16 @@ from pypdf import PdfReader
 
 from build_book import DEFAULT_OUTPUT, FRONT_COVER, manifest_entries, manifest_paths
 from book_cover import ORIGINAL, write_svg
+
+
+def normalized_cover(svg: str) -> tuple[str, tuple[tuple[int, int], bytes]]:
+    """Ignore platform-dependent PNG compression, not the cover's pixels or SVG."""
+    images = re.findall(r"data:image/png;base64,([^\"]+)", svg)
+    if len(images) != 1:
+        raise ValueError(f"Cover SVG needs one embedded PNG, found {len(images)}")
+    with Image.open(BytesIO(base64.b64decode(images[0]))) as embedded:
+        pixels = (embedded.size, embedded.convert("RGBA").tobytes())
+    return svg.replace(images[0], "<embedded-png>"), pixels
 
 
 def check(path: Path) -> None:
@@ -59,7 +72,7 @@ def check(path: Path) -> None:
     with TemporaryDirectory() as temporary:
         regenerated = Path(temporary) / "cover.svg"
         write_svg(regenerated)
-        if regenerated.read_bytes() != FRONT_COVER.read_bytes():
+        if normalized_cover(regenerated.read_text(encoding="utf-8")) != normalized_cover(cover_svg):
             raise ValueError("Tracked cover SVG differs from book_cover.py; rebuild it explicitly")
     with Image.open(ORIGINAL) as source:
         if source.size != (1024, 1536):
