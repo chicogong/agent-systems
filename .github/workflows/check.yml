@@ -15,3 +15,4 @@ jobs:
       - run: python3 scripts/rebuild_scenes.py
       - run: git diff --exit-code -- 'figures/**/scene.excalidraw'
       - run: python3 scripts/check_repo.py
+      - run: python3 scripts/check_sources.py

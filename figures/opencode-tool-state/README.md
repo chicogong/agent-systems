@@ -2,7 +2,7 @@
 
 [返回 OpenCode 剖面](../../docs/systems/opencode/README.md) · [图源](scene.excalidraw) · [SVG](diagram.svg) · [PNG](preview.png)
 
-图沿时间从左向右读。一条工具调用以 `callID` 为线索：输入相关流事件可让 `SessionProcessor.ensureToolCall` 创建或复用 `ToolPart.pending`；完整 `tool-call` 事件把它推进至 `running`；成功 `tool-result` 进入 `completed`，错误结果、`tool-error`，或清理阶段未收束的调用进入 `error`。`completed` 与 `error` 是两个终点，不是串行步骤。每个状态变更通过会话服务更新 part。
+图沿时间从左向右读常规主路径。一条工具调用以 `callID` 为线索：输入相关流事件可让 `SessionProcessor.ensureToolCall` 创建或复用 `ToolPart.pending`；完整 `tool-call` 事件把它推进至 `running`；成功 `tool-result` 进入 `completed`，错误结果或 `tool-error` 进入 `error`。底部虚线是清理阶段把未收束的 `pending` 直接标为 `error`；尚未收束的 `running` 也可由清理进入 `error`。因此不能断言所有错误都经过正常的结果事件。`completed` 与 `error` 是两个终点，不是串行步骤。每个状态变更通过会话服务更新 part。
 
 底部单独标出 session 层 `busy / retry / idle`：它是 `SessionStatus` 发布的状态，不能把其 `idle` 当成某个 ToolPart 的完成状态。工具执行包装中的 `tool.execute.before → item.execute → tool.execute.after` 放在图下作为代码路径说明，不画成另一条 ToolPart 状态箭头。[完整证据定位](../../docs/systems/opencode/code-walkthrough.md)
 

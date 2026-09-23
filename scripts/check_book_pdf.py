@@ -1,0 +1,78 @@
+"""Check that the built book is complete enough for human print review."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from PIL import Image
+from pypdf import PdfReader
+
+from build_book import DEFAULT_OUTPUT, FRONT_COVER, manifest_entries, manifest_paths
+
+
+def check(path: Path) -> None:
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    reader = PdfReader(str(path))
+    chapters = manifest_paths()
+    if len(reader.pages) < len(chapters) + 4:
+        raise ValueError(f"Only {len(reader.pages)} pages for {len(chapters)} chapters")
+    def count_outline(items):
+        return sum(count_outline(item) if isinstance(item, list) else 1 for item in items)
+
+    expected_outlines = len(chapters) + sum(kind == "part" for kind, _ in manifest_entries())
+    if count_outline(reader.outline) != expected_outlines:
+        raise ValueError(f"PDF outline has {count_outline(reader.outline)} entries; expected {expected_outlines}")
+    links = 0
+    images = 0
+    embedded_fonts = set()
+    for page in reader.pages:
+        for annotation in page.get("/Annots", []):
+            value = annotation.get_object()
+            action = value.get("/A")
+            if action and action.get("/URI"):
+                links += 1
+        resources = page.get("/Resources", {})
+        for font in resources.get("/Font", {}).values():
+            descriptor = font.get_object().get("/FontDescriptor")
+            if descriptor and descriptor.get_object().get("/FontFile2"):
+                embedded_fonts.add(str(font.get_object().get("/BaseFont")))
+        for obj in resources.get("/XObject", {}).values():
+            if obj.get_object().get("/Subtype") == "/Image":
+                images += 1
+    if links < len(chapters):
+        raise ValueError(f"Too few clickable source links: {links}")
+    if images < 10:
+        raise ValueError(f"Too few embedded figure images: {images}")
+    if len(embedded_fonts) < 2:
+        raise ValueError(f"Regular/bold fonts were not embedded: {embedded_fonts}")
+    if not any("JetBrainsMono" in name for name in embedded_fonts):
+        raise ValueError("Code font was not embedded")
+    with Image.open(FRONT_COVER) as cover:
+        if cover.width < 1000 or cover.height < 1500:
+            raise ValueError(f"Cover source is too small for the digital preview: {cover.size}")
+    cover_images = [obj for obj in reader.pages[0].get("/Resources", {}).get("/XObject", {}).values()
+                    if obj.get_object().get("/Subtype") == "/Image"]
+    if not cover_images:
+        raise ValueError("Cover image is missing")
+    title_text = reader.pages[1].extract_text() or ""
+    if "图解 Agent 系统" not in title_text:
+        raise ValueError("Accessible title page is missing")
+    last_text = reader.pages[-1].extract_text() or ""
+    if "不止会用" not in last_text or "github.com/chicogong/agent-systems" not in last_text:
+        raise ValueError("Back cover is missing or not extractable")
+    all_text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    for title in ("前言：看见回答背后的系统", "阅读指南：从问题进入", "结语：图会更新", "致谢与贡献", "作者简介"):
+        if title not in all_text:
+            raise ValueError(f"Book section missing: {title}")
+    if "CC BY-SA" in all_text or "ISBN 978-7" in all_text:
+        raise ValueError("Stale design placeholder leaked into PDF")
+    print(f"Book PDF OK: {len(reader.pages)} pages, {len(chapters)} chapters, {images} image uses, {links} source links, {len(embedded_fonts)} embedded fonts")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("pdf", nargs="?", type=Path, default=DEFAULT_OUTPUT)
+    args = parser.parse_args()
+    check(args.pdf.resolve())

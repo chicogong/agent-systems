@@ -1,0 +1,44 @@
+# Print order. One repository-relative Markdown path per line.
+@front book/frontmatter/preface.md
+@front book/frontmatter/reading-guide.md
+@part 第一部分 · 基本机制
+docs/concepts/agent-workflow-multiagent.md
+docs/concepts/agent-loop.md
+docs/concepts/context-vs-memory.md
+docs/concepts/session-compaction-and-memory.md
+docs/concepts/approval-vs-sandbox.md
+docs/concepts/extensibility-layers.md
+@part 第二部分 · 编码 Agent 与执行
+docs/systems/pi/README.md
+docs/systems/pi/code-walkthrough.md
+docs/systems/pi/extensions-and-skills.md
+docs/systems/codex/README.md
+docs/systems/codex/code-walkthrough.md
+docs/systems/opencode/README.md
+docs/systems/opencode/code-walkthrough.md
+docs/systems/mini-swe-agent/README.md
+docs/systems/mini-swe-agent/code-walkthrough.md
+docs/systems/openhands/README.md
+docs/systems/openhands/code-walkthrough.md
+docs/systems/browser-use/README.md
+docs/systems/browser-use/code-walkthrough.md
+docs/systems/qwen-code/README.md
+docs/systems/qwen-code/code-walkthrough.md
+@part 第三部分 · 记忆、状态与编排
+docs/systems/letta/README.md
+docs/systems/letta/code-walkthrough.md
+docs/systems/mem0/README.md
+docs/systems/mem0/code-walkthrough.md
+docs/systems/langgraph/README.md
+docs/systems/langgraph/code-walkthrough.md
+docs/systems/openclaw/README.md
+docs/systems/openclaw/code-walkthrough.md
+docs/systems/gpt-researcher/README.md
+@part 第四部分 · 横向对照
+docs/comparisons/persisted-vs-visible.md
+docs/comparisons/four-kinds-of-state.md
+@part 附录 · 术语与核验方法
+docs/glossary.md
+@back book/backmatter/afterword.md
+@back book/backmatter/acknowledgments.md
+@back book/backmatter/about-author.md

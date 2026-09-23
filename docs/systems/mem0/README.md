@@ -4,6 +4,8 @@
 
 [可编辑图源](../../../figures/mem0-retrieval/scene.excalidraw) · [PNG 预览](../../../figures/mem0-retrieval/preview.png) · [图的文字版](../../../figures/mem0-retrieval/README.md)
 
+[按阅读顺序跟代码](code-walkthrough.md)
+
 > 范围：官方开源仓库 [`mem0ai/mem0@f8082a7345dadd9e042ebbc40b57b1498c8f6d63`](https://github.com/mem0ai/mem0/tree/f8082a7345dadd9e042ebbc40b57b1498c8f6d63) 的 Python OSS 同步 `Memory.add(infer=True)` 与 `Memory.search`。这是**源码静态核对**，未运行模型、向量库或基准测试；不覆盖托管平台、异步 API 或所有向量库的具体行为。
 
 ## 与 Letta Code 的问题不同

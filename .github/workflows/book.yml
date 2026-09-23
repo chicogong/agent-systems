@@ -1,0 +1,106 @@
+name: Build printable book
+
+on:
+  pull_request:
+    paths:
+      - 'book/**'
+      - 'docs/**'
+      - 'figures/**'
+      - 'scripts/**'
+      - 'sources/**'
+      - 'README.md'
+      - 'LICENSE-CONTENT.md'
+      - 'LICENSE-CODE'
+      - 'CONTRIBUTING.md'
+      - '.github/workflows/book.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'book/**'
+      - 'docs/**'
+      - 'figures/**'
+      - 'scripts/**'
+      - 'sources/**'
+      - 'README.md'
+      - 'LICENSE-CONTENT.md'
+      - 'LICENSE-CODE'
+      - 'CONTRIBUTING.md'
+      - '.github/workflows/book.yml'
+  schedule:
+    # Monday 03:17 UTC. A scheduled build is a preview, never a release.
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  book:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: book/requirements.txt
+      - name: Install renderer and Poppler
+        run: |
+          python -m pip install -r book/requirements.txt
+          if ! command -v pdftoppm >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y poppler-utils
+          fi
+      - name: Check source bundles
+        run: |
+          python scripts/check_repo.py
+          python scripts/check_sources.py
+      - name: Fetch pinned OFL font
+        run: python scripts/fetch_book_font.py
+      - name: Build PDF
+        run: python scripts/build_book.py
+      - name: Check PDF structure
+        run: python scripts/check_book_pdf.py
+      - name: Render review pages
+        run: |
+          mkdir -p tmp/pdfs
+          pdftoppm -f 1 -l 5 -scale-to 1800 -png output/pdf/agent-systems-preview.pdf tmp/pdfs/review
+          pages=$(pdfinfo output/pdf/agent-systems-preview.pdf | awk '/^Pages:/ {print $2}')
+          first=$((pages - 3))
+          pdftoppm -f "$first" -l "$pages" -scale-to 1800 -png output/pdf/agent-systems-preview.pdf tmp/pdfs/tail-review
+          pdftoppm -f 1 -l 1 -r 300 -png -singlefile output/pdf/agent-systems-preview.pdf tmp/pdfs/cover-print-proof
+          pdftoppm -f "$pages" -l "$pages" -r 300 -png -singlefile output/pdf/agent-systems-preview.pdf tmp/pdfs/back-print-proof
+          pdfimages -list output/pdf/agent-systems-preview.pdf | awk 'NR>2 {print $1}' | sort -nu | while read -r page; do
+            pdftoppm -f "$page" -l "$page" -scale-to 2200 -png -singlefile output/pdf/agent-systems-preview.pdf "tmp/pdfs/figure-$page"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-systems-book-${{ github.sha }}
+          path: |
+            output/pdf/agent-systems-preview.pdf
+            tmp/pdfs/review-*.png
+            tmp/pdfs/tail-review-*.png
+            tmp/pdfs/figure-*.png
+            tmp/pdfs/*-print-proof.png
+          if-no-files-found: error
+          retention-days: 30
+
+  links:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check external and local Markdown links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --max-concurrency 8 './**/*.md'
+          token: ${{ github.token }}
+          fail: false
+          jobSummary: true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agent-systems-link-report-${{ github.sha }}
+          path: lychee/out.md
+          if-no-files-found: warn
+          retention-days: 30

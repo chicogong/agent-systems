@@ -1,59 +1,74 @@
-"""Build a source-to-context evidence braid for GPT Researcher Hybrid mode."""
+"""Build the GPT Researcher Hybrid source-convergence diagram.
+
+The braid is intentionally not a decision tree: local and web contexts are
+collected concurrently, then joined before the report-writing path.
+"""
 
 from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
-from diagram_style import BLUE, GREEN, INK, MUTED, ORANGE, PURPLE, Scene  # noqa: E402
+from diagram_style import Scene  # noqa: E402
 
 
-def ellipse(d: Scene, name: str, x: int, y: int, w: int, h: int, stroke: str, fill: str) -> None:
-    e = d._base(name, "ellipse", x, y, w, h)
-    e.update(strokeColor=stroke, backgroundColor=fill)
-    d.elements.append(e)
-
-
-def diamond(d: Scene, name: str, x: int, y: int, w: int, h: int, stroke: str, fill: str) -> None:
-    e = d._base(name, "diamond", x, y, w, h)
-    e.update(strokeColor=stroke, backgroundColor=fill)
-    d.elements.append(e)
+INK = "#14213d"
+MUTED = "#475569"
+BLUE = "#4a9eed"
+GREEN = "#16a34a"
+PURPLE = "#8b5cf6"
+ORANGE = "#f59e0b"
+RED = "#d16b52"
 
 
 def main() -> None:
     d = Scene()
-    d.text("title", "GPT Researcher：来源怎样进入报告上下文", 34, 23, 1390, 35, INK, 6)
-    d.text("subtitle", "Hybrid / 非 DeepResearch 路径；两路并发收集，然后拼接上下文并交给写作器。", 36, 77, 1380, 20, MUTED, 6)
 
-    d.arrow("local-to-context", [(246, 250), (367, 250)], BLUE)
-    d.arrow("web-to-context", [(246, 530), (367, 530)], GREEN)
-    d.arrow("local-to-join", [(632, 250), (747, 250), (747, 335)], BLUE)
-    d.arrow("web-to-join", [(632, 530), (747, 530), (747, 455)], GREEN)
-    d.arrow("join-to-state", [(861, 395), (976, 395)], PURPLE)
-    d.arrow("state-to-report", [(1108, 452), (1108, 600)], PURPLE)
+    # A light boundary groups concurrent collection, not successive stages.
+    d.box("concurrent-panel", 36, 158, 646, 418, "#cbd5e1", "#f8fafc")
+    d.elements[-1]["strokeStyle"] = "dashed"
 
-    ellipse(d, "local", 40, 192, 206, 116, BLUE, "#e6f1ff")
-    d.text("local-label", "本地文档\nDocumentLoader", 67, 218, 178, 18, BLUE, 6)
-    ellipse(d, "web", 40, 472, 206, 116, GREEN, "#e4f7ea")
-    d.text("web-label", "网页检索\nURL → 抓取", 72, 496, 175, 18, GREEN, 6)
+    # Connectors sit behind the cards and keep the two source paths distinct.
+    d.arrow("local-to-context", [(301, 284), (389, 284)], BLUE)
+    d.arrow("web-to-context", [(301, 472), (389, 472)], GREEN)
+    d.arrow("local-to-join", [(647, 284), (711, 284), (711, 339), (754, 339)], BLUE)
+    d.arrow("web-to-join", [(647, 472), (711, 472), (711, 415), (754, 415)], GREEN)
+    d.arrow("join-to-state", [(942, 378), (1000, 378)], PURPLE)
+    d.arrow("state-to-report", [(1120, 438), (1120, 558)], ORANGE)
 
-    d.box("local-context", 367, 199, 265, 103, BLUE, "#f4f9ff")
-    d.text("local-context-label", "压缩 / 格式化\nlocal context", 391, 225, 231, 19, INK, 6)
-    d.box("web-context", 367, 479, 265, 103, GREEN, "#f3fcf6")
-    d.text("web-context-label", "子查询 · 网页内容\nweb context", 390, 504, 233, 19, INK, 6)
+    d.box("local-source", 65, 231, 236, 106, BLUE, "#a5d8ff")
+    d.box("local-context", 389, 231, 258, 106, BLUE, "#e6f3ff")
+    d.box("web-source", 65, 419, 236, 106, GREEN, "#c3fae8")
+    d.box("web-context", 389, 419, 258, 106, GREEN, "#e8fbf2")
+    d.box("hybrid-join", 754, 315, 188, 126, PURPLE, "#d8c8ff")
+    d.box("research-context", 1000, 318, 241, 120, PURPLE, "#f0e9ff")
+    d.box("report-writer", 1000, 558, 241, 124, ORANGE, "#fff3bf")
+    d.box("risk", 36, 728, 1205, 108, RED, "#fff0e9")
 
-    diamond(d, "join", 688, 335, 173, 120, PURPLE, "#eee7ff")
-    d.text("join-label", "拼接\n两路上下文", 719, 360, 135, 19, INK, 6)
-    d.box("state", 976, 338, 264, 114, PURPLE, "#f3eeff")
-    d.text("state-label", "researcher.context\n可选来源筛选", 998, 361, 235, 19, INK, 6)
-    d.box("report", 976, 600, 264, 132, ORANGE, "#fff5e3")
-    d.text("report-label", "ReportGenerator\n有上下文 → LLM 写作", 998, 625, 230, 19, INK, 6)
+    # Code/Comic Shanns is shared with the recent project figures. Chinese
+    # glyphs use the renderer's fallback font and are checked in PNG and SVG.
+    d.text("title", "GPT Researcher：来源如何进入报告上下文", 42, 24, 1190, 34, INK, 8)
+    d.text("subtitle", "Hybrid 普通研究：本地与网页并发形成上下文，再交给写作器。", 44, 78, 1180, 20, MUTED, 8)
+    d.text("concurrent-label", "asyncio.gather · 两路并发", 64, 176, 555, 21, MUTED, 8)
 
-    d.text("parallel-note", "asyncio.gather：两路并发", 482, 381, 285, 18, MUTED, 6)
-    d.text("sources-note", "多来源是入口选择；不是每篇报告都会同时用本地、网页、MCP。", 48, 687, 806, 18, MUTED, 6)
-    d.box("risk", 40, 765, 1200, 112, "#d56a4c", "#fff1ed")
-    d.text("risk-label", "边界：Hybrid 拼接会加固定标签。即使两路内容都空，字符串也可能非空；写作器的“空上下文”保护不能自动证明有证据。", 67, 792, 1140, 17, "#a9422b", 6)
-    d.text("footer", "源码：assafelovic/gpt-researcher@6f998577；图为静态路径，未验证生成报告的事实准确性或引用质量。", 42, 908, 1340, 16, MUTED, 6)
+    d.text("local-source-label", "本地文档\nDocumentLoader", 87, 251, 210, 22, INK, 8)
+    d.text("local-context-label", "压缩 / 格式化\nlocal context", 412, 251, 224, 22, INK, 8)
+    d.text("web-source-label", "网页检索\nURL → 抓取", 87, 439, 210, 22, INK, 8)
+    d.text("web-context-label", "子查询 · 网页内容\nweb context", 412, 439, 224, 22, INK, 8)
+
+    d.text("join-label", "Hybrid 拼接\n两路上下文", 773, 342, 164, 23, INK, 8)
+    d.text("state-label", "researcher.context\n可选来源筛选", 1019, 342, 212, 19, INK, 8)
+    d.text("writer-edge", "write_report()", 961, 493, 225, 18, ORANGE, 8)
+    d.text("report-label", "ReportGenerator\n上下文 → LLM 写作", 1019, 582, 212, 21, INK, 8)
+
+    d.text("risk-label", "关键边界：Hybrid 拼接会加固定标签；即使双路正文都空，字符串仍可能非空。\n写作器的“空上下文”保护不能单独证明有来源证据。", 63, 748, 1150, 20, "#9a402f", 8)
+
+    for element in d.elements:
+        if element["type"] in {"rectangle", "arrow"}:
+            element["roughness"] = 1
+        if element["type"] == "arrow":
+            element["strokeWidth"] = 3
+
     d.save(Path(__file__).with_name("scene.excalidraw"))
 
 

@@ -4,6 +4,8 @@
 
 [可编辑图源](../../../figures/langgraph-checkpoints/scene.excalidraw) · [PNG 预览](../../../figures/langgraph-checkpoints/preview.png) · [图的文字版](../../../figures/langgraph-checkpoints/README.md)
 
+[关键代码走读：checkpoint 创建、读取与分支](code-walkthrough.md)
+
 > 核对官方仓库 [`langchain-ai/langgraph@bdb85b5aa87a21de68371d2e534b81aeed398f57`](https://github.com/langchain-ai/langgraph/tree/bdb85b5aa87a21de68371d2e534b81aeed398f57) 的 Python `Pregel`/checkpointer 路径。证据包括源码和仓库内已有测试用例；本文**未运行测试或数据库后端**。图只抽取几个关键快照，不表示真实执行只有这些 checkpoint。
 
 ## 一句话区分
