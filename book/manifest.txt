@@ -2,6 +2,7 @@
 @front book/frontmatter/preface.md
 @front book/frontmatter/reading-guide.md
 @part 第一部分 · 基本机制
+docs/concepts/model-harness-cli-mcp-skill.md
 docs/concepts/agent-workflow-multiagent.md
 docs/concepts/agent-loop.md
 docs/concepts/context-vs-memory.md

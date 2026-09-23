@@ -8,6 +8,8 @@
 | 工作流 | 由预设步骤和分支组织的过程；其中可以包含 Agent 决策 | [与 Agent 的区别](concepts/agent-workflow-multiagent.md) |
 | 多 Agent / 多执行者 | 任务拆给多个有独立职责的执行者，还需定义交接、合并与冲突处理；与下一步控制权是不同维度 | [控制权与数量](concepts/agent-workflow-multiagent.md) |
 | Agent loop | 在模型请求、工具结果和继续/结束判断之间迭代的控制流程 | [Pi 代码导读](systems/pi/code-walkthrough.md) |
+| Harness / 运行器 | 位于模型外的运行与控制层；组织模型调用、工具路由、上下文和权限等职责，不等于模型本身 | [五层职责](concepts/model-harness-cli-mcp-skill.md) |
+| CLI | 命令行交互界面；不是 Agent 的全部运行机制，换产品的 CLI 也往往同时换了其他层 | [五层职责](concepts/model-harness-cli-mcp-skill.md) |
 | Tool | 带输入、执行与结果的能力接口；模型提出调用不等于已经获准执行 | [Codex 审批](systems/codex/README.md) |
 | Observation | 动作后提供给系统的结果或状态；它不必然准确，也不等于成功验收 | [OpenHands 事件](systems/openhands/README.md) |
 | 当前上下文 | 一次模型请求实际提交的指令、消息和材料 | [上下文与记忆](concepts/context-vs-memory.md) |

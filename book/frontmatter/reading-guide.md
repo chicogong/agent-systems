@@ -2,13 +2,15 @@
 
 这不是要求从第一页读到最后一页的项目百科。正文以机制为主线，项目是有边界的案例；同一个问题可能在几个系统中得到不同答案。你可以选择一条路线开始，再沿章节中的链接交叉阅读。
 
-## 三条阅读路线
+## 四条阅读路线
 
-**先理解机制。** 从 [Agent、工作流与多 Agent](../../docs/concepts/agent-workflow-multiagent.md) 和 [Agent loop](../../docs/concepts/agent-loop.md) 开始，接着读上下文、记忆、审批和扩展。每章先抓住“谁决定、谁保存、谁执行、谁验证”，再看项目映射。
+**先理解机制。** 如果还分不清模型、运行器和工具，先看[一项任务中的五层职责](../../docs/concepts/model-harness-cli-mcp-skill.md)；再从 [Agent、工作流与多 Agent](../../docs/concepts/agent-workflow-multiagent.md) 和 [Agent loop](../../docs/concepts/agent-loop.md) 进入上下文、记忆、审批和扩展。每章先抓住“谁决定、谁保存、谁执行、谁验证”，再看项目映射。
 
 **沿项目追源码。** 从 [Pi 的分层](../../docs/systems/pi/README.md) 进入一条实际运行路径，然后打开章内的代码导读。读系统篇时，先确认上游仓库、固定 commit 和研究范围，再沿“入口 → 状态 → 分支 → 副作用 → 结束或恢复”追踪；不要把一条局部路径误读成项目全貌。
 
 **带着设计问题查阅。** 如果你正在决定如何保存会话、拦截动作或判断完成，先读相应机制，再看[横向对照](../../docs/comparisons/README.md)。比较只针对同一个问题和已有证据，不给项目排总名次。
+
+**先用再深究。** 已经在用 Codex 或 Claude Code 的读者，可以先用[五层职责](../../docs/concepts/model-harness-cli-mcp-skill.md)分析一项自己的任务：项目约定从哪来、Skill 何时读、MCP 提供什么、动作在哪里受限。此处先提供判断框架；各产品的逐步操作教程和同环境实验仍在编写，不把概念例子当成实测。
 
 ## 怎样读图与证据
 

@@ -15,11 +15,24 @@
 
 一个系统可出现在多条问题线中，但每篇文章仍只证明它固定版本中的一条**窄路径**。概念篇解释设计空间，系统篇给来源，对照篇只比较双方已经核对的同一问题；不做“最佳 Agent”总榜。
 
+## 下一波选题先分层
+
+[五层职责导读](concepts/model-harness-cli-mcp-skill.md)已用一项任务区分模型、Harness、CLI、Skill 与 MCP。它们不是五种竞品：模型给出判断，Harness 管运行与边界，CLI 提供交互入口，Skill 装载流程知识，MCP 连接外部能力。下一波研究沿以下问题推进，而不把热门名称直接并列打分。
+
+| 对象 | 研究层次 | 要回答的新问题 | 晋级方式 |
+| --- | --- | --- | --- |
+| [Codex](systems/codex/README.md)、[Claude Code](https://code.claude.com/docs/en/how-claude-code-works) | 两个编码 Agent 的公开行为与用户工作流 | 同一修复任务中的项目指导、MCP、Skill、审批/沙箱如何分工？ | Codex 继续固定源码窄路径；Claude Code 只据官方接口和可复现操作写使用对照，不推断未公开调用栈。 |
+| [MiMo Code](https://github.com/XiaomiMiMo/MiMo-Code)、[Kimi Code](https://github.com/MoonshotAI/kimi-code) | 开源 CLI + Harness | 长任务 checkpoint/重建与单次 turn/事件持久化分别怎样做？ | 各固定 release/commit，追正常与失败路径，完成独立源码复核后写系统篇。 |
+| [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) | 结构化决策模型，不是编码 Agent | 有界判断怎样嵌入 Skill 选择或路由，而执行权仍留给代码？ | 先做模型/决策层旁栏；性能与正确性作为厂商主张，需独立复核。 |
+| MCP、Agent Skills、CLI 与 Harness | 协议、工作流包、界面与运行器 | 哪个层次能增加能力，哪个层次能授权执行，哪个只改变入口？ | 官方规范/文档加至少一条具体产品接入路径；安全边界与失败路径都要有。 |
+
+[Jev、MiMo Code、Kimi Code 研究笔记](field-notes/2026-09-23-jev-mimo-kimi.md)记录已找到的第一方入口与尚未完成的源码、运行、许可核查；它不是已完成书稿。
+
 ## 仍可补位的候选
 
 | 候选 | 值得调查的问题 | 升格条件 |
 | --- | --- | --- |
-| [Aider](https://github.com/Aider-AI/aider)、[Cline](https://github.com/cline/cline)、[Goose](https://github.com/aaif-goose/goose)、[Gemini CLI](https://github.com/google-gemini/gemini-cli)、[Kimi Code](https://github.com/MoonshotAI/kimi-cli) | 在循环、上下文装配、授权或工具生命周期上，是否提供与已有案例不同的取舍？ | 至少指出一个现有章节解释不了的问题，并固定可定位的源码版本。 |
+| [Aider](https://github.com/Aider-AI/aider)、[Cline](https://github.com/cline/cline)、[Goose](https://github.com/aaif-goose/goose)、[Gemini CLI](https://github.com/google-gemini/gemini-cli) | 在循环、上下文装配、授权或工具生命周期上，是否提供与已有案例不同的取舍？ | 至少指出一个现有章节解释不了的问题，并固定可定位的源码版本。 |
 | [AutoGen](https://github.com/microsoft/autogen)、[CrewAI](https://github.com/crewAIInc/crewAI)、[Pydantic AI](https://github.com/pydantic/pydantic-ai) | 框架提供哪些状态、委派与运行保证，哪些仍须应用自己完成？ | 先明确框架与成品 Agent 的比较边界，避免直接拿不同层次排功能榜。 |
 | [Letta 历史服务](https://github.com/letta-ai/letta) | 旧版 memory blocks 与当前 Letta Code local MemFS 有何连续或断裂？ | 核对仓库维护状态与版本；只作历史对照，不把旧实现标作现行架构。 |
 
