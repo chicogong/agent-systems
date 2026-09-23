@@ -1,0 +1,59 @@
+"""Check figure bundles and local Markdown links without network access."""
+
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+LINK = re.compile(r"!?(?:\[[^\]]*\])\(([^)]+)\)")
+
+
+def check_figures() -> list[str]:
+    errors: list[str] = []
+    for scene_file in sorted((ROOT / "figures").glob("*/scene.excalidraw")):
+        folder = scene_file.parent
+        for name in ("diagram.svg", "preview.png", "README.md"):
+            if not (folder / name).is_file():
+                errors.append(f"{folder.relative_to(ROOT)} missing {name}")
+        try:
+            scene = json.loads(scene_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            errors.append(f"{scene_file.relative_to(ROOT)} invalid JSON: {error}")
+            continue
+        if scene.get("type") != "excalidraw":
+            errors.append(f"{scene_file.relative_to(ROOT)} is not a native scene")
+        elements = scene.get("elements", [])
+        ids = [element.get("id") for element in elements]
+        if len(ids) != len(set(ids)):
+            errors.append(f"{scene_file.relative_to(ROOT)} has duplicate element IDs")
+        for element in elements:
+            if element.get("type") == "text" and element.get("fontFamily") not in (6, 8):
+                errors.append(f"{scene_file.relative_to(ROOT)} text {element.get('id')} uses an unreviewed font")
+    return errors
+
+
+def check_links() -> list[str]:
+    errors: list[str] = []
+    for markdown in sorted(ROOT.rglob("*.md")):
+        if ".git" in markdown.parts:
+            continue
+        for destination in LINK.findall(markdown.read_text(encoding="utf-8")):
+            path = destination.split("#", 1)[0].strip("<>")
+            if not path or "://" in path or path.startswith("mailto:"):
+                continue
+            target = (markdown.parent / path).resolve()
+            if not target.is_relative_to(ROOT) or not target.exists():
+                errors.append(f"{markdown.relative_to(ROOT)} -> {destination}")
+    return errors
+
+
+if __name__ == "__main__":
+    found = check_figures() + check_links()
+    if found:
+        for item in found:
+            print(f"ERROR: {item}")
+        raise SystemExit(1)
+    print("Figure bundles and local Markdown links: OK")

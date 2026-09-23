@@ -7,3 +7,5 @@
 标题与节点字体、图形语义和导出验收见[视觉规范](STYLE.md)。当前采用 Normal 标题和 Code 节点；MCP 交互画布会强制使用另一字体，因此仓库 SVG/PNG 才是对外展示的视觉基准。
 
 概念图可以表达通用模型，但须说明它不是某个项目的内部结构。实现图只标固定源码版本中能核对的组件和路径。
+
+当前图集：[Agent loop 概念图](agent-loop/README.md) · [Pi 分层图](pi-architecture/README.md) · [Pi 扩展资源图](pi-extensions/README.md)。

@@ -2,11 +2,11 @@
 
 用可编辑的图、简短的文字和可核对的开源实现，理解 Agent 怎样调用工具、管理上下文与记忆、控制权限，以及判断任务是否真正完成。
 
-![Agent 从任务到验证的概念总览](figures/agent-loop/diagram.svg)
+![Pi 运行核心与 coding-agent 外壳的分层图](figures/pi-architecture/diagram.svg)
 
-[编辑这张图](figures/agent-loop/scene.excalidraw) · [PNG 预览](figures/agent-loop/preview.png) · [不看图的文字说明](figures/agent-loop/README.md)
+[第一篇：Pi 的架构与代码路径](docs/systems/pi/README.md) · [Extensions 与 Skills](docs/systems/pi/extensions-and-skills.md) · [编辑图源](figures/pi-architecture/scene.excalidraw) · [PNG 预览](figures/pi-architecture/preview.png)
 
-> 当前是建仓草稿。总览图表达通用概念，不代表任何一个项目的实际内部拓扑；系统剖面须在固定源码版本上逐项核验。内容许可与公开发布将在正式发布前确定。
+> 当前是私有筹备稿。首页图只解释 Pi 固定源码版本的局部分层，不是所有运行模式的完整拓扑；尚未做运行实测。[通用 Agent loop 概念图](figures/agent-loop/README.md)另列。内容许可与公开发布将在正式发布前确定。
 
 ## 从哪里开始
 
@@ -16,6 +16,7 @@
 | Pi、Codex 等项目分别怎样实现？ | [按开源系统阅读](docs/systems/README.md) |
 | 同一个机制有哪些不同设计？ | [横向对照](docs/comparisons/README.md) |
 | 哪些章节已核验，接下来做什么？ | [路线与验收计划](docs/roadmap.md) |
+| Pi 第一篇具体怎样推进？ | [Pi 实施计划](docs/pi-first.md) |
 
 ## 这份指南怎样组织
 
