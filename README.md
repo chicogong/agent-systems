@@ -1,59 +1,36 @@
 # 图解 Agent 系统
 
-用可编辑的图、简短的文字和可核对的开源实现，理解 Agent 怎样调用工具、管理上下文与记忆、控制权限，以及判断任务是否真正完成。
+用图、可读的文字和可核对的开源实现，理解 Agent 怎样决定下一步、调用工具、管理上下文与记忆，以及在权限和失败边界下完成任务。
 
-![Pi 运行核心与 coding-agent 外壳的分层图](figures/pi-architecture/diagram.svg)
+<img src="book/assets/cover-preview.png" alt="图解 Agent 系统封面预览" width="240">
 
-[第一篇：Pi 的架构与代码路径](docs/systems/pi/README.md) · [Extensions 与 Skills](docs/systems/pi/extensions-and-skills.md) · [编辑图源](figures/pi-architecture/scene.excalidraw) · [PNG 预览](figures/pi-architecture/preview.png)
+这是一部持续写作的开源指南，不是某个 Agent 项目的说明书。**机制是主线，项目是有版本边界的案例，横向对照解释不同实现的取舍。** 当前仓库是预览筹备稿；静态源码阅读不等于运行验证，也不代表已完成外部试读或正式出版。
 
-其余样章按问题进入：
+## 从问题进入
 
-| 关心的问题 | 固定源码样章 |
+| 想了解什么 | 阅读入口 |
 | --- | --- |
-| 循环、工具和停止 | [OpenCode 工具状态](docs/systems/opencode/README.md)、[mini-SWE-agent 退出契约](docs/systems/mini-swe-agent/README.md)、[Qwen Code 延迟工具](docs/systems/qwen-code/README.md) |
-| 权限、环境和动作 | [Codex 审批](docs/systems/codex/README.md)、[OpenHands 动作事件](docs/systems/openhands/README.md)、[Browser Use 网页行动](docs/systems/browser-use/README.md)、[OpenClaw 会话路由](docs/systems/openclaw/README.md) |
-| 记忆、持久状态和研究 | [Letta Code](docs/systems/letta/README.md)、[Mem0](docs/systems/mem0/README.md)、[LangGraph checkpoint](docs/systems/langgraph/README.md)、[GPT Researcher](docs/systems/gpt-researcher/README.md) |
+| Agent loop、工具、上下文、记忆、权限与扩展怎样工作？ | [按机制学习](docs/concepts/README.md) |
+| Pi、Codex、OpenCode、Letta 等开源系统怎样实现一条具体路径？ | [按开源系统阅读](docs/systems/README.md) |
+| 同一问题为何有不同设计？ | [横向对照](docs/comparisons/README.md) |
+| 先查术语，还是按书的顺序阅读？ | [术语表](docs/glossary.md) · [阅读指南](book/frontmatter/reading-guide.md) |
 
-> 当前是公开预览筹备稿。首页图只解释 Pi 固定源码版本的局部分层，不是所有运行模式的完整拓扑；尚未做运行实测。[通用 Agent loop 概念图](figures/agent-loop/README.md)另列。许可已确定，但仓库公开、正式出版和外部读者验收尚未完成。
+例如，可以从 [Agent loop](docs/concepts/agent-loop.md) 进入，再分别看 [Pi 的循环与会话](docs/systems/pi/README.md)、[Codex 的执行审批](docs/systems/codex/README.md) 或 [Letta Code 的记忆可见性](docs/systems/letta/README.md)。这些图各回答一个问题，不合成一张虚构的“通用 Agent 内部架构图”。[完整系统目录](docs/systems/README.md)列出目前所有案例。
 
-## 当前完成度
+## 在哪里读
 
-| 交付 | 当前状态 | 不能据此宣称 |
-| --- | --- | --- |
-| 12 个系统剖面 | 每个有固定源码版本的一条局部路径；部分另有代码导读 | 已审计整个项目或已做运行验证 |
-| 机制与对照 | 6 篇机制专题、2 篇跨系统对照；恢复与评测等主题仍在路线图中 | 一本内容完整的 Agent 教科书 |
-| 图稿 | 16 组可编辑图源、SVG、PNG 与文字说明 | 所有交互画布与导出在每种环境下像素一致 |
-| 纸书 | 可从 [书稿清单与构建说明](book/README.md)导出 A4 PDF 预览 | 已完成外部试读、许可/印刷终审 |
-
-正文和原创图采用 [CC BY 4.0](LICENSE-CONTENT.md)，`scripts/`、各图目录的 `build.py` 与自动化代码采用 [MIT](LICENSE-CODE)。上游项目仍遵守各自许可；引用链接不意味着它们为本指南背书。
-
-## 书籍预览
-
-<img src="book/assets/cover-preview.png" alt="图解 Agent 系统封面 PDF 校样预览" width="260">
-
-[书稿顺序与 PDF 构建](book/README.md)已接入封面、前言、阅读指南、目录、正文、结语、致谢、作者简介和封底。封面保留选定插画，并用矢量文字重排关键信息；[可编辑的混合设计源文件](book/assets/cover.svg)与 PDF 同源。插画仍不是 300 PPI 印刷母版；版权、页码与封底文案以仓库可维护的书稿和构建器为准，不直接采用生成图片中的占位文字。
-
-## 从哪里开始
-
-| 你想解决的问题 | 入口 |
+| 方式 | 用途 |
 | --- | --- |
-| Agent 到底怎样工作？ | [按机制学习](docs/concepts/README.md) |
-| 文中的状态、记忆、Skill 等词是什么意思？ | [术语表](docs/glossary.md) |
-| Pi、Codex 等项目分别怎样实现？ | [按开源系统阅读](docs/systems/README.md) |
-| 同一个机制有哪些不同设计？ | [横向对照](docs/comparisons/README.md) |
-| 哪些章节已核验，接下来做什么？ | [路线与验收计划](docs/roadmap.md) |
-| 怎样收口成书并持续更新？ | [成书与持续更新计划](docs/editorial-plan.md)、[贡献指南](CONTRIBUTING.md) |
-| Pi 第一篇具体怎样推进？ | [Pi 实施计划](docs/pi-first.md) |
-| 整本书如何并行推进、还会研究哪些系统？ | [实施总图](docs/program.md) |
+| GitHub Markdown | 直接沿正文链接阅读，查看可编辑图源、图的文字说明和固定源码链接。 |
+| [可携带 Markdown 阅读包](book/README.md#markdown-阅读包) | 从同一书稿清单生成 ZIP，解压后可在普通 Markdown 阅读器或 Obsidian 中打开；章节链接与图片保留相对路径。 |
+| [A4 PDF 预览](book/README.md#pdf-预览) | 定时构建供排版与打印校稿；不是自动发布的正式版本。 |
 
-## 这份指南怎样组织
+三种阅读方式共享 Markdown 正文；[书稿清单](book/manifest.txt)决定 PDF 和阅读包的章节顺序，不维护第二份复制粘贴的书稿。[写作与校稿方法](docs/editorial-plan.md)说明一章怎样从问题、来源、图稿走到可合入的内容。
 
-机制是主线，项目是案例。同一张概念图只解释一个问题；项目剖面再把概念对应到真实模块、状态和调用路径。上下文窗口、会话记录、压缩摘要、长期记忆、外部知识库会分开讲，不统称为“记忆”。
+## 目前的范围
 
-每篇项目剖面需要标明分析的仓库和 commit、实际读到的源码或官方文档、适用范围，以及哪些结论仍是推断。项目会变，固定版本的图不会自动变成新版本的事实。[来源规则](sources/README.md)
+现有 6 篇机制专题、12 个固定源码版本的系统局部剖面、2 篇跨系统对照和 16 组可编辑图。它们是**预览稿**：恢复与评测等机制、更多横向对照、二次来源复核及外部读者验收仍待完成。[当前状态与下一步](docs/roadmap.md)是唯一进度入口；[选题地图](docs/program.md)收录候选，但列入候选不等于已经核验。
 
-## 图和文字的关系
+每篇系统剖面应说明上游仓库与 commit、读到的源码或官方文档、结论适用范围，以及事实、推断和未知的区别。[来源规则](sources/README.md) · [图稿与导出规则](figures/README.md) · [贡献指南](CONTRIBUTING.md)
 
-每张正式图都提供可编辑的 `.excalidraw`、供 Markdown 展示的 SVG、PNG 预览，以及文字说明。按问题选择时序、状态、数据流或对照等形式，不把 Pi 的样式套给所有系统。绘图与导出使用 [excalidraw-agent](https://github.com/chicogong/excalidraw-agent)；本地导出和交互画布需要分别检查，不能只凭工具返回“已显示”就宣称两者一致。[图稿规则](figures/README.md) · [设计原则](figures/STYLE.md)
-
-本项目只收录原创图解、必要的短引文和指向原始资料的链接；不复制其他项目的大段文档，也不公开私人研究笔记。
+原创正文和图采用 [CC BY 4.0](LICENSE-CONTENT.md)，脚本与工作流采用 [MIT](LICENSE-CODE)。上游项目遵守各自许可；链接不表示它们为本书背书。仓库公开、正式出版、许可终审与印刷验收是独立步骤，不由构建成功自动完成。

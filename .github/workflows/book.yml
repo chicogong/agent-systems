@@ -55,6 +55,8 @@ jobs:
         run: |
           python scripts/check_repo.py
           python scripts/check_sources.py
+      - name: Build portable Markdown reading archive
+        run: python scripts/build_markdown.py --ref "${{ github.sha }}"
       - name: Fetch pinned OFL font
         run: python scripts/fetch_book_font.py
       - name: Build PDF
@@ -77,6 +79,7 @@ jobs:
         with:
           name: agent-systems-book-${{ github.sha }}
           path: |
+            output/markdown/agent-systems-md.zip
             output/pdf/agent-systems-preview.pdf
             tmp/pdfs/review-*.png
             tmp/pdfs/tail-review-*.png

@@ -2,6 +2,9 @@
 
 本仓库是公开指南的筹备稿。以 `README.md` 为读者入口，以 `docs/roadmap.md` 为当前范围；不要把私人阅读库、聊天记录或账户数据复制进来。
 
+- `docs/editorial-plan.md` 管写作与验收方法，`docs/program.md` 只管选题；Pi 的首篇计划是历史工单，不作为整本书的目录或当前进度。
+- Markdown 正文是唯一源稿，`book/manifest.txt` 同时控制 PDF 和可携带 Markdown 阅读包的章序。不要在 `output/` 导出物里改稿，也不要为 Obsidian 另写一套正文。
+
 - 概念图与项目实现图分开。项目事实必须落到固定 commit 的源码、官方文档或可复现运行记录；将事实、推断和未知明确区分。
 - 一张图只回答一个主要问题。`.excalidraw` 是图源；SVG、PNG 是从该图源导出的产物。每张图须有等价的文字说明。
 - 图稿遵循 `figures/STYLE.md`；按关系选择图形形式和字体，不把 Pi 的卡片样式复制到所有章节。仓库 SVG/PNG 是发布视觉基准，不声称 MCP 画布能保留所有字体。

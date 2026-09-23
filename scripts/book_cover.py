@@ -6,6 +6,7 @@ vectorized or 300 PPI print master. The SVG and PDF use this same composition.
 
 from __future__ import annotations
 
+import argparse
 import html
 from pathlib import Path
 import re
@@ -129,3 +130,11 @@ def write_svg(path: Path) -> None:
     if matches < 20 or "<text " in svg:
         raise ValueError(f"Cover SVG text outline conversion incomplete: {matches} labels")
     path.write_text(svg, encoding="utf-8")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Rebuild the tracked mixed-media cover SVG")
+    parser.add_argument("--output", type=Path, default=ROOT / "book" / "assets" / "cover.svg")
+    args = parser.parse_args()
+    write_svg(args.output.resolve())
+    print(f"Built {args.output}")

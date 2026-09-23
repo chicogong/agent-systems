@@ -39,7 +39,7 @@ from reportlab.platypus import (
 )
 from reportlab.platypus.tableofcontents import TableOfContents
 
-from book_cover import cover_drawing, write_svg
+from book_cover import cover_drawing
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -419,7 +419,6 @@ def chapter_flowables(path: Path, index: int, style: dict[str, ParagraphStyle], 
 def build(output: Path, font_path: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     style = styles(font_path)
-    write_svg(FRONT_COVER)
     entries = manifest_entries()
     paths = manifest_paths()
     CHAPTER_KEYS.clear()

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from PIL import Image
 from pypdf import PdfReader
 
 from build_book import DEFAULT_OUTPUT, FRONT_COVER, manifest_entries, manifest_paths
-from book_cover import ORIGINAL
+from book_cover import ORIGINAL, write_svg
 
 
 def check(path: Path) -> None:
@@ -55,6 +56,11 @@ def check(path: Path) -> None:
     cover_svg = FRONT_COVER.read_text(encoding="utf-8")
     if "<svg" not in cover_svg or "data:image/png;base64" not in cover_svg or "<text " in cover_svg:
         raise ValueError("Cover SVG needs embedded art and portable vector type outlines")
+    with TemporaryDirectory() as temporary:
+        regenerated = Path(temporary) / "cover.svg"
+        write_svg(regenerated)
+        if regenerated.read_bytes() != FRONT_COVER.read_bytes():
+            raise ValueError("Tracked cover SVG differs from book_cover.py; rebuild it explicitly")
     with Image.open(ORIGINAL) as source:
         if source.size != (1024, 1536):
             raise ValueError(f"Selected illustration changed unexpectedly: {source.size}")

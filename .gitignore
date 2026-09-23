@@ -4,5 +4,6 @@ __pycache__/
 *.pyc
 tmp/pdfs/
 output/pdf/
+output/markdown/
 output/book-design-review/
 book/.cache/

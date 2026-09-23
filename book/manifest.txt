@@ -1,4 +1,4 @@
-# Print order. One repository-relative Markdown path per line.
+# Shared reading order for PDF and portable Markdown. One repository-relative Markdown path per line.
 @front book/frontmatter/preface.md
 @front book/frontmatter/reading-guide.md
 @part 第一部分 · 基本机制
@@ -8,7 +8,7 @@ docs/concepts/context-vs-memory.md
 docs/concepts/session-compaction-and-memory.md
 docs/concepts/approval-vs-sandbox.md
 docs/concepts/extensibility-layers.md
-@part 第二部分 · 编码 Agent 与执行
+@part 第二部分 · 行动、工具与执行
 docs/systems/pi/README.md
 docs/systems/pi/code-walkthrough.md
 docs/systems/pi/extensions-and-skills.md
@@ -24,7 +24,7 @@ docs/systems/browser-use/README.md
 docs/systems/browser-use/code-walkthrough.md
 docs/systems/qwen-code/README.md
 docs/systems/qwen-code/code-walkthrough.md
-@part 第三部分 · 记忆、状态与编排
+@part 第三部分 · 状态、记忆与协作编排
 docs/systems/letta/README.md
 docs/systems/letta/code-walkthrough.md
 docs/systems/mem0/README.md

@@ -1,6 +1,6 @@
 # Pi：小核心与可扩展外壳
 
-[返回系统目录](../README.md) · [实施计划](../../pi-first.md) · [关键代码导读](code-walkthrough.md)
+[返回系统目录](../README.md) · [关键代码导读](code-walkthrough.md)
 
 Pi 的第一篇从“哪些状态属于核心、哪些由 coding-agent 负责”讲起。核心的 `Agent` 接受输入、管理内存消息和运行队列；`runLoop` 组织模型回合、工具调用及继续/结束；coding-agent 的 `AgentSession` 另行编排资源和会话持久化。把三者混作一个“Agent 大盒子”，就很难解释 Extension、Skill 和 session tree 各在哪里起作用。
 
