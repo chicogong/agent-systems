@@ -29,9 +29,9 @@
 
 ## 书籍预览
 
-<img src="book/assets/cover-selected.png" alt="图解 Agent 系统封面预览" width="260">
+<img src="book/assets/cover-preview.png" alt="图解 Agent 系统封面 PDF 校样预览" width="260">
 
-[书稿顺序与 PDF 构建](book/README.md)已接入封面、前言、阅读指南、目录、正文、结语、致谢、作者简介和封底。封面是屏幕审稿图，不是 300 PPI 印刷母版；版权、页码与封底文案以仓库可维护的书稿和构建器为准，不直接采用生成图片中的占位文字。
+[书稿顺序与 PDF 构建](book/README.md)已接入封面、前言、阅读指南、目录、正文、结语、致谢、作者简介和封底。封面保留选定插画，并用矢量文字重排关键信息；[可编辑的混合设计源文件](book/assets/cover.svg)与 PDF 同源。插画仍不是 300 PPI 印刷母版；版权、页码与封底文案以仓库可维护的书稿和构建器为准，不直接采用生成图片中的占位文字。
 
 ## 从哪里开始
 

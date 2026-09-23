@@ -39,11 +39,13 @@ from reportlab.platypus import (
 )
 from reportlab.platypus.tableofcontents import TableOfContents
 
+from book_cover import cover_drawing, write_svg
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "book" / "manifest.txt"
 DEFAULT_OUTPUT = ROOT / "output" / "pdf" / "agent-systems-preview.pdf"
-FRONT_COVER = ROOT / "book" / "assets" / "cover-selected.png"
+FRONT_COVER = ROOT / "book" / "assets" / "cover.svg"
 DEFAULT_FONT = ROOT / "book" / ".cache" / "NotoSansSC-Regular.ttf"
 FONT_NAME = "BookNoto"
 BOLD_NAME = "BookNotoBold"
@@ -274,15 +276,7 @@ class BookDoc(BaseDocTemplate):
     def decorate(self, canvas, doc):
         canvas.saveState()
         if doc.page == 1:
-            if not FRONT_COVER.is_file():
-                raise FileNotFoundError(f"Cover missing: {FRONT_COVER}")
-            with PILImage.open(FRONT_COVER) as cover:
-                image_w, image_h = cover.size
-            cover_w = PAGE_H * image_w / image_h
-            canvas.setFillColor(colors.HexColor("#faf9f4"))
-            canvas.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
-            canvas.drawImage(str(FRONT_COVER), (PAGE_W - cover_w) / 2, 0,
-                             width=cover_w, height=PAGE_H, mask="auto")
+            renderPDF.draw(cover_drawing(), canvas, 0, 0)
             canvas.restoreState()
             return
         canvas.setStrokeColor(colors.HexColor("#d8e2ec"))
@@ -425,6 +419,7 @@ def chapter_flowables(path: Path, index: int, style: dict[str, ParagraphStyle], 
 def build(output: Path, font_path: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     style = styles(font_path)
+    write_svg(FRONT_COVER)
     entries = manifest_entries()
     paths = manifest_paths()
     CHAPTER_KEYS.clear()

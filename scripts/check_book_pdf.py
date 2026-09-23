@@ -9,6 +9,7 @@ from PIL import Image
 from pypdf import PdfReader
 
 from build_book import DEFAULT_OUTPUT, FRONT_COVER, manifest_entries, manifest_paths
+from book_cover import ORIGINAL
 
 
 def check(path: Path) -> None:
@@ -49,13 +50,22 @@ def check(path: Path) -> None:
         raise ValueError(f"Regular/bold fonts were not embedded: {embedded_fonts}")
     if not any("JetBrainsMono" in name for name in embedded_fonts):
         raise ValueError("Code font was not embedded")
-    with Image.open(FRONT_COVER) as cover:
-        if cover.width < 1000 or cover.height < 1500:
-            raise ValueError(f"Cover source is too small for the digital preview: {cover.size}")
-    cover_images = [obj for obj in reader.pages[0].get("/Resources", {}).get("/XObject", {}).values()
-                    if obj.get_object().get("/Subtype") == "/Image"]
-    if not cover_images:
-        raise ValueError("Cover image is missing")
+    if not FRONT_COVER.is_file():
+        raise ValueError("Editable mixed-media cover is missing")
+    cover_svg = FRONT_COVER.read_text(encoding="utf-8")
+    if "<svg" not in cover_svg or "data:image/png;base64" not in cover_svg or "<text " in cover_svg:
+        raise ValueError("Cover SVG needs embedded art and portable vector type outlines")
+    with Image.open(ORIGINAL) as source:
+        if source.size != (1024, 1536):
+            raise ValueError(f"Selected illustration changed unexpectedly: {source.size}")
+    # ReportLab's graphics renderer stores the one original illustration as an
+    # inline image; page.images sees both inline and XObject images.
+    cover_images = reader.pages[0].images
+    if len(cover_images) != 1:
+        raise ValueError(f"Cover needs one original illustration, found {len(cover_images)} images")
+    cover_text = reader.pages[0].extract_text() or ""
+    if "图解" not in cover_text or "Agent" not in cover_text or "chicogong" not in cover_text:
+        raise ValueError("Vector cover text is missing or not extractable")
     title_text = reader.pages[1].extract_text() or ""
     if "图解 Agent 系统" not in title_text:
         raise ValueError("Accessible title page is missing")

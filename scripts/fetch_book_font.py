@@ -52,14 +52,42 @@ def fetch(source: Path, url: str, sha256: str) -> bool:
     return refreshed
 
 
+def name_is_correct(path: Path, weight: int) -> bool:
+    if not path.is_file():
+        return False
+    font = TTFont(path)
+    expected = "NotoSansSC-Regular" if weight == 400 else "NotoSansSC-Bold"
+    result = font["name"].getDebugName(6) == expected and font["OS/2"].usWeightClass == weight
+    font.close()
+    return result
+
+
+def set_static_names(font: TTFont, weight: int) -> None:
+    style = "Regular" if weight == 400 else "Bold"
+    values = {
+        1: "Noto Sans SC",
+        2: style,
+        4: f"Noto Sans SC {style}",
+        6: f"NotoSansSC-{style}",
+        16: "Noto Sans SC",
+        17: style,
+    }
+    name = font["name"]
+    for record in list(name.names):
+        if record.nameID in values:
+            name.setName(values[record.nameID], record.nameID,
+                         record.platformID, record.platEncID, record.langID)
+
+
 def main() -> None:
     FONT.parent.mkdir(parents=True, exist_ok=True)
     refreshed = fetch(FONT, URL, SHA256)
     for weight, target in ((400, REGULAR), (700, BOLD)):
-        if target.is_file() and not refreshed:
+        if not refreshed and name_is_correct(target, weight):
             continue
         source = TTFont(FONT)
         instance = instantiateVariableFont(source, {"wght": weight}, inplace=False)
+        set_static_names(instance, weight)
         instance.save(target)
         instance.close()
         source.close()
