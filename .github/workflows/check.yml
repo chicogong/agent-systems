@@ -12,6 +12,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python3 scripts/build_pi_figures.py
-      - run: git diff --exit-code -- figures/pi-architecture/scene.excalidraw figures/pi-extensions/scene.excalidraw
+      - run: python3 scripts/rebuild_scenes.py
+      - run: git diff --exit-code -- 'figures/**/scene.excalidraw'
       - run: python3 scripts/check_repo.py

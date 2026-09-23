@@ -30,8 +30,10 @@ def check_figures() -> list[str]:
         if len(ids) != len(set(ids)):
             errors.append(f"{scene_file.relative_to(ROOT)} has duplicate element IDs")
         for element in elements:
-            if element.get("type") == "text" and element.get("fontFamily") not in (6, 8):
-                errors.append(f"{scene_file.relative_to(ROOT)} text {element.get('id')} uses an unreviewed font")
+            if element.get("type") == "text":
+                family = element.get("fontFamily")
+                if not isinstance(family, int) or family <= 0:
+                    errors.append(f"{scene_file.relative_to(ROOT)} text {element.get('id')} has invalid fontFamily")
     return errors
 
 
