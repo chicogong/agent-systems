@@ -14,7 +14,7 @@
 
 ## 写入：不是把整段对话原样塞进向量库
 
-`Memory.add()` 要求 `user_id`、`agent_id`、`run_id` 至少有一个用于作用域；它把消息正规化后交给 `_add_to_vector_store`。在本篇限定的 `infer=True` 路径中，代码先取同一作用域最近消息和部分已有记忆，调用一次 LLM 提取新事实，再批量 embedding、对检索到的已有记录及本批次按文本 hash 排重，最后批量 `insert` 到向量库并记录历史；即使未提取到事实，也会保存本轮消息。[作用域构造](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L314-L409) · [`add` 分派](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L760-L877) · [提取与落库](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L879-L1067)
+`Memory.add()` 要求 `user_id`、`agent_id`、`run_id` 至少有一个用于作用域；它把消息正规化后交给 `_add_to_vector_store`。在本篇限定的 `infer=True` 路径中，代码先取同一作用域最近消息和部分已有记忆，调用一次 LLM 提取新事实，再批量 embedding、对检索到的已有记录及本批次按文本 hash 排重，最后尝试批量 `insert`（失败后逐条重试）并记录 ADD 历史。逐条写入仍可能失败，返回的 ADD 项不能单独证明每条已持久化；即使未提取到事实，也会保存本轮消息。[作用域构造](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L314-L409) · [`add` 分派](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L760-L877) · [提取与落库](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L879-L1067)
 
 注意两个边界：`infer=False` 会走逐消息直接写入路径；procedural memory 也有独立分支。本篇图与正文不能替代它们。当前源码这条推断路径是 **ADD-only**，不是自动 UPDATE/DELETE；`add()` docstring 仍有“决定添加、更新或删除”的旧表述，应以具体执行分支为准。[`infer=False` 与 V3 路径分叉](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L879-L944) · [项目 README 对新算法的限定](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/README.md#L49-L76)
 
