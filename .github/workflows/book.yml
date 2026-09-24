@@ -55,6 +55,7 @@ jobs:
         run: |
           python scripts/check_repo.py
           python scripts/check_sources.py
+          python scripts/test_build_book.py
           python scripts/test_check_repo.py
           python scripts/test_check_figure_legibility.py
           python scripts/check_figure_legibility.py --strict
@@ -63,9 +64,13 @@ jobs:
       - name: Fetch pinned OFL font
         run: python scripts/fetch_book_font.py
       - name: Build PDF
-        run: python scripts/build_book.py
-      - name: Check PDF structure
-        run: python scripts/check_book_pdf.py
+        run: |
+          python scripts/build_book.py
+          python scripts/build_book.py --public-links --output output/pdf/agent-systems-public-preview.pdf
+      - name: Check both PDF editions
+        run: |
+          python scripts/check_book_pdf.py
+          python scripts/check_book_pdf.py output/pdf/agent-systems-public-preview.pdf --public-readiness
       - name: Render review pages
         run: |
           mkdir -p tmp/pdfs
@@ -84,6 +89,7 @@ jobs:
           path: |
             output/markdown/agent-systems-md.zip
             output/pdf/agent-systems-preview.pdf
+            output/pdf/agent-systems-public-preview.pdf
             tmp/pdfs/review-*.png
             tmp/pdfs/tail-review-*.png
             tmp/pdfs/figure-*.png

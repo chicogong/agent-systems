@@ -27,11 +27,19 @@ pdfinfo output/pdf/agent-systems-preview.pdf
 
 可用 `--output /绝对路径/书名.pdf` 另存。默认 PDF 是**静态源码阅读预览**，不是对全部项目的运行验证，也不是已授权的正式出版物。PDF 自动把图的 SVG 展示路径映射到同目录的 PNG 预览，不修改正文或 `.excalidraw` 图源。章节中的上游代码链接保留为 PDF 可点击外链。封面、标题页、关于本版、目录与封底由构建器插入；致谢和作者简介仍在 Markdown 中。
 
-默认校样会把未纳入 PDF 的本仓本地链接转成私有书稿仓库 URL，**不能直接放到公开网站供阅读或下载**。考虑公开 PDF 时，先生成没有私有链接的公共阅读版，再运行 `python3 scripts/check_book_pdf.py --public-readiness`；该附加门禁只检查已知私有仓与非 HTTPS 的 PDF 链接，不代替外部材料权益、链接可访问性、无障碍和完整阅读审查。当前校样预期不通过此门禁，网页 HTML 仍是公共阅读入口。
+默认校样会把未纳入 PDF 的本仓本地链接转成源码仓 URL，**在仓库仍私有时不能直接放到公开网站**。另用同一清单构建公共阅读版：
+
+```bash
+python3 scripts/build_book.py --public-links --output output/pdf/agent-systems-public-preview.pdf
+python3 scripts/check_book_pdf.py output/pdf/agent-systems-public-preview.pdf --public-readiness
+shasum -a 256 output/pdf/agent-systems-public-preview.pdf
+```
+
+公共版将可用的内部参考链接改到在线章节或原尺寸 SVG，不把尚未发布的可编辑图源伪装成可点击链接。公共门禁检查已知私有仓与非 HTTPS 注释链接；它不代替权益、外链可访问性、无障碍和整书审稿。电子版仍应以 HTML 为检索与辅助技术阅读的首选；PDF 尚未制作语义标签，也不代表 300 PPI 印刷母版。两个 PDF 都由每周 CI 构建为私有审稿 Artifact，不会自动上线。
 
 PDF 构建只读书稿与图稿，写入指定输出路径；不会顺手重写仓库中的封面 SVG。封面设计变更时单独运行 `python3 scripts/book_cover.py` 更新该图，并检查 PDF 与 SVG 一致。默认输出不提交 Git，适合完成校稿后作为 Release 附件。没有在 PDF 中内嵌第三方上游代码或仓库文件。文字与原创图采用 [CC BY 4.0](../LICENSE-CONTENT.md)，构建脚本采用 [MIT](../LICENSE-CODE)。正文使用固定 SHA-256 校验的 [Noto Sans SC](https://github.com/google/fonts/tree/e44c4b011a820c2cbe2fd2cfa8052037d7edb571/ofl/notosanssc)；代码拉丁字母使用 [JetBrains Mono](https://github.com/google/fonts/tree/e44c4b011a820c2cbe2fd2cfa8052037d7edb571/ofl/jetbrainsmono)，中文仍由 Noto Sans SC 承载。两者均遵循 [SIL OFL 1.1](https://github.com/google/fonts/blob/e44c4b011a820c2cbe2fd2cfa8052037d7edb571/ofl/jetbrainsmono/OFL.txt)，独立于本仓库内容许可。构建前下载一次，以后可离线重建。发布前仍需确认外链、图片和打印实样；构建成功本身不替代编辑审稿。
 
-[GitHub Actions](../.github/workflows/book.yml) 在书稿、来源、许可、正文或图稿变更、每周一 03:17 UTC（新加坡时间 11:17）和手动触发时重建；先运行图稿最小字号预检与单测，再上传 Markdown ZIP、PDF、前五页、末四页、封面与封底 300 DPI 校样及所有含图页的审稿 PNG，保留 30 天。每周还检查 Markdown 外链并上传待复核报告；网络错误不自动改正文。定时任务只给校稿者下载，不自动提交生成文件或发布 Release；正式版本由人工审稿后另行打 tag 并发布。GitHub 定时任务可能延迟或因仓库长期无活动而停用，因此不能把它当作永久存档。
+[GitHub Actions](../.github/workflows/book.yml) 在书稿、来源、许可、正文或图稿变更、每周一 03:17 UTC（新加坡时间 11:17）和手动触发时重建；先运行图稿最小字号预检与单测，再上传 Markdown ZIP、私有校样、公共链接版和审稿 PNG，保留 30 天。每周还检查 Markdown 外链并上传待复核报告；网络错误不自动改正文。定时任务只给校稿者下载，不自动提交生成文件或发布 Release；正式版本由人工审稿后另行打 tag 并发布。GitHub 定时任务可能延迟或因仓库长期无活动而停用，因此不能把它当作永久存档。
 
 图稿 PNG 在 PDF 中通常有数百 DPI；若 A4 上仍难读，优先检查原图节点文字、注释密度与图在页面中的实际尺寸，单纯提高像素数不会放大印刷字体。正文图与图源同源，校稿时以含图页审稿 PNG 检查节点、箭头及图注，不能只看独立的高分辨率 `preview.png`。
 

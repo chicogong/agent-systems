@@ -1,10 +1,15 @@
 import { cp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const site = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repo = path.resolve(process.env.BOOK_CONTENT_ROOT || path.join(site, '..'))
 const output = path.join(site, 'content')
+const pdfFile = process.env.PUBLIC_PDF_FILE
+const pdfName = 'agent-systems-public-preview.pdf'
+if (pdfFile && process.env.DEPLOY_TARGET !== 'vercel') throw new Error('Public PDF builds require the reviewed Vercel noindex header configuration')
 const origin = process.env.SITE_URL
 if (!origin || !/^https:\/\/[^/]+$/.test(origin)) throw new Error('Set SITE_URL to the intended HTTPS origin')
 
@@ -180,7 +185,7 @@ description: "《图解 Agent 系统》在线阅读：从 Agent 运行机制到�
 
 从运行机制到开源实现，沿问题读懂 Agent 怎样决策、调用工具、管理上下文与记忆，并在权限和失败边界下完成任务。这是一本持续校稿的免费中文技术书，正文可直接在网页阅读。
 
-> **在线预览稿。** 本站已收录书稿清单中的 ${chapterCount} 篇正文和部分阅读索引与来源说明。书稿 GitHub 仓库目前保持私有；PDF、可编辑图源和脚本未在本站发布。系统剖面以篇内固定源码版本为准，不代表运行评测。
+> **在线预览稿。** 本站已收录书稿清单中的 ${chapterCount} 篇正文和部分阅读索引与来源说明。${pdfFile ? 'PDF 电子校样可在线阅读' : 'PDF 暂未在本站发布'}；可编辑图源与脚本不随网站发布，能否从源码仓访问取决于仓库可见性。系统剖面以篇内固定源码版本为准，不代表运行评测。
 
 ## 选择你的阅读路线
 
@@ -198,11 +203,13 @@ description: "《图解 Agent 系统》在线阅读：从 Agent 运行机制到�
 
 发现事实错误、图中文字难读或源码链接失效？[查看反馈方式](/feedback)。阅读不需要登录；目前不收集站内评论。
 
+${pdfFile ? '## 离线阅读\n\n[打开 PDF 电子校样](/pdf)。它和在线正文同源，提供浏览器预览与下载；在线章节仍是检索、引用和无障碍阅读的优先入口。\n' : ''}
+
 ${contents}
 
 ---
 
-原创文字与图：chicogong 与贡献者，按 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 提供；引用的上游项目、商标和外部材料归各自权利人。当前站点是阅读入口，不表示私有源仓已公开。
+原创文字与图：chicogong 与贡献者，按 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 提供；引用的上游项目、商标和外部材料归各自权利人。网站与源码仓分别发布，以 GitHub 页面显示的仓库可见性为准。
 `
 await writeFile(path.join(output, 'index.md'), home)
 const generalFeedback = feedbackMailto('《图解 Agent 系统》阅读反馈', '章节或页面：\n问题或建议：\n相关证据/链接（如有）：\n')
@@ -220,8 +227,39 @@ description: "《图解 Agent 系统》的勘误、图稿与阅读体验反馈�
 
 建议包含：页面链接、原句或图中位置、问题说明，以及可公开引用的上游源码或文档链接。请不要通过邮件发送密钥、私有资料或个人敏感信息。
 
-目前没有站内账户、评论区或行为追踪。书稿仓库仍为私有，因此读者暂时不能使用该仓库的 GitHub Issues。重要勘误会在后续版本中修正，并在公开更新说明中标明；收到邮件不代表每项建议都会被采纳。
+目前没有站内账户、评论区或行为追踪；反馈统一使用邮件，GitHub Issues 暂不作为本网站的反馈入口。重要勘误会在后续版本中修正，并在公开更新说明中标明；收到邮件不代表每项建议都会被采纳。
 `)
+if (pdfFile) {
+  const expected = path.join(repo, 'output', 'pdf', pdfName)
+  if (path.resolve(pdfFile) !== expected) throw new Error('PUBLIC_PDF_FILE must point to this book build: ' + expected)
+  const sha = process.env.PUBLIC_PDF_SHA256
+  if (!/^[a-f0-9]{64}$/.test(sha || '')) throw new Error('PUBLIC_PDF_SHA256 must be the reviewed artifact digest')
+  const bytes = await readFile(expected)
+  const actual = createHash('sha256').update(bytes).digest('hex')
+  if (actual !== sha) throw new Error('Reviewed PDF digest does not match PUBLIC_PDF_FILE')
+  try {
+    execFileSync(process.env.PDF_CHECK_PYTHON || 'python3', [path.join(repo, 'scripts/check_book_pdf.py'), expected, '--public-readiness'], { cwd: repo, encoding: 'utf8' })
+  } catch (error) {
+    throw new Error('PDF public-readiness check failed: ' + (error.stdout || error.stderr || error.message))
+  }
+  await mkdir(path.join(output, 'public', 'book'), { recursive: true })
+  await cp(expected, path.join(output, 'public', 'book', pdfName))
+  await writeFile(path.join(output, 'pdf.md'), `---
+description: "《图解 Agent 系统》PDF 电子校样的在线预览、下载及版本校验。"
+---
+
+# 阅读 PDF 电子校样
+
+**在线预览稿。** 这是与本网站正文同源构建的电子阅读版，仍在校稿，并非 300 PPI 印刷母版。需要检索和引用单篇内容时，建议优先使用[在线章节目录](/)；PDF 适合离线通读。图像可放大查看，但 PDF 尚未制作语义标签，使用辅助技术阅读时请用 HTML 正文。
+
+[打开或下载 PDF 电子校样](/book/${pdfName}) · [返回在线目录](/) · [提交阅读反馈](/feedback)
+
+<object class="book-pdf-preview" data="/book/${pdfName}" type="application/pdf" aria-label="图解 Agent 系统 PDF 电子校样">
+  浏览器无法直接显示 PDF。请使用上方下载链接。
+</object>
+
+文件 SHA-256：\`${actual}\`。本电子校样已将内部可用链接改为在线阅读站链接，未包含可编辑图源。源码仓与网站分别发布。\n`)
+}
 await writeFile(path.join(site, '.vitepress', 'generated-sidebar.json'), JSON.stringify(ordered, null, 2) + '\n')
 await writeFile(path.join(output, 'public', 'robots.txt'), 'User-agent: *\nAllow: /\n\nUser-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: GPTBot\nDisallow: /\n\nSitemap: ' + origin + '/sitemap.xml\n')
 await writeFile(path.join(output, 'public', 'THIRD-PARTY-NOTICES.txt'), 'Diagram font notices\n\nNunito: Copyright 2014 The Nunito Project Authors. SIL Open Font License 1.1.\nhttps://github.com/google/fonts/blob/main/ofl/nunito/OFL.txt\n\nComic Shanns: Copyright 2018 Shannon Miwa. MIT License.\nhttps://github.com/shannpersand/comic-shanns/blob/master/LICENSE\n')

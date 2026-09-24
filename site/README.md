@@ -1,6 +1,6 @@
 # 图解 Agent 系统 · 在线阅读站
 
-[线上预览](https://books.aimake.cc/) 是公开阅读入口，**不是** GitHub 书稿仓库的公开镜像。书稿仓库目前仍为私有；本站仅发布书稿清单中的 Markdown 正文、少量阅读索引与来源说明，以及对应展示用 SVG。PDF、可编辑 Excalidraw 图源、构建脚本和仓库元数据不在公开产物中。
+[线上预览](https://books.aimake.cc/) 是公开阅读入口，**不是** GitHub 书稿仓库的公开镜像。默认构建仅发布书稿清单中的 Markdown 正文、少量阅读索引与来源说明，以及对应展示用 SVG；可编辑 Excalidraw 图源、构建脚本和仓库元数据不在网站产物中。PDF 只有经过独立审稿、散列锁定并显式启用时才加入。
 
 ## 唯一内容源
 
@@ -20,7 +20,7 @@ SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 
 - `npm run build:public` 将章节 Markdown 内链改为站内路由，保留固定版本的公开上游源码链接。指向私有 `chicogong/agent-systems` 的链接不会输出。
 - 图只复制展示 SVG；同页附图的文字说明和原尺寸 SVG 链接，不复制 `.excalidraw` 或 PNG。未纳入书稿的内部计划页、贡献流程和模板页不作为网站正文发布。
-- `scripts/verify-public.mjs` 对 HTML 页数、站内路由与标题锚点、sitemap、canonical、分享/结构化元信息、robots、私有仓标记和输出文件类型做发布前门禁。本轮生成 64 个 HTML 页面，其中 54 篇来自书稿清单，另有反馈页。`Check guide structure` 的 `public-site` job 在每次推送/PR 运行同一门禁，不自动部署。
+- `scripts/verify-public.mjs` 对 HTML 页数、站内路由与标题锚点、sitemap、canonical、分享/结构化元信息、robots、私有仓标记和输出文件类型做发布前门禁。默认生成 64 个 HTML 页面；显式启用 PDF 时才生成第 65 页和唯一许可的 PDF 文件。`Check guide structure` 的 `public-site` job 在每次推送/PR 运行默认门禁，不自动部署。
 - 首页与每章明确标识“在线预览稿”；静态源码阅读不等于运行实测。站点允许搜索引擎抓取，但 robots 不是访问控制。正文与原创图采用 CC BY 4.0，图内嵌字体的许可另列在 `/THIRD-PARTY-NOTICES.txt`。
 
 ## 搜索发现与阅读反馈
@@ -33,12 +33,24 @@ Search Console 的站点所有权验证、提交 sitemap、索引与点击数据
 
 ## PDF 在线阅读的发布门槛
 
-同域名放 PDF 技术上可行：保留 HTML 为主要可搜索、可缩放的阅读版，再提供独立 PDF 页面、浏览器原生预览与下载后备链接。当前 PDF 仍是私有电子校样，**不得直接复制进 `public/`**：文件内还有指向私有 GitHub 仓库的注释链接，公开读者无法访问；还需完成外部材料/图稿权益、封面与整本书的阅读校验。先从同一书稿生成公共阅读版，替换私有链接，再用 `python3 scripts/check_book_pdf.py --public-readiness` 检查链接；该门禁目前会按预期失败。之后还需核验版本标识及文件散列，再人工决定是否公开。若将 PDF 作为 HTML 的替代格式提供，还要明确其索引策略，避免同一正文的两个 URL 互相竞争。
+同域名 PDF 采用独立 `/pdf` 页面、浏览器原生预览和显眼的下载后备；小屏不嵌入 PDF 阅读器，避免浏览器不支持时出现黑框。HTML 仍是主要可搜索、可缩放和辅助技术阅读版。PDF 尚未制作语义标签，封面插画也不是 300 PPI 印刷母版。PDF 文件单独由 Vercel 回应 `X-Robots-Tag: noindex`，其阅读说明页仍可被发现；这种非 HTML 索引控制符合 [Google 的说明](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag)。
 
-目前 Vercel 项目未连接 Git；部署前先从最终书稿重新构建并通过门禁，再把 `dist/` 部署到已有的 `agent-systems-reader` 项目。不要让 Vercel 构建直接读取私有书稿仓库，也不要上传 PDF 或提交/推送本地工作树来触发部署。
+默认校样会链接到本仓，仓库私有时不能上传。公共阅读版使用同一书稿清单，内部可用链接改到网站；`book.yml` 在每次审稿构建中额外生成并检查它，但仍只上传为私有 Artifact。**不允许直接把默认校样复制到网站。** 人工完成内容、权益、图文和外链审查后，先从最终提交构建公共版，运行 `python3 scripts/check_book_pdf.py output/pdf/agent-systems-public-preview.pdf --public-readiness`，记录该文件的 SHA-256。只有明确指定如下三个变量，网站构建才会再次运行 PDF 检查、比对 SHA 并复制该文件；未设置时维持无 PDF 的默认公开包：
+
+```bash
+cd site
+PUBLIC_PDF_FILE=/绝对路径/agent-systems/output/pdf/agent-systems-public-preview.pdf \
+PUBLIC_PDF_SHA256=<已审稿文件的64位sha256> \
+PDF_CHECK_PYTHON=python3 \
+SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
+```
+
+Vercel 部署前须人工核对 `dist/pdf.html`、`dist/book/agent-systems-public-preview.pdf`、`dist/vercel.json` 和构建日志，再从同一份 `dist/` 部署。`verify:live` 会在 PDF 模式下连同文件字节和线上 `X-Robots-Tag` 一起检查。构建和测试通过并非权益许可或作者的公开发布决定。
+
+目前 Vercel 项目未连接 Git；部署前先从最终书稿重新构建并通过门禁，再把 `dist/` 部署到已有的 `agent-systems-reader` 项目。不要让 Vercel 构建直接读取私有书稿仓库，也不要把推送工作树等同于网站部署。
 
 部署后，在同一份构建产物仍在本地时运行 `LIVE_URL=https://books.aimake.cc npm run verify:live`。脚本逐一比较 sitemap 中的 HTML、所有展示 SVG、sitemap/robots/字体说明与本地构建的 SHA-256，并检查四个私有路径仍为 404。它只读取线上公开资源，不改变部署；若随后重新构建了本地 `dist/`，应先确认新产物与线上对应同一提交再比较。
 
 ## 本次验收
 
-2026-09-24 从当前书稿构建出 54 篇正文、8 篇补充页、1 个反馈页和 25 张展示 SVG；本地门禁验证 64 个 HTML 页面及站内链接和标题锚点、sitemap、canonical、分享/结构化元信息、robots 和产物白名单。桌面浏览器已抽看首页、Pi 章节和反馈页；此前的 390px 手机视口检查对应旧站点，新增页面仍需复核。线上字节一致性须在本轮部署后重新执行。非作者读者试读仍是独立验收项，不能据此称正式出版。
+2026-09-24 从当前书稿构建出 54 篇正文、8 篇补充页、1 个反馈页和 25 张展示 SVG；默认与 PDF 模式分别通过 64／65 页的本地门禁。桌面与 390px 手机浏览器抽查首页、PDF 页和反馈页，确认无横向溢出、脚本错误或断开的 PDF 下载；小屏原生 PDF 嵌入区隐藏，保留直接打开链接。线上字节一致性须在部署后重新执行。非作者读者试读仍是独立验收项，不能据此称正式出版。

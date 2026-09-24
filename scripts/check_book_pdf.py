@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 from PIL import Image
 from pypdf import PdfReader
 
-from build_book import DEFAULT_OUTPUT, FRONT_COVER, manifest_entries, manifest_paths
+from build_book import DEFAULT_OUTPUT, FRONT_COVER, PUBLIC_SUPPLEMENTS, READER_URL, ROOT, manifest_entries, manifest_paths, public_route
 from book_cover import ORIGINAL, write_svg
 
 
@@ -105,6 +105,11 @@ def check_public_readiness(path: Path) -> None:
     """Reject a private-review PDF before it can be used as a public download."""
     reader = PdfReader(str(path))
     blocked: list[str] = []
+    reader_host = urlparse(READER_URL).netloc
+    site_paths = {"/", "/feedback"}
+    site_paths.update(public_route(source) for source in manifest_paths())
+    site_paths.update(public_route(ROOT / source) for source in PUBLIC_SUPPLEMENTS)
+    site_paths.update(f"/assets/figures/{folder.name}/diagram.svg" for folder in (ROOT / "figures").iterdir() if (folder / "diagram.svg").is_file())
     for page in reader.pages:
         for annotation in page.get("/Annots", []):
             action = annotation.get_object().get("/A")
@@ -115,14 +120,17 @@ def check_public_readiness(path: Path) -> None:
             private_repo = parsed.netloc == "github.com" and (
                 parsed.path == "/chicogong/agent-systems" or parsed.path.startswith("/chicogong/agent-systems/")
             )
-            if parsed.scheme != "https" or private_repo or parsed.hostname in {"localhost", "127.0.0.1"}:
+            if parsed.scheme != "https" or private_repo or parsed.hostname in {"localhost", "127.0.0.1"} or (parsed.netloc == reader_host and parsed.path not in site_paths):
                 blocked.append(url)
     if blocked:
         raise ValueError(
             f"PDF is not public-ready: {len(blocked)} blocked link annotations "
             f"({len(set(blocked))} unique). Examples: {', '.join(sorted(set(blocked))[:3])}"
         )
-    print("Public PDF link gate OK: no private-repository or non-HTTPS annotations")
+    all_text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    if "可编辑图源 · PNG 预览" in all_text or "图源 · PNG 预览" in all_text:
+        raise ValueError("Public PDF advertises private figure assets")
+    print("Public PDF link gate OK: no private-repository, non-HTTPS, or unknown reader-route annotations")
 
 
 if __name__ == "__main__":

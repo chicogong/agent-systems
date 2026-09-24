@@ -97,6 +97,74 @@ IMAGE = re.compile(r"^!\[([^\]]*)\]\(([^)]+)\)$")
 HEADING = re.compile(r"^(#{1,3})\s+(.+)$")
 LIST = re.compile(r"^\s*(?:[-*]|\d+\.)\s+(.+)$")
 CHAPTER_KEYS: dict[Path, str] = {}
+PUBLIC_LINKS = False
+PUBLIC_ROUTES: dict[Path, str] = {}
+FIGURE_OWNERS: dict[str, str] = {}
+PUBLIC_SUPPLEMENTS = (
+    "docs/concepts/README.md",
+    "docs/systems/README.md",
+    "docs/comparisons/README.md",
+    "sources/README.md",
+    "sources/jev.md",
+    "sources/mcp-skill-tool-lifecycle.md",
+    "sources/kimi-code.md",
+    "sources/mimo-code.md",
+)
+
+
+def public_route(path: Path) -> str:
+    relative = path.relative_to(ROOT).as_posix().removesuffix(".md")
+    if relative.startswith("book/frontmatter/"):
+        relative = relative.replace("book/frontmatter/", "front/", 1)
+    elif relative.startswith("book/backmatter/"):
+        relative = relative.replace("book/backmatter/", "back/", 1)
+    elif relative.startswith("docs/"):
+        relative = relative[5:]
+    return "/" + relative.removesuffix("/README")
+
+
+def public_link(target: Path, label: str, fragment: str) -> str:
+    """Resolve only assets deliberately included in the public reader build."""
+    relative = target.relative_to(ROOT).as_posix()
+    url = PUBLIC_ROUTES.get(target)
+    if target == ROOT / "README.md":
+        url = "/"
+    elif relative == "CONTRIBUTING.md":
+        url = "/feedback"
+        label = "反馈方式"
+    elif relative == "LICENSE-CONTENT.md":
+        url = "https://creativecommons.org/licenses/by/4.0/"
+    elif relative == "LICENSE-CODE":
+        url = "https://opensource.org/license/mit"
+    elif re.fullmatch(r"figures/[^/]+/diagram\.svg", relative):
+        slug = relative.split("/")[1]
+        url = f"/assets/figures/{slug}/diagram.svg" if slug in FIGURE_OWNERS else None
+    elif re.fullmatch(r"figures/[^/]+/README\.md", relative):
+        slug = relative.split("/")[1]
+        owner = FIGURE_OWNERS.get(slug)
+        url = f"{owner}#图的文字说明-{slug}" if owner else None
+    elif re.fullmatch(r"figures/[^/]+/(?:scene\.excalidraw|preview\.png)", relative):
+        return ""
+    if not url:
+        return html.escape(label)
+    if fragment and "#" not in url:
+        url += "#" + quote(fragment, safe="-_")
+    if url.startswith("/"):
+        url = READER_URL.rstrip("/") + url
+    return f'<link href="{html.escape(url, quote=True)}" color="#2563a6">{html.escape(label)}</link>'
+
+
+def prepare_public_links(paths: list[Path]) -> None:
+    PUBLIC_ROUTES.clear()
+    FIGURE_OWNERS.clear()
+    for path in (*paths, *(ROOT / name for name in PUBLIC_SUPPLEMENTS)):
+        PUBLIC_ROUTES[path] = public_route(path)
+    for path in (*paths, *(ROOT / name for name in PUBLIC_SUPPLEMENTS)):
+        markdown = path.read_text(encoding="utf-8")
+        for destination in re.findall(r"!\[[^\]]*\]\(([^)]+)\)", markdown):
+            target = (path.parent / destination).resolve()
+            if target.is_relative_to(ROOT) and re.fullmatch(r"figures/[^/]+/diagram\.svg", target.relative_to(ROOT).as_posix()):
+                FIGURE_OWNERS.setdefault(target.parent.name, PUBLIC_ROUTES[path])
 
 
 def code_markup(source: str, preserve_leading: bool = False) -> str:
@@ -124,6 +192,8 @@ def inline(source: str, current_path: Path | None = None) -> str:
                 target = (current_path.parent / local_path).resolve()
                 if target in CHAPTER_KEYS:
                     result.append(f'<link href="#{CHAPTER_KEYS[target]}" color="#2563a6">{html.escape(label)}</link>')
+                elif PUBLIC_LINKS and target.is_relative_to(ROOT):
+                    result.append(public_link(target, label, fragment))
                 elif target.is_relative_to(ROOT) and target.exists():
                     public_path = quote(target.relative_to(ROOT).as_posix(), safe="/")
                     public_url = f"https://github.com/chicogong/agent-systems/blob/main/{public_path}"
@@ -193,7 +263,8 @@ class Chapter(Paragraph):
 
 
 class BookDoc(BaseDocTemplate):
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, public_links: bool = False):
+        self.public_links = public_links
         super().__init__(
             filename,
             pagesize=A4,
@@ -201,7 +272,7 @@ class BookDoc(BaseDocTemplate):
             rightMargin=MARGIN_X,
             topMargin=21 * mm,
             bottomMargin=20 * mm,
-            title="图解 Agent 系统 · 源码阅读预览",
+            title="图解 Agent 系统 · 在线阅读预览" if public_links else "图解 Agent 系统 · 源码阅读预览",
             author="Chicogong",
             pageCompression=1,
         )
@@ -229,7 +300,7 @@ class BookDoc(BaseDocTemplate):
         for offset, line in enumerate((
             "从运行循环到工具、上下文、记忆与权限，",
             "用清晰的图解建立机制，用固定版本的源码核对实现。",
-            "每章标明证据边界，保留可编辑图源与文字说明。",
+            "每章标明证据边界，提供清晰图稿与文字说明。" if self.public_links else "每章标明证据边界，保留可编辑图源与文字说明。",
         )):
             canvas.drawString(22 * mm, (211 - 10 * offset) * mm, line)
         canvas.setFont(BOLD_NAME, 13)
@@ -285,7 +356,7 @@ class BookDoc(BaseDocTemplate):
         canvas.line(MARGIN_X, 17 * mm, PAGE_W - MARGIN_X, 17 * mm)
         canvas.setFont(FONT_NAME, 8)
         canvas.setFillColor(MUTED)
-        canvas.drawString(MARGIN_X, 12 * mm, "图解 Agent 系统 · 固定源码阅读预览")
+        canvas.drawString(MARGIN_X, 12 * mm, "图解 Agent 系统 · 在线阅读预览" if self.public_links else "图解 Agent 系统 · 固定源码阅读预览")
         canvas.drawRightString(PAGE_W - MARGIN_X, 12 * mm, str(doc.page))
         canvas.restoreState()
 
@@ -354,6 +425,10 @@ def chapter_flowables(path: Path, index: int, style: dict[str, ParagraphStyle], 
     i = 0
     while i < len(lines):
         line = lines[i].strip()
+        if PUBLIC_LINKS:
+            line = re.sub(r"\[[^\]]+\]\([^)]*/figures/[^/]+/(?:scene\.excalidraw|preview\.png)\)", "", line)
+            line = re.sub(r"^(?:\s*·\s*)+|(?:\s*·\s*)+$", "", line).strip()
+            line = re.sub(r"(?:\s*·\s*){2,}", " · ", line)
         if line.startswith("[返回") or line.startswith("[图源]("):
             flush()
             i += 1
@@ -418,13 +493,17 @@ def chapter_flowables(path: Path, index: int, style: dict[str, ParagraphStyle], 
     return result
 
 
-def build(output: Path, font_path: Path) -> None:
+def build(output: Path, font_path: Path, public_links: bool = False) -> None:
+    global PUBLIC_LINKS
+    PUBLIC_LINKS = public_links
     output.parent.mkdir(parents=True, exist_ok=True)
     style = styles(font_path)
     entries = manifest_entries()
     paths = manifest_paths()
     CHAPTER_KEYS.clear()
     CHAPTER_KEYS.update({path: f"chapter-{i}" for i, path in enumerate(paths)})
+    if public_links:
+        prepare_public_links(paths)
     story: list[Flowable] = [
         Spacer(1, 1),
         PageBreak(),
@@ -437,7 +516,7 @@ def build(output: Path, font_path: Path) -> None:
         Paragraph("关于本版", style["h1"]),
         Paragraph("本书的项目结论对应各章注明的固定源码版本。除非单独说明，它们是静态代码阅读，不是运行评测或产品安全认证。", style["body"]),
         Paragraph('原创文字与图：<link href="https://creativecommons.org/licenses/by/4.0/legalcode" color="#2563a6">CC BY 4.0</link>。构建脚本：<link href="https://opensource.org/license/mit" color="#2563a6">MIT</link>。正文 <link href="https://github.com/google/fonts/blob/e44c4b011a820c2cbe2fd2cfa8052037d7edb571/ofl/notosanssc/OFL.txt" color="#2563a6">Noto Sans SC</link>、代码 <link href="https://github.com/google/fonts/blob/e44c4b011a820c2cbe2fd2cfa8052037d7edb571/ofl/jetbrainsmono/OFL.txt" color="#2563a6">JetBrains Mono</link> 均依 SIL OFL 1.1 授权。上游项目与其商标、代码遵守各自许可；链接不表示对本书的认可。', style["body"]),
-        Paragraph("正文以 Markdown 为准；PDF 由书稿清单自动生成。章节有意保留研究范围、未覆盖情况和可点击的固定源码链接。", style["body"]),
+        Paragraph("正文以 Markdown 为准；PDF 由书稿清单自动生成。章节有意保留研究范围、未覆盖情况和可点击的固定源码链接。" + ("本公共阅读版的内部参考链接只指向在线章节和已发布的图稿；可编辑图源暂未公开。" if public_links else ""), style["body"]),
         PageBreak(),
     ]
     chapter_index = 0
@@ -481,13 +560,14 @@ def build(output: Path, font_path: Path) -> None:
         story.extend(chapter_flowables(value, chapter_index, style, outline_level=0))
         chapter_index += 1
     story.extend([NextPageTemplate("back"), PageBreak(), Spacer(1, 1)])
-    BookDoc(str(output)).multiBuild(story)
-    print(f"Built {output} from {len(paths)} Markdown chapters")
+    BookDoc(str(output), public_links=public_links).multiBuild(story)
+    print(f"Built {output} from {len(paths)} Markdown chapters ({'public' if public_links else 'private'} links)")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--font", type=Path, default=DEFAULT_FONT)
+    parser.add_argument("--public-links", action="store_true", help="link only to the public reader, included figures, and external sources")
     args = parser.parse_args()
-    build(args.output.resolve(), args.font.resolve())
+    build(args.output.resolve(), args.font.resolve(), public_links=args.public_links)

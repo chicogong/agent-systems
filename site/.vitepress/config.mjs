@@ -2,6 +2,7 @@ import { defineConfig } from 'vitepress'
 import { readFileSync } from 'node:fs'
 
 const publicMode = process.env.SITE_MODE === 'public'
+const pdfPublished = publicMode && Boolean(process.env.PUBLIC_PDF_FILE)
 const siteUrl = process.env.SITE_URL
 const publicSidebar = publicMode ? JSON.parse(readFileSync(new URL('./generated-sidebar.json', import.meta.url), 'utf8')) : []
 if (publicMode && (!siteUrl || !/^https:\/\/[^/]+$/.test(siteUrl))) {
@@ -29,7 +30,7 @@ export default defineConfig({
     const pathname = pageData.relativePath.replace(/index\.md$/, '').replace(/\.md$/, '')
     const canonical = `${siteUrl}/${pathname}`
     const isHome = pathname === ''
-    const isArticle = !isHome && !new Set(['feedback', 'concepts', 'systems', 'comparisons', 'sources']).has(pathname)
+    const isArticle = !isHome && !new Set(['feedback', 'pdf', 'concepts', 'systems', 'comparisons', 'sources']).has(pathname)
     const title = pageData.title || '图解 Agent 系统'
     const description = pageData.frontmatter.description || '从运行机制、源码导读到横向对照，图解 Agent 系统。'
     pageData.frontmatter.head ??= []
@@ -69,6 +70,7 @@ export default defineConfig({
       { text: '机制', link: '/concepts/agent-loop' },
       { text: '项目', link: '/systems/pi' },
       { text: '对照', link: '/comparisons/loop-and-stop' },
+      ...(pdfPublished ? [{ text: 'PDF', link: '/pdf' }] : []),
       { text: '反馈', link: '/feedback' }
     ] : [
       { text: '阅读起点', link: '/' },

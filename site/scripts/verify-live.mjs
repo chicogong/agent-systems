@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readFile, readdir } from 'node:fs/promises'
+import { readFile, readdir, stat } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -41,6 +41,9 @@ const files = [
   ['/robots.txt', 'robots.txt'],
   ['/THIRD-PARTY-NOTICES.txt', 'THIRD-PARTY-NOTICES.txt'],
 ]
+const pdfPath = 'book/agent-systems-public-preview.pdf'
+const hasPdf = await stat(join(dist, pdfPath)).then(() => true, () => false)
+if (hasPdf) files.push(['/' + pdfPath, pdfPath])
 
 const failures = []
 for (let start = 0; start < files.length; start += 8) {
@@ -59,10 +62,14 @@ for (const path of privatePaths) {
   const response = await fetch(new URL(path, site), { method: 'HEAD', signal: AbortSignal.timeout(15000) })
   if (response.status !== 404) failures.push(`${path}: expected HTTP 404, got ${response.status}`)
 }
+if (hasPdf) {
+  const response = await fetch(new URL('/' + pdfPath, site), { method: 'HEAD', signal: AbortSignal.timeout(15000) })
+  if (response.headers.get('x-robots-tag') !== 'noindex') failures.push(`${pdfPath}: missing PDF X-Robots-Tag: noindex`)
+}
 
 if (failures.length) {
   console.error(failures.join('\n'))
   process.exitCode = 1
 } else {
-  console.log(`Live ${site.origin}: ${locations.length} HTML pages, ${figures.length} SVG figures and 3 metadata files match the local build byte-for-byte; 4 private paths return 404.`)
+  console.log(`Live ${site.origin}: ${locations.length} HTML pages, ${figures.length} SVG figures, 3 metadata files${hasPdf ? ', and the public PDF' : ''} match the local build byte-for-byte; 4 private paths return 404.`)
 }
