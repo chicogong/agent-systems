@@ -20,7 +20,7 @@
 
 ## 一个需要单独核验的边界
 
-在本文限定的**非 Granite PromptFamily** 路径，`join_local_web_documents` 无条件写出 `Context from local documents:` 和 `Context from web sources:` 两段标签。即使两路没有有效正文，拼接结果在字符串意义上仍可能非空；而写作器当前只用 `_ctx.strip()` 判断“是否有材料”。因此，从静态路径看，这道保护**不能独立证明该 Hybrid 报告确有来源材料**。Granite 提示词家族覆写了拼接格式，不能照搬这项字符串推断。这只是代码可推导的风险，尚未实际触发或证明会生成虚假引用。[拼接实现](https://github.com/assafelovic/gpt-researcher/blob/6f998577d547b1e54ec662dac63583aa11e3b84b/gpt_researcher/prompts.py#L564-L566) · [Granite 覆写](https://github.com/assafelovic/gpt-researcher/blob/6f998577d547b1e54ec662dac63583aa11e3b84b/gpt_researcher/prompts.py#L756-L834) · [写作器判断](https://github.com/assafelovic/gpt-researcher/blob/6f998577d547b1e54ec662dac63583aa11e3b84b/gpt_researcher/skills/writer.py#L62-L75)
+在本文限定的**非 Granite PromptFamily** 路径，`join_local_web_documents` 无条件写出 `Context from local documents:` 和 `Context from web sources:` 两段标签。即使两路没有有效正文，拼接结果在字符串意义上仍可能非空；而写作器当前只用 `_ctx.strip()` 判断“是否有材料”。因此，从静态路径看，这道保护**不能独立证明该 Hybrid 报告确有来源材料**。Granite 提示词家族覆写了拼接格式，不能照搬这项字符串推断。这只是代码可推导的风险，尚未实际触发或证明会生成虚假引用。[拼接实现](https://github.com/assafelovic/gpt-researcher/blob/6f998577d547b1e54ec662dac63583aa11e3b84b/gpt_researcher/prompts.py#L564-L566) · [Granite 覆写](https://github.com/assafelovic/gpt-researcher/blob/6f998577d547b1e54ec662dac63583aa11e3b84b/gpt_researcher/prompts.py#L756-L834) · [写作器判断](https://github.com/assafelovic/gpt-researcher/blob/6f998577d547b1e54ec662dac63583aa11e3b84b/gpt_researcher/skills/writer.py#L77-L88)
 
 ## 不要混淆
 

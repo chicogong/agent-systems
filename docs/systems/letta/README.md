@@ -26,7 +26,7 @@ Agent 把东西“记住”了，究竟是写入了本轮模型可见的提示�
 
 1. `detectMemoryFormat(memoryDir, localMemfs)`：本地 MemFS 返回 v1；非本地且有根 `MEMORY.md` 才识别为 v2。`isCoreMemoryPath` 因此在 v1 判断 `system/`，在 v2 判断根目录 Markdown。[源码](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/memory-format.ts#L6-L29)
 2. `estimateSystemPromptSize` 用同一个格式判断核心记忆的范围：v1 递归统计 `system/`，v2 统计根目录 Markdown。这里是 **4 字节 / token 的粗估**，不是模型计费或真实 token 数。[源码](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/system-prompt-size.ts#L1-L106)
-3. `memory()` 工具解析目标目录、核对工作树、执行编辑，并调用 `commitMemoryWrite` 提交受影响路径；这解释了“写文件”和“持久化”之间还有一步。[工具实现](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/tools/impl/memory.ts#L99-L157) · [Git 提交实现](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/memory-git.ts#L1319-L1358)
+3. `memory()` 工具解析目标目录、核对工作树、执行编辑，并调用 `commitMemoryWrite` 为受影响路径形成 Git 版本。这里要分清**工作树文件已写、Git 版本已形成、后续同步与提示重编译**；它们不是同一个“持久化完成”事件。[工具实现](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/tools/impl/memory.ts#L99-L157) · [Git 提交实现](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/memory-git.ts#L1319-L1358)
 4. 对于 memory worker 的合并路径，代码先处理同步，再在能力允许时请求 `recompileAgentSystemPrompt`；内置提示也写明当前回合不会因编辑而立刻改变已编译提示。不能据此泛化为所有工具写入都在同一时机重编译。[worker 路径](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/subagents/memory-worker.ts#L95-L139) · [重编译入口](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/modify.ts#L683-L729)
 
 ## v1 与 v2 不要混成一张目录图

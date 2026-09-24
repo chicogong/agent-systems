@@ -38,4 +38,4 @@
 
 原创正文和图采用 [CC BY 4.0](LICENSE-CONTENT.md)，脚本与工作流采用 [MIT](LICENSE-CODE)。上游项目遵守各自许可；链接不表示它们为本书背书。仓库公开、正式出版、许可终审与印刷验收是独立步骤，不由构建成功自动完成。
 
-联系作者：[ghr7719@gmail.com](mailto:ghr7719@gmail.com)。内容勘误与可复现的源码证据也欢迎在仓库 Issue 中提出。
+联系作者：[ghr7719@gmail.com](mailto:ghr7719@gmail.com)。公开读者可用[网站反馈入口](https://books.aimake.cc/feedback)报告内容勘误并附可复现的源码证据；书稿仓库保持私有期间，不将其 Issue 作为公共反馈入口。

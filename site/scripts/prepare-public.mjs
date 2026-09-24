@@ -56,8 +56,24 @@ function resolve(source, target) {
   if (resolved.startsWith('../') || resolved.startsWith('/')) throw new Error(source + ': path escapes repository: ' + target)
   return { resolved, suffix }
 }
+const figureOwners = new Map()
+for (const { source } of paths) {
+  const markdown = await readFile(path.join(repo, source), 'utf8')
+  for (const match of markdown.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
+    const resolved = resolve(source, match[1]).resolved
+    if (/^figures\/[^/]+\/diagram\.svg$/.test(resolved)) {
+      const slug = resolved.split('/')[1]
+      if (!figureOwners.has(slug)) figureOwners.set(slug, route(source))
+    }
+  }
+}
 function rewrite(markdown, source) {
-  return markdown.replace(/(!?)\[([^\]]+)\]\(([^\s)]+)\)/g, (full, image, label, target) => {
+  // In book source, editable/PNG links often share a line with a public text-version
+  // link. Drop their whole list item before rewriting so no inert labels survive.
+  const withoutPrivateAssets = markdown.split('\n').map((line) => line.split(/\s+·\s+/).filter((item) =>
+    !/^\[[^\]]+\]\([^)]*\/figures\/[^/]+\/(?:scene\.excalidraw|preview\.png)\)$/.test(item)
+  ).join(' · ')).join('\n')
+  return withoutPrivateAssets.replace(/(!?)\[([^\]]+)\]\(([^\s)]+)\)/g, (full, image, label, target) => {
     if (target.startsWith('#')) return full
     if (/^https?:\/\//.test(target)) {
       return /^https:\/\/github\.com\/chicogong\/agent-systems(?:\/|$)/.test(target) ? label : full
@@ -78,13 +94,18 @@ function rewrite(markdown, source) {
     if (/^figures\/[^/]+\/README\.md$/.test(resolved)) {
       const slug = resolved.split('/')[1]
       figures.add(slug)
-      return '[' + label + '](#图的文字说明-' + slug + ')'
+      const owner = figureOwners.get(slug)
+      if (!owner) throw new Error(source + ': no public host page for figure text ' + slug)
+      return '[' + label + '](' + owner + '#图的文字说明-' + slug + ')'
     }
-    if (/^figures\/[^/]+\/(?:scene\.excalidraw|preview\.png)$/.test(resolved)) return label
+    if (/^figures\/[^/]+\/(?:scene\.excalidraw|preview\.png)$/.test(resolved)) return ''
+    if (resolved === 'CONTRIBUTING.md') return '[反馈说明](/feedback)'
+    if (resolved === 'LICENSE-CONTENT.md') return '[' + label + '](https://creativecommons.org/licenses/by/4.0/)'
+    if (resolved === 'LICENSE-CODE') return '[' + label + '](https://opensource.org/license/mit)'
     if (resolved === 'README.md') return '[' + label + '](/)'
     if (routes.has(resolved)) return '[' + label + '](' + routes.get(resolved) + suffix + ')'
     unresolved.add(source + ': ' + target)
-    return label
+    return label + '（仓库开放后提供）'
   })
 }
 function explanation(markdown) {
@@ -117,6 +138,9 @@ function pageDescription(markdown, title) {
   }
   return title
 }
+function feedbackMailto(subject, body) {
+  return 'mailto:ghr7719@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body)
+}
 await rm(output, { recursive: true, force: true })
 await mkdir(path.join(output, 'public', 'assets', 'figures'), { recursive: true })
 for (const { source, group } of paths) {
@@ -135,8 +159,9 @@ for (const { source, group } of paths) {
     transformed += '\n\n## 图的文字说明 · ' + slug + ' {#图的文字说明-' + slug + '}\n\n' + rewrite(explanation(readme), 'figures/' + slug + '/README.md') + '\n'
   }
   const frontmatter = '---\ndescription: ' + JSON.stringify(pageDescription(original, title)) + '\n---\n\n'
+  const feedback = feedbackMailto('《图解 Agent 系统》阅读反馈：' + title, '章节：' + title + '\n页面：' + origin + route(source) + '\n问题或建议：\n相关证据/链接（如有）：\n')
   await mkdir(path.dirname(destination), { recursive: true })
-  await writeFile(destination, frontmatter + transformed + '\n\n---\n\n在线预览稿：书稿仍在校稿，系统篇以文内固定源码版本为准；静态阅读不等于运行验收。\n')
+  await writeFile(destination, frontmatter + transformed + '\n\n---\n\n在线预览稿：书稿仍在校稿，系统篇以文内固定源码版本为准；静态阅读不等于运行验收。发现错误或有改进建议？[按本章填写邮件](' + feedback + ')，或查看[反馈说明](/feedback)。\n')
 }
 for (const slug of figures) {
   const src = path.join(repo, 'figures', slug, 'diagram.svg')
@@ -147,8 +172,56 @@ for (const slug of figures) {
 }
 const ordered = groups.filter((item) => item.items.length)
 const contents = ordered.map((part) => '## ' + part.text + '\n\n' + part.items.map((item) => '- [' + item.text + '](' + item.link + ')').join('\n')).join('\n\n')
-const home = '---\ndescription: "《图解 Agent 系统》在线阅读：从 Agent 运行机制到固定源码版本的开源实现与横向对照。"\n---\n\n# 图解 Agent 系统\n\n从运行机制到开源实现，沿问题读懂 Agent 怎样决策、调用工具、管理上下文与记忆，并在权限和失败边界下完成任务。\n\n> **在线预览稿。** 本站已收录书稿清单中的 ' + chapterCount + ' 篇正文和部分阅读索引与来源说明，方便公开阅读；内容仍在校稿。书稿 GitHub 仓库目前保持私有，PDF、可编辑图源和脚本未在本站发布。所有系统剖面都以篇内固定源码版本为准，不代表运行评测。\n\n[从阅读指南开始](/front/reading-guide) · [按学习路径进入](/learning-path) · [先看 Agent loop](/concepts/agent-loop)\n\n' + contents + '\n\n---\n\n原创文字与图：chicogong 与贡献者，按 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 提供；引用的上游项目、商标和外部材料归各自权利人。当前站点是阅读入口，不表示私有源仓已公开。\n'
+const home = `---
+description: "《图解 Agent 系统》在线阅读：从 Agent 运行机制到固定源码版本的开源实现与横向对照。"
+---
+
+# 图解 Agent 系统
+
+从运行机制到开源实现，沿问题读懂 Agent 怎样决策、调用工具、管理上下文与记忆，并在权限和失败边界下完成任务。这是一本持续校稿的免费中文技术书，正文可直接在网页阅读。
+
+> **在线预览稿。** 本站已收录书稿清单中的 ${chapterCount} 篇正文和部分阅读索引与来源说明。书稿 GitHub 仓库目前保持私有；PDF、可编辑图源和脚本未在本站发布。系统剖面以篇内固定源码版本为准，不代表运行评测。
+
+## 选择你的阅读路线
+
+- **初次接触 Agent**：从[阅读指南](/front/reading-guide)和[行动闭环](/concepts/agent-loop)开始。先弄清 Agent、工具、上下文和停止条件分别承担什么责任。
+- **正在实现 Agent**：沿[学习路径](/learning-path)看机制，再进入 [Pi 源码导读](/systems/pi)、[Codex 源码导读](/systems/codex)等固定版本案例，核对关键代码路径。
+- **正在选型或做架构评审**：先看[运行循环与停止条件对照](/comparisons/loop-and-stop)，再按项目与问题跳转；比较的是可验证的设计取舍，不是产品排行榜。
+
+## 先用一张图建立全局认识
+
+![Agent 的观察、思考、行动与反馈循环](/assets/figures/agent-loop/diagram.svg)
+
+[打开原尺寸 SVG](/assets/figures/agent-loop/diagram.svg) · [阅读图的解释与边界](/concepts/agent-loop)
+
+## 反馈与更正
+
+发现事实错误、图中文字难读或源码链接失效？[查看反馈方式](/feedback)。阅读不需要登录；目前不收集站内评论。
+
+${contents}
+
+---
+
+原创文字与图：chicogong 与贡献者，按 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 提供；引用的上游项目、商标和外部材料归各自权利人。当前站点是阅读入口，不表示私有源仓已公开。
+`
 await writeFile(path.join(output, 'index.md'), home)
+const generalFeedback = feedbackMailto('《图解 Agent 系统》阅读反馈', '章节或页面：\n问题或建议：\n相关证据/链接（如有）：\n')
+await writeFile(path.join(output, 'feedback.md'), `---
+description: "《图解 Agent 系统》的勘误、图稿与阅读体验反馈方式。"
+---
+
+# 阅读反馈
+
+这本书正在校稿。事实、代码路径、图稿、引用、排版与阅读体验方面的反馈都欢迎；请尽可能指出具体章节或页面，以及你核对过的依据。
+
+## 反馈方式
+
+[发送反馈邮件](${generalFeedback}) 给 **ghr7719@gmail.com**。每章末尾的“按本章填写邮件”会预填章节与页面地址；如果设备没有配置邮件客户端，也可以复制邮箱地址手动发送。
+
+建议包含：页面链接、原句或图中位置、问题说明，以及可公开引用的上游源码或文档链接。请不要通过邮件发送密钥、私有资料或个人敏感信息。
+
+目前没有站内账户、评论区或行为追踪。书稿仓库仍为私有，因此读者暂时不能使用该仓库的 GitHub Issues。重要勘误会在后续版本中修正，并在公开更新说明中标明；收到邮件不代表每项建议都会被采纳。
+`)
 await writeFile(path.join(site, '.vitepress', 'generated-sidebar.json'), JSON.stringify(ordered, null, 2) + '\n')
 await writeFile(path.join(output, 'public', 'robots.txt'), 'User-agent: *\nAllow: /\n\nUser-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: GPTBot\nDisallow: /\n\nSitemap: ' + origin + '/sitemap.xml\n')
 await writeFile(path.join(output, 'public', 'THIRD-PARTY-NOTICES.txt'), 'Diagram font notices\n\nNunito: Copyright 2014 The Nunito Project Authors. SIL Open Font License 1.1.\nhttps://github.com/google/fonts/blob/main/ofl/nunito/OFL.txt\n\nComic Shanns: Copyright 2018 Shannon Miwa. MIT License.\nhttps://github.com/shannpersand/comic-shanns/blob/master/LICENSE\n')

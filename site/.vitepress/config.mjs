@@ -27,8 +27,34 @@ export default defineConfig({
   transformPageData(pageData) {
     if (!publicMode) return
     const pathname = pageData.relativePath.replace(/index\.md$/, '').replace(/\.md$/, '')
+    const canonical = `${siteUrl}/${pathname}`
+    const isHome = pathname === ''
+    const isArticle = !isHome && !new Set(['feedback', 'concepts', 'systems', 'comparisons', 'sources']).has(pathname)
+    const title = pageData.title || '图解 Agent 系统'
+    const description = pageData.frontmatter.description || '从运行机制、源码导读到横向对照，图解 Agent 系统。'
     pageData.frontmatter.head ??= []
-    pageData.frontmatter.head.push(['link', { rel: 'canonical', href: `${siteUrl}/${pathname}` }])
+    pageData.frontmatter.head.push(
+      ['link', { rel: 'canonical', href: canonical }],
+      ['meta', { property: 'og:site_name', content: '图解 Agent 系统' }],
+      ['meta', { property: 'og:locale', content: 'zh_CN' }],
+      ['meta', { property: 'og:type', content: isArticle ? 'article' : 'website' }],
+      ['meta', { property: 'og:title', content: title }],
+      ['meta', { property: 'og:description', content: description }],
+      ['meta', { property: 'og:url', content: canonical }],
+      ['meta', { name: 'twitter:card', content: 'summary' }]
+    )
+    const identity = { '@type': 'Person', name: 'chicogong', url: `${siteUrl}/back/about-author` }
+    const book = { '@type': 'WebSite', '@id': `${siteUrl}/#website`, name: '图解 Agent 系统', url: `${siteUrl}/`, inLanguage: 'zh-CN' }
+    const schema = isHome ? book : {
+      '@type': isArticle ? 'Article' : 'WebPage',
+      headline: title,
+      description,
+      url: canonical,
+      inLanguage: 'zh-CN',
+      isPartOf: { '@id': book['@id'] },
+      ...(isArticle ? { author: identity } : {})
+    }
+    pageData.frontmatter.head.push(['script', { type: 'application/ld+json' }, JSON.stringify({ '@context': 'https://schema.org', ...schema }).replace(/</g, '\\u003c')])
   },
   // VitePress treats this source extension as a page, although it is copied to public/.
   ignoreDeadLinks: [/\/assets\/figures\/[^/]+\/scene\.excalidraw$/],
@@ -42,7 +68,8 @@ export default defineConfig({
       { text: '学习路径', link: '/learning-path' },
       { text: '机制', link: '/concepts/agent-loop' },
       { text: '项目', link: '/systems/pi' },
-      { text: '对照', link: '/comparisons/loop-and-stop' }
+      { text: '对照', link: '/comparisons/loop-and-stop' },
+      { text: '反馈', link: '/feedback' }
     ] : [
       { text: '阅读起点', link: '/' },
       { text: '机制', link: '/concepts/agent-loop' },

@@ -8,6 +8,7 @@ from io import BytesIO
 from pathlib import Path
 import re
 from tempfile import TemporaryDirectory
+from urllib.parse import urlparse
 
 from PIL import Image
 from pypdf import PdfReader
@@ -100,8 +101,35 @@ def check(path: Path) -> None:
     print(f"Book PDF OK: {len(reader.pages)} pages, {len(chapters)} chapters, {images} image uses, {links} source links, {len(embedded_fonts)} embedded fonts")
 
 
+def check_public_readiness(path: Path) -> None:
+    """Reject a private-review PDF before it can be used as a public download."""
+    reader = PdfReader(str(path))
+    blocked: list[str] = []
+    for page in reader.pages:
+        for annotation in page.get("/Annots", []):
+            action = annotation.get_object().get("/A")
+            url = str(action.get("/URI")) if action and action.get("/URI") else ""
+            if not url:
+                continue
+            parsed = urlparse(url)
+            private_repo = parsed.netloc == "github.com" and (
+                parsed.path == "/chicogong/agent-systems" or parsed.path.startswith("/chicogong/agent-systems/")
+            )
+            if parsed.scheme != "https" or private_repo or parsed.hostname in {"localhost", "127.0.0.1"}:
+                blocked.append(url)
+    if blocked:
+        raise ValueError(
+            f"PDF is not public-ready: {len(blocked)} blocked link annotations "
+            f"({len(set(blocked))} unique). Examples: {', '.join(sorted(set(blocked))[:3])}"
+        )
+    print("Public PDF link gate OK: no private-repository or non-HTTPS annotations")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("pdf", nargs="?", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--public-readiness", action="store_true", help="also reject private-repository and non-HTTPS links before public hosting")
     args = parser.parse_args()
     check(args.pdf.resolve())
+    if args.public_readiness:
+        check_public_readiness(args.pdf.resolve())

@@ -16,7 +16,8 @@
 | 会话记录 | 宿主保留的消息或事件历史，不保证全量进入下一次模型请求 | [状态对照](comparisons/four-kinds-of-state.md) |
 | 压缩摘要 | 将选定历史转写为更短表示的产物；是否进入下一轮由宿主决定 | [上下文与记忆](concepts/context-vs-memory.md) |
 | 长期记忆 | 跨轮次或跨任务保留、可能需检索和注入的状态或知识 | [Letta Code](systems/letta/README.md)、[Mem0](systems/mem0/README.md) |
-| Checkpoint | 一个可定位的运行状态版本；不等同语义记忆 | [LangGraph](systems/langgraph/README.md) |
+| Checkpoint（执行状态） | 一个可定位的图执行状态版本，包含继续执行所需的状态与位置；不等同语义记忆 | [LangGraph](systems/langgraph/README.md) |
+| `checkpoint.md`（上下文续接材料） | 从历史提炼给后续模型窗口使用的任务与线索，可能遗漏或保留旧状态；虽同名，不保证恢复原执行状态 | [MiMo Code](systems/mimo-code/README.md) |
 | 审批 | 某个动作开始前的授权决定；不保证运行中隔离或结果正确 | [审批与沙箱](concepts/approval-vs-sandbox.md) |
 | 沙箱/隔离 | 对执行期间可访问资源的边界；不替代用户意图确认 | [审批与沙箱](concepts/approval-vs-sandbox.md) |
 | Skill | 按需读取的任务指导及配套文件，不等于可执行插件本身 | [扩展层次](concepts/extensibility-layers.md) |
