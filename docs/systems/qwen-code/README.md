@@ -16,7 +16,7 @@
 
 ## 设计取舍
 
-这是一个“工具已注册，但完整 schema 按需给模型看”的折中：减少初始声明体积，同时保留发现和调用入口。源码在 `setTools()` 中取得注册表的声明列表，并向模型聊天对象设置它；`tool_search` 的文本回答本身不调用 `setTools()`。[setTools](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/core/client.ts#L1181-L1204) · [tool_search 实现](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L295-L411)
+在 `tool_search` 与 `tool_call` 都已注册且可声明的条件下，这是一个“工具已注册，但完整 schema 按需给模型看”的折中：减少初始声明体积，同时保留发现和调用入口。源码在 `setTools()` 中取得注册表的声明列表，并向模型聊天对象设置它；`tool_search` 的文本回答本身不调用 `setTools()`。[声明过滤](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-registry.ts#L835-L869) · [setTools](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/core/client.ts#L1181-L1204) · [tool_search 实现](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L295-L411)
 
 但这不是绝对的“deferred 永远隐藏”：小规模 deferred schema 可被预算预加载，历史回放或会话 setup 也可 reveal；`CodeModeOnly` 有不同声明路径。[预算预加载](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-registry.ts#L1032-L1085) · [模式分支](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-registry.ts#L850-L903)
 

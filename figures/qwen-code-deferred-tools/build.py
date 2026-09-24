@@ -36,7 +36,7 @@ def arrow(scene: Scene, name: str, x0: int, x1: int, y: int, color: str) -> None
 def build() -> None:
     d = Scene()
     d.text("title", "Qwen Code：延迟工具的发现与执行", 34, 25, 850, 30, INK, 8)
-    d.text("scope", "普通声明模式 · 仍隐藏的 deferred 目标", 37, 80, 820, 21, MUTED, 8)
+    d.text("scope", "普通声明模式 · 双桥已注册且可声明 · 隐藏的 deferred 目标", 37, 80, 820, 21, MUTED, 8)
 
     # Registration and model declaration are distinct states, not call steps.
     d.box("registry-band", 36, 136, 372, 92, "#b9cef0", "#f7faff")

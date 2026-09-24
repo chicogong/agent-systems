@@ -6,7 +6,7 @@
 
 ```text
 setTools(): ToolRegistry.getFunctionDeclarations() → 初始模型声明
-  hidden deferred 目标不在声明列表；tool_search 与 tool_call 留在列表
+  hidden deferred 目标不在声明列表；已注册且可声明的 tool_search / tool_call 留在列表
 
 请求一：tool_search(query)
   检索已注册且隐藏的 deferred 工具 → 返回 <functions>{schema}</functions>

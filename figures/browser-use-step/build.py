@@ -49,7 +49,7 @@ def build() -> None:
     exchange(d, "model-output", 575, 115, 385, "AgentOutput.action", purple, 265, 244)
     exchange(d, "execute-actions", 115, 345, 451, "multi_act → Tools.act", orange, 128, 250)
     exchange(d, "action-result", 345, 115, 517, "ActionResult", orange, 175, 175)
-    exchange(d, "write-history", 115, 805, 583, "_finalize → AgentHistory（有 last_result 时）", green, 286, 500)
+    exchange(d, "write-history", 115, 805, 583, "_finalize → AgentHistory（有结果且状态摘要时）", green, 286, 500)
 
     d.box("screenshot-note", 30, 621, 860, 96, "#9dbfe8", "#f4f9ff")
     d.text("screenshot-title", "截图采集：include_screenshot=True", 47, 635, 430, 19, "#2563a6", 8)

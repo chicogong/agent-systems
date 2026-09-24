@@ -19,6 +19,6 @@
 
 ## 边界与下一步
 
-时序图把源码中的异步调用整理成一条正常阅读路径；它**没有**断言每步一定进入历史：`_finalize()` 在没有 `last_result` 时直接返回，步骤异常、暂停、重连和超时分支会改变结果。[条件](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1356-L1360) · [异常处理](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1258-L1314)
+时序图把源码中的异步调用整理成一条正常阅读路径；它**没有**断言每步一定进入历史：`_finalize()` 在没有 `last_result` 时直接返回，有结果但没有浏览器状态摘要时也不会创建 `AgentHistory`。步骤异常、暂停、重连和超时分支会改变结果。[条件](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1356-L1385) · [异常处理](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1258-L1314)
 
 尚未启动浏览器、实测模型是否看到截图，也未验证截图存储、事件总线消费或页面变化检测的时延。Skills 在 `run()` 初始化阶段可注册为动作，但并非本图覆盖的执行链；后续应单独研究注册与权限边界。[Skills 注册入口](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L2562-L2574)
