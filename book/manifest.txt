@@ -45,11 +45,14 @@ docs/systems/langgraph/code-walkthrough.md
 docs/systems/openclaw/README.md
 docs/systems/openclaw/code-walkthrough.md
 docs/systems/gpt-researcher/README.md
+docs/systems/gpt-researcher/code-walkthrough.md
 @part 第四部分 · 横向对照
 docs/comparisons/loop-and-stop.md
 docs/comparisons/persisted-vs-visible.md
 docs/comparisons/four-kinds-of-state.md
 docs/comparisons/claude-code-codex.md
+docs/comparisons/permission-and-recovery.md
+docs/comparisons/completion-and-evidence.md
 @part 附录 · 术语与核验方法
 docs/glossary.md
 @back book/backmatter/afterword.md

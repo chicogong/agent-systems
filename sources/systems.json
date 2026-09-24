@@ -2,73 +2,101 @@
   "browser-use": {
     "scope": "one Agent.step observation-action-history path",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "MIT",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/LICENSE"],
     "versions": ["https://github.com/browser-use/browser-use/tree/d8110c5ff87ccba887aaa726cdb780f2f84bef8d"]
   },
   "codex": {
     "scope": "Rust core exec_command approval and execution path",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "Apache-2.0",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/LICENSE"],
     "versions": ["https://github.com/openai/codex/tree/c44deff7b1083e9660ac55d02122481f1cdf139b"]
   },
   "gpt-researcher": {
     "scope": "ReportSource.Hybrid local and web context path",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "Apache-2.0",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/assafelovic/gpt-researcher/blob/6f998577d547b1e54ec662dac63583aa11e3b84b/LICENSE"],
     "versions": ["https://github.com/assafelovic/gpt-researcher/tree/6f998577d547b1e54ec662dac63583aa11e3b84b"]
   },
   "kimi-code": {
     "scope": "agent-core TurnFlow steer buffer, step boundary, and stop check path",
     "status": "static-slice-draft",
     "upstream_license": "MIT",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/LICENSE"],
     "versions": ["https://github.com/MoonshotAI/kimi-code/tree/75a894e9ad5e8d49509664b3daaa1bbc9bb39432"]
   },
   "langgraph": {
     "scope": "Python Pregel checkpoint history and fork path",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "MIT",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/LICENSE"],
     "versions": ["https://github.com/langchain-ai/langgraph/tree/bdb85b5aa87a21de68371d2e534b81aeed398f57"]
   },
   "letta": {
     "scope": "Letta Code local MemFS v1 visibility and write paths",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "Apache-2.0",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/LICENSE"],
     "versions": ["https://github.com/letta-ai/letta-code/tree/1f55d3dc66e238d203757fae288bb53f3adc7cd3"]
   },
   "mem0": {
     "scope": "Python OSS synchronous add and search paths",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "Apache-2.0",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/LICENSE"],
     "versions": ["https://github.com/mem0ai/mem0/tree/f8082a7345dadd9e042ebbc40b57b1498c8f6d63"]
   },
   "mimo-code": {
     "scope": "session checkpoint writer, successful watermark, and overflow rebuild path",
     "status": "static-slice-draft",
     "upstream_license": "MIT",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/LICENSE"],
     "versions": ["https://github.com/XiaomiMiMo/MiMo-Code/tree/a273d3450ee05ba5163320eae59d7716b778e480"]
   },
   "mini-swe-agent": {
     "scope": "DefaultAgent and LocalEnvironment loop and exit path",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "MIT",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/LICENSE.md"],
     "versions": ["https://github.com/SWE-agent/mini-swe-agent/tree/04d809ceab9df28f9adaed044884180159172930"]
   },
   "openclaw": {
     "scope": "Gateway agent RPC with explicit sessionKey",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "MIT",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/LICENSE"],
+    "license_note": "Root LICENSE text is MIT; GitHub license API reports NOASSERTION for this revision.",
     "versions": ["https://github.com/openclaw/openclaw/tree/b373c9a9bcd4954ccdab963e3ed71336302b82be"]
   },
   "opencode": {
     "scope": "ToolPart state and SessionStatus path",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "MIT",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/LICENSE"],
     "versions": ["https://github.com/anomalyco/opencode/tree/18ef3cc7c5a25b82114c953a80ccc09f4988f74e"]
   },
   "openhands": {
     "scope": "software-agent-sdk LocalConversation.run and Agent.step; parent repository split",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "MIT",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": [
+      "https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/LICENSE",
+      "https://github.com/OpenHands/OpenHands/blob/928873b4c2efb5a17ffa93eb541c78bb43a109f3/LICENSE"
+    ],
     "versions": [
       "https://github.com/OpenHands/software-agent-sdk/tree/6ebd820d10794f1b52bb06ef6c19512888a1401b",
       "https://github.com/OpenHands/OpenHands/tree/928873b4c2efb5a17ffa93eb541c78bb43a109f3"
@@ -77,13 +105,17 @@
   "pi": {
     "scope": "agent-core loop, coding-agent session, Extensions and Skills",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "MIT",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/LICENSE"],
     "versions": ["https://github.com/earendil-works/pi/tree/898ab804050730e9dcefb4443875d5a932aa6a32"]
   },
   "qwen-code": {
     "scope": "tool_search and tool_call deferred-tool paths",
     "status": "static-slice-draft",
-    "upstream_license": "pending-review",
+    "upstream_license": "Apache-2.0",
+    "license_reviewed_at": "2026-09-24",
+    "license_sources": ["https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/LICENSE"],
     "versions": ["https://github.com/QwenLM/qwen-code/tree/b9840886b86c23f196482cc1ee55d59cbc74df87"]
   }
 }

@@ -20,11 +20,11 @@ SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 
 - `npm run build:public` 将章节 Markdown 内链改为站内路由，保留固定版本的公开上游源码链接。指向私有 `chicogong/agent-systems` 的链接不会输出。
 - 图只复制展示 SVG；同页附图的文字说明和原尺寸 SVG 链接，不复制 `.excalidraw` 或 PNG。未纳入书稿的内部计划页、贡献流程和模板页不作为网站正文发布。
-- `scripts/verify-public.mjs` 对 HTML 页数、站内链接、sitemap、canonical、robots、私有仓标记和输出文件类型做发布前门禁。生成物约 60 个 HTML 页面，其中 51 篇来自书稿清单。
+- `scripts/verify-public.mjs` 对 HTML 页数、站内链接、sitemap、canonical、robots、私有仓标记和输出文件类型做发布前门禁。本轮生成 63 个 HTML 页面，其中 54 篇来自书稿清单。
 - 首页与每章明确标识“在线预览稿”；静态源码阅读不等于运行实测。站点允许搜索引擎抓取，但 robots 不是访问控制。正文与原创图采用 CC BY 4.0，图内嵌字体的许可另列在 `/THIRD-PARTY-NOTICES.txt`。
 
 目前 Vercel 项目未连接 Git；部署前先从最终书稿重新构建并通过门禁，再把 `dist/` 部署到已有的 `agent-systems-reader` 项目。不要让 Vercel 构建直接读取私有书稿仓库，也不要上传 PDF 或提交/推送本地工作树来触发部署。
 
 ## 本次验收
 
-2026-09-23 由最终书稿工作树构建出 51 篇正文、8 篇补充页和 24 张展示 SVG；本地门禁验证 60 个 HTML 页面及站内链接，线上逐一请求 60 个阅读 URL，并抽查图、sitemap、robots 和版权说明均为 HTTP 200。PDF、仓库元数据、未发布页面和可编辑图源入口返回 HTTP 404。页面在桌面与 390px 手机视口检查了目录、章节、图示与阅读宽度；仍需外部读者试读和内容终审，不能据此称正式出版。
+2026-09-24 从当前书稿构建出 54 篇正文、8 篇补充页和 25 张展示 SVG；本地门禁验证 63 个 HTML 页面及站内链接、sitemap、canonical、robots 和产物白名单。桌面与 390px 手机视口抽测了首页、新增权限对照、完成证据对照及 GPT Researcher 代码导读：页面无横向溢出、无损坏的正文图片或浏览器脚本错误。线上部署和非作者读者试读是独立验收项；本地检查不能据此称正式出版。

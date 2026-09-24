@@ -37,4 +37,4 @@ Pi 的对照依据是本书[固定版的 `Agent.prompt()`、队列及 `runLoop` 
 
 先沿[代码导读](code-walkthrough.md)逐步重建 `steer → flush → runTurn → continue/stop`，再自己画出“新输入在模型停止之前和之后到达”两种时间线。接着读 Pi 的[队列与会话](../pi/README.md)，最后读 Codex 的[命令审批](../codex/README.md)，区分**交互调度**与**执行授权**。自测：若 `steer()` 返回 `null`，能否推断输入已被模型看到？若当前 step 一直不结束，图中哪条箭头仍未发生？
 
-本篇仅静态阅读固定提交的 `TurnFlow` 与通用 loop。未追踪 CLI/TUI 到 `steer()` 的入口、SDK/RPC 所有调用者、`wire.jsonl` 持久化与恢复、子 Agent 上下文隔离，也未测试并发抵达、取消竞争或最大步数附近的实际事件顺序。官方[会话文档](https://moonshotai.github.io/kimi-code/en/guides/sessions)和[子 Agent 文档](https://moonshotai.github.io/kimi-code/en/customization/agents)可作后续入口，不能替代这些尚未完成的源码与运行核验。
+本篇主要是固定提交的 `TurnFlow` 与通用 loop 静态阅读。2026-09-24 又复跑该提交 `agent-core` 的 3 组 mock 测试，共 68 例通过；其中一个用例确实模拟了**等待 Bash 审批时收到 steer，批准后同一 turn 的下一步看到它**。[测试与环境记录](../../../sources/kimi-code.md)说明了具体命令和局限。我们仍未追踪 CLI/TUI 到 `steer()` 的全部入口、SDK/RPC 所有调用者、`wire.jsonl` 持久化与恢复、子 Agent 上下文隔离，也未测真实模型、并发抵达、取消竞争或最大步数附近的实际事件顺序。官方[会话文档](https://moonshotai.github.io/kimi-code/en/guides/sessions)和[子 Agent 文档](https://moonshotai.github.io/kimi-code/en/customization/agents)可作后续入口，不能替代这些尚未完成的源码与运行核验。

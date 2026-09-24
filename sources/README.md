@@ -12,4 +12,4 @@
 
 候选名单不是来源台账。只有开始具体剖面时才建立该项目的固定版本记录，避免把不断变化的默认分支误称为已核验版本。
 
-[系统来源台账](systems.json)记录了当前 14 篇源码切面的上游固定版本与范围。概念层另有 [Jev](jev.md) 和 [MCP／Skill 生命周期](mcp-skill-tool-lifecycle.md)的官方文档范围说明，它们不是系统源码剖面。`static-slice-draft` 只表示正文已有静态源码路径；`upstream_license: pending-review` 明确保留公开发布前的逐项目许可核对工作，不应被解释为上游无许可。`python3 scripts/check_sources.py` 只检查台账与文章的一致性及 commit 形式，不代替外链、源码事实或许可人工复核。
+[系统来源台账](systems.json)记录了当前 14 篇源码切面的上游固定版本与范围。概念层另有 [Jev](jev.md) 和 [MCP／Skill 生命周期](mcp-skill-tool-lifecycle.md)的官方文档范围说明，它们不是系统源码剖面。`static-slice-draft` 只表示正文已有静态源码路径。2026-09-24 核对的 `upstream_license` 与 `license_sources` 只识别**所列固定提交的仓库根许可证**；它不等于完成子目录、依赖、图片、商标、引用片段或 Apache NOTICE 的权益审查，也不表示当天重读了全部系统源码。OpenClaw 根文件文字为 MIT，而 GitHub 许可证 API 在该提交返回 `NOASSERTION`，故台账保留人工识别说明。`python3 scripts/check_sources.py` 只检查台账与文章的一致性、固定提交及许可证据 URL 形式，不代替外链、源码事实或权益人工复核。
