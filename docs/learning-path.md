@@ -4,6 +4,8 @@
 
 Agent 可以先理解为一个反复执行的过程：接收目标，依据已有信息决定下一步，调用工具，观察结果，再决定继续、停止或请人处理。本书按**机制问题**组织阅读；项目是回答问题的实例，不是性能或流行度排行榜。下面四层可以顺读，也可以从自己正遇到的问题进入。
 
+教程与站外文档链接可能搬家或改版；本书对系统的事实断言以[来源台账](../sources/README.md)与各篇固定的上游 commit 为准，不以临时外链为准。
+
 ## 1. 零基础：认出循环和控制权
 
 **要回答：**模型的一次回答，何时变成了能影响外部世界的动作？先读本书的 [Agent loop](concepts/agent-loop.md) 和 [五层职责](concepts/model-harness-cli-mcp-skill.md)，再读 [Hugging Face Agents Course 第一单元](https://huggingface.co/learn/agents-course/unit1/introduction) 的 Think → Act → Observe 示例，以及 [Anthropic 的 Agent 构建模式](https://www.anthropic.com/engineering/building-effective-agents) 对固定工作流与动态 Agent 的区分。前者适合看清最小循环，后者帮助判断什么时候需要多一步路由、并行或委派。
@@ -22,7 +24,7 @@ Agent 可以先理解为一个反复执行的过程：接收目标，依据已�
 
 ## 3. 读源码：沿一条窄路径追到停止条件
 
-**要回答：**一次请求具体怎样穿过运行循环、工具和会话？从本书的 [Pi 局部剖面](systems/pi/README.md) 和[官方源码](https://github.com/earendil-works/pi)开始；它把模型接口、Agent 核心与交互外壳分开，适合第一次追调用链。接着选一个不同取舍：[mini-SWE-agent](systems/mini-swe-agent/README.md) 用简短消息账本说明停止契约；[OpenCode](systems/opencode/README.md) 区分工具调用状态与会话状态；[Kimi Code](systems/kimi-code/README.md) 展示忙时 steer 缓冲与 step 边界续跑；[MiMo Code](systems/mimo-code/README.md) 展示长任务 checkpoint 与重建。它们的官方源码入口依次是 [SWE-agent](https://github.com/SWE-agent/mini-swe-agent)、[Anomaly](https://github.com/anomalyco/opencode)、[MoonshotAI](https://github.com/MoonshotAI/kimi-code) 和 [XiaomiMiMo](https://github.com/XiaomiMiMo/MiMo-Code)。每次只选**一个**差异阅读，不必把五个仓库从头读完。
+**要回答：**一次请求具体怎样穿过运行循环、工具和会话？从本书的 [Pi 局部剖面](systems/pi/README.md) 和[官方源码](https://github.com/earendil-works/pi)开始；它把模型接口、Agent 核心与交互外壳分开，适合第一次追调用链。接着选一个不同取舍：[mini-swe-agent](systems/mini-swe-agent/README.md) 用简短消息账本说明停止契约；[OpenCode](systems/opencode/README.md) 区分工具调用状态与会话状态；[Kimi Code](systems/kimi-code/README.md) 展示忙时 steer 缓冲与 step 边界续跑；[MiMo Code](systems/mimo-code/README.md) 展示长任务 checkpoint 与重建。它们的官方源码入口依次是 [SWE-agent](https://github.com/SWE-agent/mini-swe-agent)、[Anomaly](https://github.com/anomalyco/opencode)、[MoonshotAI](https://github.com/MoonshotAI/kimi-code) 和 [XiaomiMiMo](https://github.com/XiaomiMiMo/MiMo-Code)。每次只选**一个**差异阅读，不必把五个仓库从头读完。
 
 **动手：**任选一个项目，从本书给出的固定 commit 打开三个源码位置：请求入口、工具结果写回、结束或继续的分支。用不超过八步写出正常路径，再提出一个可证伪的问题，例如“工具超时后会不会重复写入？”找不到代码或运行证据时写“未知”。
 

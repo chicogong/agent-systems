@@ -252,7 +252,7 @@ description: "《图解 Agent 系统》的勘误、图稿与阅读体验反馈�
 
 建议包含：页面链接、原句或图中位置、问题说明，以及可公开引用的上游源码或文档链接。请不要通过邮件发送密钥、私有资料或个人敏感信息。
 
-目前没有站内账户、评论区或行为追踪。可公开复现的勘误也可提交到[GitHub Issues](https://github.com/chicogong/agent-systems/issues)；涉及个人信息的反馈请使用邮件。重要勘误会在后续版本中修正，并在公开更新说明中标明；收到反馈不代表每项建议都会被采纳。
+目前没有站内账户、评论区或行为追踪。可公开复现的勘误可提交 [GitHub Issues](https://github.com/chicogong/agent-systems/issues)；涉及个人信息的反馈请使用邮件。重要勘误会在后续版本中修正，并在公开更新说明中标明；收到反馈不代表每项建议都会被采纳。
 `)
 if (pdfFile) {
   const expected = path.join(repo, 'output', 'pdf', pdfName)

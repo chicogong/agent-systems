@@ -4,6 +4,12 @@
 
 以下是便于阅读的**逻辑摘要**，不是原项目源码复制，也不覆盖所有 provider、异常和插件分支。本文的行为描述仅来自固定版本的静态实现，尚未做故障注入或跨 provider 运行验证。
 
+## 30 秒范围
+
+- **本篇只追**：固定版本里从 `Agent.prompt()` → `runLoop` / 工具批次，到 coding-agent `SessionManager` 会话投影的一条控制路径。
+- **不覆盖**：全部 provider、插件、故障注入或跨部署的运行验证；也不把编码外壳的恢复策略外推为 agent-core 合同。
+- **固定 commit**：[`898ab804`](https://github.com/earendil-works/pi/tree/898ab804050730e9dcefb4443875d5a932aa6a32)
+
 1. `Agent.prompt()` 准备用户消息并进入 `runAgentLoop`。若已有运行，它拒绝第二个 `prompt()`，提示改用队列或等待结束。[入口](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L367-L442)
 2. `runLoop` 启动回合。它有处理模型与工具的内层循环，也有在自然结束点检查 follow-up 的外层循环；因此“模型只回复一次”和“本次 Agent 运行结束”不是同一概念。[循环](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L162-L320)
 3. 每次请求模型前，先执行可选 `prepareRequest`；再变换 Agent 内部上下文，通过 `convertToLlm` 形成模型可理解的消息，交由流式接口处理。[回合准备](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L181-L241) · [请求边界](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L380-L406)

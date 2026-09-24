@@ -12,7 +12,7 @@ Pi 是最早写成的系统案例，用来建立“运行循环 → 交互外壳
 | [Codex](codex/README.md) | 一次执行如何跨审批、沙箱与工具结果边界 |
 | [OpenCode](opencode/README.md) | 单次工具调用状态与会话状态为何不同 |
 | [OpenHands](openhands/README.md) | SDK 中 ActionEvent、确认闸门与 ObservationEvent |
-| [mini-SWE-agent](mini-swe-agent/README.md) | 消息账本与 `role=exit` 停止契约 |
+| [mini-swe-agent](mini-swe-agent/README.md) | 消息账本与 `role=exit` 停止契约 |
 | [Letta Code](letta/README.md) | local MemFS v1 的记忆文件与当前上下文 |
 | [Mem0](mem0/README.md) | OSS 同步记忆写入与多信号排序的候选边界 |
 | [LangGraph](langgraph/README.md) | 同一 thread 的 checkpoint 版本与分支 |

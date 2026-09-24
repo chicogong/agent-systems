@@ -27,7 +27,7 @@ SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 
 首页先说明本书能解决的问题，再给出初学、实现和架构对照三条路线与一张代表性图；每章仍以原文的具体问题、固定源码证据和边界为主。页面输出唯一 canonical、独立 description、Open Graph 信息与适度的 JSON-LD（首页为 WebSite，正文为 Article）；sitemap 与 robots 同源。结构化数据只是帮助机器理解页面，不保证获得富媒体展示或 AI 引用。不要为了所谓 GEO 在正文堆关键词或编造未核验的结论。
 
-[反馈页](https://books.aimake.cc/feedback)与每章末尾的预填邮件链接使用作者已公开的邮箱，不收集站内评论、账号或阅读行为。GitHub Issues 可用于可公开复现的勘误；私人或敏感信息仍通过邮件沟通。接入公开表单前，要先决定垃圾邮件、隐私告知、数据留存和处理责任。
+[反馈页](https://books.aimake.cc/feedback)与每章末尾的预填邮件链接使用作者已公开的邮箱，不收集站内评论、账号或阅读行为。可公开复现的勘误可提交 GitHub Issues；私人或敏感信息仍通过邮件沟通。接入公开表单前，要先决定垃圾邮件、隐私告知、数据留存和处理责任。
 
 Search Console 的站点所有权验证、提交 sitemap、索引与点击数据监测是部署后的账号操作；**构建通过或站点能访问都不等于已经被收录**。
 
