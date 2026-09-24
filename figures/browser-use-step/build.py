@@ -41,7 +41,7 @@ def build() -> None:
     for name, x, label, left, width, color, fill in lanes:
         lifeline(d, name + "-lifeline", x)
         d.box(name + "-head", left, 85, width, 54, color, fill)
-        d.text(name + "-name", label, left + 13, 101, width - 26, 20, INK, 8)
+        d.text(name + "-name", label, left + 13, 101, width - 26, 20, INK, 8, align="center")
 
     exchange(d, "request-state", 115, 345, 187, "get_browser_state_summary", navy, 128, 275)
     exchange(d, "state-summary", 345, 115, 253, "BrowserStateSummary", teal, 130, 248)
