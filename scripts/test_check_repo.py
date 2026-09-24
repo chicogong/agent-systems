@@ -32,6 +32,13 @@ class CheckLinksTest(TestCase):
             with patch.object(check_repo, "ROOT", root):
                 self.assertEqual(check_repo.check_links(), ["docs/broken.md -> no-such-file.md"])
 
+    def test_html_thumbnail_source_is_checked(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            (root / "README.md").write_text('<img src="missing-preview.png" alt="preview">\n', encoding="utf-8")
+            with patch.object(check_repo, "ROOT", root):
+                self.assertEqual(check_repo.check_links(), ["README.md -> missing-preview.png"])
+
 
 if __name__ == "__main__":
     main()

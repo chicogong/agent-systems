@@ -9,9 +9,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r"!?(?:\[[^\]]*\])\(([^)]+)\)")
+HTML_IMAGE = re.compile(r'<(?:img|source)\b[^>]*\bsrc=["\']([^"\']+)["\']', re.I)
 SOURCE_MARKDOWN_FILES = (
     "AGENTS.md", "README.md", "CONTRIBUTING.md", "LICENSE-CONTENT.md",
-    "book/README.md", "scripts/README.md", "site/README.md",
+    "book/README.md", "book/assets/README.md", "book/print-proof-brief.md",
+    "scripts/README.md", "site/README.md",
 )
 SOURCE_MARKDOWN_DIRS = (
     "book/frontmatter", "book/backmatter", "docs", "figures", "sources",
@@ -52,7 +54,8 @@ def check_links() -> list[str]:
     for directory in SOURCE_MARKDOWN_DIRS:
         markdown_files.extend((ROOT / directory).rglob("*.md"))
     for markdown in sorted(path for path in markdown_files if path.is_file()):
-        for destination in LINK.findall(markdown.read_text(encoding="utf-8")):
+        content = markdown.read_text(encoding="utf-8")
+        for destination in LINK.findall(content) + HTML_IMAGE.findall(content):
             path = destination.split("#", 1)[0].strip("<>")
             if not path or "://" in path or path.startswith("mailto:"):
                 continue

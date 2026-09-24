@@ -15,6 +15,11 @@ its provenance and print-resolution limitations are documented in
 `book/assets/README.md`. This grant does not extend to unrelated generated
 drafts, upstream trademarks, or third-party components.
 
+The author-provided spine mockup `book/assets/spine-concept-2026-09-24.png` is
+archived as a visual reference only. It is excluded from this CC BY 4.0 grant
+until its provenance and relicensing rights are confirmed; do not treat it as a
+reusable diagram or a print-ready production file.
+
 Please credit "图解 Agent 系统 / Chicogong contributors", link to the source
 repository and this license, and indicate changes. This license covers only
 material that the contributors have the right to license. Linked upstream
