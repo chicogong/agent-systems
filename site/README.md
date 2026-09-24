@@ -4,7 +4,7 @@
 
 ## 唯一内容源
 
-VitePress 1.6.4 只负责静态 HTML 呈现。脚本 `scripts/prepare-public.mjs` 从仓库根目录的 `book/manifest.txt` 按顺序读取正文，生成首页目录、章节路由、导航和图稿的文字说明；正文仍只在原 Markdown 文件里维护。额外公开的 8 篇是机制/系统/对照索引及来源记录，不进入书稿清单。它们帮助保留书内引用的证据路径。
+VitePress 1.6.4 只负责静态 HTML 呈现。脚本 `scripts/prepare-public.mjs` 从仓库根目录的 `book/manifest.txt` 按顺序读取正文，生成首页目录、章节路由、章节位置与前后篇导航，以及图稿的文字说明；正文仍只在原 Markdown 文件里维护。GitHub 的 `book/CONTENTS.md` 同样由清单派生。额外公开的 8 篇是机制/系统/对照索引及来源记录，不进入书稿清单。它们帮助保留书内引用的证据路径。
 
 同仓运行时无需指定内容根目录。独立工作树联调可设 `BOOK_CONTENT_ROOT` 指向待验收的书稿根目录，确保生成的是同一版稿件，而不是旧分支。生产构建必须设置实际 HTTPS 站点域名作为 `SITE_URL`，供 canonical、sitemap 和 robots 使用。
 
@@ -20,7 +20,7 @@ SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 
 - `npm run build:public` 将已发布章节的 Markdown 内链改为站内路由，保留固定版本的公开上游源码链接；未收入网站的本仓页面链接到公开 GitHub 源仓。网站产物仍不包含仓库源文件。
 - 图只复制展示 SVG；同页附图的文字说明和原尺寸 SVG 链接，不复制 `.excalidraw` 或 PNG。未纳入书稿的内部计划页、贡献流程和模板页不作为网站正文发布。
-- `scripts/verify-public.mjs` 对 HTML 页数、站内路由与标题锚点、sitemap、canonical、分享/结构化元信息、robots 和输出文件类型做发布前门禁。默认生成 64 个 HTML 页面；显式启用 PDF 时才生成第 65 页和唯一许可的 PDF 文件。`Check guide structure` 的 `public-site` job 在每次推送/PR 运行默认门禁，不自动部署。
+- `scripts/verify-public.mjs` 对 HTML 页数、书序位置与前后篇链接、站内路由与标题锚点、sitemap、canonical、分享/结构化元信息、robots 和输出文件类型做发布前门禁。默认生成 64 个 HTML 页面；显式启用 PDF 时才生成第 65 页和唯一许可的 PDF 文件。`Check guide structure` 的 `public-site` job 在每次推送/PR 运行默认门禁，不自动部署。
 - 首页与每章明确标识“在线预览稿”；静态源码阅读不等于运行实测。站点允许搜索引擎抓取，但 robots 不是访问控制。正文与原创图采用 CC BY 4.0，图内嵌字体的许可另列在 `/THIRD-PARTY-NOTICES.txt`。
 
 ## 搜索发现与阅读反馈
@@ -51,6 +51,6 @@ Vercel 部署前须人工核对 `dist/pdf.html`、`dist/book/agent-systems-publi
 
 部署后，在**实际部署的同一份 `dist/`** 仍在本地时运行 `LIVE_URL=https://books.aimake.cc npm run verify:live`。脚本逐一比较 sitemap 中的 HTML、所有展示 SVG、sitemap/robots/字体说明与本地构建的 SHA-256，并检查四个私有路径仍为 404。它只读取线上公开资源，不改变部署；不要在验收前重建 `dist/`：实测同一提交的重复 VitePress 构建仍可能产生不同的前端资源哈希，新产物的 HTML 因引用改变而不能与旧部署逐字节比较。
 
-## 本次验收
+## 当前验收记录
 
-2026-09-24 从当前书稿构建出 54 篇正文、8 篇补充页、1 个反馈页和 25 张展示 SVG；默认与 PDF 模式分别通过 64／65 页的本地门禁。桌面与 390px 手机浏览器抽查首页、PDF 页和反馈页，确认无横向溢出、脚本错误或断开的 PDF 下载；小屏原生 PDF 嵌入区隐藏，保留直接打开链接。已将公共链接版 107 页 PDF 人工部署到 [阅读页](https://books.aimake.cc/pdf)，其 SHA-256 为 `394c9110cb9ac2b220fc768e6392225a3e2a15fa936892ffc8d652dee804bc1a`。Vercel 部署 `dpl_E6ucmFFhfVVP1A6DVG8NJdqFiw4v` 的 `verify:live` 比对线上 65 个 HTML、25 个 SVG、3 个元数据文件与 PDF 均和本地构建逐字节一致，4 条私有路径返回 404，PDF 响应头包含 `X-Robots-Tag: noindex`。非作者读者试读仍是独立验收项，不能据此称正式出版。
+本文件只说明构建与验收方法，不维护一份会过期的部署报告。当前覆盖、已验证范围与未完成项见[路线页](../docs/roadmap.md)；线上具体内容以部署后从**同一份 `dist/`**运行的 `verify:live` 结果为准。非作者读者试读、版权终审与印前验收仍是独立门槛，不能由站点检查代替。

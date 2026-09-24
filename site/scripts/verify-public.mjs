@@ -20,6 +20,9 @@ if (process.env.DEPLOY_TARGET === 'vercel') {
 }
 const sidebar = JSON.parse(await readFile(path.join(site, '.vitepress', 'generated-sidebar.json'), 'utf8'))
 const expected = ['index.html', 'feedback.html', ...(pdfPublished ? ['pdf.html'] : []), ...sidebar.flatMap((part) => part.items.map((item) => item.link.slice(1) + '.html'))]
+const chapterCount = (await readFile(path.join(site, '..', 'book', 'manifest.txt'), 'utf8')).split(/\r?\n/).filter((line) => line.trim() && !line.trim().startsWith('#') && !line.trim().startsWith('@part ')).length
+const bookItems = sidebar.flatMap((part) => part.items).slice(0, chapterCount)
+if (bookItems.length !== chapterCount) throw new Error('Sidebar has fewer book chapters than the manifest')
 if (expected.length < 51) throw new Error('Full public reader has too few chapters: ' + expected.length)
 const found = []
 async function walk(directory) {
@@ -57,6 +60,16 @@ for (const forbidden of ['href="/assets/figures/scene.excalidraw"', '下载可�
 }
 
 const pages = new Map(await Promise.all(expected.map(async (file) => [file, await readFile(path.join(dist, file), 'utf8')])))
+if (!pages.get('index.html').includes('id="全书目录"')) throw new Error('Home page has no book-order contents anchor')
+for (const [index, item] of bookItems.entries()) {
+  const file = item.link.slice(1) + '.html'
+  const html = pages.get(file)
+  if (!html.includes(`data-book-position="${index + 1}/${chapterCount}"`)) throw new Error(`${file}: missing book-position navigation`)
+  if (!html.includes('aria-label="本书章节导航"') || !html.includes('href="/#全书目录"')) throw new Error(`${file}: inaccessible or missing table-of-contents navigation`)
+  for (const adjacent of [bookItems[index - 1], bookItems[index + 1]].filter(Boolean)) {
+    if (!html.includes(`href="${adjacent.link}"`)) throw new Error(`${file}: missing adjacent chapter ${adjacent.link}`)
+  }
+}
 const anchors = new Map([...pages].map(([file, html]) => [file, new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]))]))
 const indexPages = new Set(['feedback.html', 'pdf.html', 'concepts.html', 'systems.html', 'comparisons.html', 'sources.html'])
 for (const file of expected) {

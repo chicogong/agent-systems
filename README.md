@@ -17,18 +17,18 @@
 | 同一问题为何有不同设计？ | [横向对照](docs/comparisons/README.md) |
 | 先查术语，还是按书的顺序阅读？ | [术语表](docs/glossary.md) · [阅读指南](book/frontmatter/reading-guide.md) |
 
-第一次读可以从[五层职责](docs/concepts/model-harness-cli-mcp-skill.md)进入，再读 [Agent loop](docs/concepts/agent-loop.md)，然后分别看 [Pi 的循环与会话](docs/systems/pi/README.md)、[Codex 的执行审批](docs/systems/codex/README.md) 或 [Letta Code 的记忆可见性](docs/systems/letta/README.md)。这些图各回答一个问题，不合成一张虚构的“通用 Agent 内部架构图”。[完整系统目录](docs/systems/README.md)列出目前所有案例。
+第一次读可以从[五层职责](docs/concepts/model-harness-cli-mcp-skill.md)进入，再读 [Agent loop](docs/concepts/agent-loop.md)，然后分别看 [Pi 的循环与会话](docs/systems/pi/README.md)、[Codex 的执行审批](docs/systems/codex/README.md) 或 [Letta Code 的记忆可见性](docs/systems/letta/README.md)。这些图各回答一个问题，不合成一张虚构的“通用 Agent 内部架构图”。想按书逐章读，请打开[完整书序目录](book/CONTENTS.md)；[系统索引](docs/systems/README.md)则适合按项目查找。
 
 ## 在哪里读
 
 | 方式 | 用途 |
 | --- | --- |
 | [在线阅读网站](https://books.aimake.cc/) | 54 个正文单元及必要索引可公开阅读；可缩放、检索，是主要阅读入口。 |
-| GitHub Markdown | 直接沿正文链接阅读，查看可编辑图源、图的文字说明和固定源码链接。 |
+| [GitHub Markdown 书序目录](book/CONTENTS.md) | 从卷首到卷末逐章阅读，查看可编辑图源、图的文字说明和固定源码链接。 |
 | [可携带 Markdown 阅读包](book/README.md#markdown-阅读包) | 从同一书稿清单生成 ZIP，解压后可在普通 Markdown 阅读器或 Obsidian 中打开；章节链接与图片保留相对路径。 |
 | [A4 PDF 电子校样](https://books.aimake.cc/pdf) | 已人工发布公共链接版，供浏览或下载；不是定时自动发布的正式版本，也不是印刷母版。 |
 
-三种阅读方式共享 Markdown 正文；[书稿清单](book/manifest.txt)决定 PDF 和阅读包的章节顺序，不维护第二份复制粘贴的书稿。[写作与校稿方法](docs/editorial-plan.md)说明一章怎样从问题、来源、图稿走到可合入的内容。
+所有阅读方式共享 Markdown 正文；[书稿清单](book/manifest.txt)决定 GitHub 目录、网站、PDF 和阅读包的章节顺序，不维护第二份复制粘贴的书稿。[写作与校稿方法](docs/editorial-plan.md)说明一章怎样从问题、来源、图稿走到可合入的内容。
 
 ## 目前的范围
 

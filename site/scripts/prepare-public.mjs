@@ -31,6 +31,14 @@ for (const line of manifest) {
 }
 if (paths.length < 50) throw new Error('Expected a full book, found only ' + paths.length + ' chapters')
 const chapterCount = paths.length
+const bookPaths = paths.map(({ source, group }) => ({ source, group }))
+const bookTitles = new Map(await Promise.all(bookPaths.map(async ({ source }) => {
+  const markdown = await readFile(path.join(repo, source), 'utf8')
+  const title = markdown.match(/^#\s+(.+)$/m)?.[1]?.trim()
+  if (!title) throw new Error(source + ': missing H1')
+  return [source, title]
+})))
+const bookPosition = new Map(bookPaths.map(({ source, group }, index) => [source, { index, group }]))
 const supplements = { text: '阅读索引与来源说明', items: [] }
 groups.push(supplements)
 for (const source of [
@@ -144,6 +152,23 @@ function pageDescription(markdown, title) {
 function feedbackMailto(subject, body) {
   return 'mailto:ghr7719@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body)
 }
+function escapeHtml(value) {
+  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+}
+function chapterNavigation(source) {
+  const position = bookPosition.get(source)
+  if (!position) return ''
+  const { index, group } = position
+  const previous = bookPaths[index - 1]?.source
+  const next = bookPaths[index + 1]?.source
+  const link = (target, label, className) => target
+    ? `<a class="${className}" href="${route(target)}" aria-label="${label}：${escapeHtml(bookTitles.get(target))}"><span>${label}</span><strong>${escapeHtml(bookTitles.get(target))}</strong></a>`
+    : `<span class="${className} is-empty" aria-hidden="true"></span>`
+  return `<nav class="reading-position" aria-label="本书章节导航" data-book-position="${index + 1}/${chapterCount}">
+  <div class="reading-position-heading"><span class="reading-position-kicker">图解 Agent 系统 · ${escapeHtml(group.text)}</span><span class="reading-position-number">${String(index + 1).padStart(2, '0')} / ${chapterCount}</span></div>
+  <div class="reading-position-links">${link(previous, '上一篇', 'reading-position-previous')}<a class="reading-position-contents" href="/#全书目录">全书目录</a>${link(next, '下一篇', 'reading-position-next')}</div>
+</nav>\n\n`
+}
 await rm(output, { recursive: true, force: true })
 await mkdir(path.join(output, 'public', 'assets', 'figures'), { recursive: true })
 for (const { source, group } of paths) {
@@ -164,7 +189,7 @@ for (const { source, group } of paths) {
   const frontmatter = '---\ndescription: ' + JSON.stringify(pageDescription(original, title)) + '\n---\n\n'
   const feedback = feedbackMailto('《图解 Agent 系统》阅读反馈：' + title, '章节：' + title + '\n页面：' + origin + route(source) + '\n问题或建议：\n相关证据/链接（如有）：\n')
   await mkdir(path.dirname(destination), { recursive: true })
-  await writeFile(destination, frontmatter + transformed + '\n\n---\n\n在线预览稿：书稿仍在校稿，系统篇以文内固定源码版本为准；静态阅读不等于运行验收。发现错误或有改进建议？[按本章填写邮件](' + feedback + ')，或查看[反馈说明](/feedback)。\n')
+  await writeFile(destination, frontmatter + chapterNavigation(source) + transformed + '\n\n---\n\n在线预览稿：书稿仍在校稿，系统篇以文内固定源码版本为准；静态阅读不等于运行验收。发现错误或有改进建议？[按本章填写邮件](' + feedback + ')，或查看[反馈说明](/feedback)。\n')
 }
 for (const slug of figures) {
   const src = path.join(repo, 'figures', slug, 'diagram.svg')
@@ -202,6 +227,8 @@ description: "《图解 Agent 系统》在线阅读：从 Agent 运行机制到�
 发现事实错误、图中文字难读或源码链接失效？[查看反馈方式](/feedback)。阅读不需要登录；目前不收集站内评论。
 
 ${pdfFile ? '## 离线阅读\n\n[打开 PDF 电子校样](/pdf)。它和在线正文同源，提供浏览器预览与下载；在线章节仍是检索、引用和无障碍阅读的优先入口。\n' : ''}
+
+## 全书目录
 
 ${contents}
 

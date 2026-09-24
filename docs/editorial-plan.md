@@ -1,6 +1,6 @@
 # 写作、校稿与持续更新
 
-[返回首页](../README.md) · [当前进度与缺口](roadmap.md) · [书稿与两种导出](../book/README.md)
+[返回首页](../README.md) · [当前进度与缺口](roadmap.md) · [书稿与两种导出](../book/README.md) · [出版验收单](publication-checklist.md)
 
 本书采用“**可迭代的机制解释 + 固定版本的可核对案例**”。`docs/` 和 `book/frontmatter/`、`book/backmatter/` 是唯一正文；`figures/` 保留原生图源、展示图和图的文字版；`sources/` 记录上游版本与范围。PDF 和可携带 Markdown 阅读包都由 [`book/manifest.txt`](../book/manifest.txt) 指定同一批章节与顺序生成。导出目录不是写作位置，也不把 Obsidian 特有语法写进源稿。
 
@@ -54,10 +54,11 @@ python3 scripts/check_book_pdf.py
 
 首次构建 PDF 前还需安装 [`book/requirements.txt`](../book/requirements.txt) 并运行 `python3 scripts/fetch_book_font.py`。图源生成器的确定性另由 CI 检查；若改生成图，先确认没有未保存的手工图稿编辑再运行 `scripts/rebuild_scenes.py`。人工还要打开阅读包中的首页、跨章节链接和 SVG/PNG，检查 PDF 受影响页、所有含图页及前后页；脚本通过不等于视觉、源码或许可审稿通过。
 
-## 一个源稿，三个阅读界面
+## 一个源稿，四个阅读界面
 
-- **GitHub** 直接读源 Markdown，保留项目结构和可编辑图源。
+- **GitHub** 从[自动生成的书序目录](../book/CONTENTS.md)读源 Markdown，保留项目结构和可编辑图源。
+- **在线阅读站** 从同一清单生成 HTML 章节、书序导航与图的文字说明，适合手机、搜索、引用和反馈。
 - **Markdown ZIP** 沿同一清单生成可携带目录，适合 Obsidian 等本地阅读器；不在导出副本改稿，避免形成另一份事实来源。
 - **PDF** 负责固定页序、目录、字体、印刷与封面校样；其位图化的正文图要以实际 A4 页面检查字号，不能只看独立高清 PNG。
 
-PR 和每周 Action 都可生成两种导出供审稿；定时任务不会发布。每月抽查上游链接、项目版本和许可，记录“保持固定版 / 需新版剖面 / 链接损坏”；不要静默把旧源码结论改写成新版本事实。正式版本需人工完成外链、第三方内容、隐私、移动端、打印实样与非作者试读审查，再批准 tag/Release，并同时附 PDF 与 Markdown ZIP。具体未完成项只在[路线页](roadmap.md)维护。
+PR 和每周 Action 都可生成两种离线导出供审稿；定时任务不会发布。每月抽查上游链接、项目版本和许可，记录“保持固定版 / 需新版剖面 / 链接损坏”；不要静默把旧源码结论改写成新版本事实。正式版本按[出版验收单](publication-checklist.md)留下候选版证据，人工完成外链、第三方内容、隐私、移动端、打印实样与非作者试读审查，再批准 tag/Release，并同时附 PDF 与 Markdown ZIP。具体未完成项只在[路线页](roadmap.md)维护。

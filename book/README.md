@@ -1,6 +1,6 @@
 # 同一书稿，两种导出
 
-[`manifest.txt`](manifest.txt) 是 PDF 与可携带 Markdown 阅读包共用的**唯一章节顺序**。`@front` 指卷首，`@part` 指分部，`@back` 指卷末；其余行是相对于仓库根目录的正文路径。正文只在 `book/frontmatter/`、`docs/`、`book/backmatter/` 中维护一份，不在导出目录手改副本。未完成的专题不会凭空加入清单；进入清单也只表示进入预览稿，不代表通过正式出版验收。
+[`manifest.txt`](manifest.txt) 是 GitHub [书序目录](CONTENTS.md)、阅读网站、PDF 与可携带 Markdown 阅读包共用的**唯一章节顺序**。`@front` 指卷首，`@part` 指分部，`@back` 指卷末；其余行是相对于仓库根目录的正文路径。正文只在 `book/frontmatter/`、`docs/`、`book/backmatter/` 中维护一份，不在导出目录手改副本。未完成的专题不会凭空加入清单；进入清单也只表示进入预览稿，不代表通过正式出版验收。
 
 ## Markdown 阅读包
 

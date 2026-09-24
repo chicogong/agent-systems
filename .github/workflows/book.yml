@@ -55,6 +55,7 @@ jobs:
         run: |
           python scripts/check_repo.py
           python scripts/check_sources.py
+          python scripts/build_contents.py --check
           python scripts/test_build_book.py
           python scripts/test_check_repo.py
           python scripts/test_check_figure_legibility.py

@@ -7,6 +7,7 @@ python3 scripts/rebuild_scenes.py
 python3 scripts/check_repo.py
 python3 scripts/check_sources.py
 python3 scripts/check_figure_legibility.py
+python3 scripts/build_contents.py --check
 python3 scripts/build_markdown.py
 ```
 
@@ -14,7 +15,7 @@ python3 scripts/build_markdown.py
 
 生成器只使用 Python 标准库，没有访问模型或外部账户。固定版本的源码链接保存在各篇正文，不写入图像生成代码的运行时依赖。
 
-`build_markdown.py` 也只使用标准库：从 `book/manifest.txt` 生成确定性的可携带 ZIP，把正文、章节导航、图源、SVG/PNG 与证据规则放在同一个相对路径树中；写作与构建文件只保留仓库链接。构建时检查包内相对链接，不改源 Markdown。PDF 另由 `build_book.py` 生成；它不会修改仓库中跟踪的封面 SVG。需要更新封面时明确运行 `python3 scripts/book_cover.py`，之后由 PDF 检查重建临时 SVG 与跟踪版本比对。
+`build_contents.py` 从同一书稿清单生成仓库跟踪的 `book/CONTENTS.md`，供 GitHub 按书序阅读；改变章节或标题后运行脚本更新目录，CI 用 `--check` 防止过期。它只有导航，没有第二份正文。`build_markdown.py` 也只使用标准库：从 `book/manifest.txt` 生成确定性的可携带 ZIP，把正文、章节导航、图源、SVG/PNG 与证据规则放在同一个相对路径树中；写作与构建文件只保留仓库链接。构建时检查包内相对链接，不改源 Markdown。PDF 另由 `build_book.py` 生成；它不会修改仓库中跟踪的封面 SVG。需要更新封面时明确运行 `python3 scripts/book_cover.py`，之后由 PDF 检查重建临时 SVG 与跟踪版本比对。
 
 `check_figure_legibility.py` 只用标准库，按书稿清单中的实际图宽和图源字号估算 A4 页上的最小文字尺寸，同时报告有效 PPI。它默认列出需人工审阅的图；单图严格检查可用 `python3 scripts/check_figure_legibility.py --strict --figure agent-loop`。这只是排版预检，不判断箭头是否交叉、语义是否正确，也不取代实际 PDF 含图页目视审稿。
 
