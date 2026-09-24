@@ -1,6 +1,7 @@
 # Shared reading order for PDF and portable Markdown. One repository-relative Markdown path per line.
 @front book/frontmatter/preface.md
 @front book/frontmatter/reading-guide.md
+@front docs/learning-path.md
 @part 第一部分 · 基本机制
 docs/concepts/model-harness-cli-mcp-skill.md
 docs/concepts/agent-workflow-multiagent.md
@@ -9,6 +10,11 @@ docs/concepts/context-vs-memory.md
 docs/concepts/session-compaction-and-memory.md
 docs/concepts/approval-vs-sandbox.md
 docs/concepts/extensibility-layers.md
+docs/concepts/mcp-skill-tool-lifecycle.md
+docs/concepts/jev-and-system-one.md
+docs/concepts/delegation-and-handoff.md
+docs/concepts/interruption-recovery.md
+docs/concepts/observation-evaluation.md
 @part 第二部分 · 行动、工具与执行
 docs/systems/pi/README.md
 docs/systems/pi/code-walkthrough.md
@@ -25,7 +31,11 @@ docs/systems/browser-use/README.md
 docs/systems/browser-use/code-walkthrough.md
 docs/systems/qwen-code/README.md
 docs/systems/qwen-code/code-walkthrough.md
-@part 第三部分 · 状态、记忆与协作编排
+docs/systems/kimi-code/README.md
+docs/systems/kimi-code/code-walkthrough.md
+docs/systems/mimo-code/README.md
+docs/systems/mimo-code/code-walkthrough.md
+@part 第三部分 · 状态、记忆与任务上下文
 docs/systems/letta/README.md
 docs/systems/letta/code-walkthrough.md
 docs/systems/mem0/README.md
@@ -36,8 +46,10 @@ docs/systems/openclaw/README.md
 docs/systems/openclaw/code-walkthrough.md
 docs/systems/gpt-researcher/README.md
 @part 第四部分 · 横向对照
+docs/comparisons/loop-and-stop.md
 docs/comparisons/persisted-vs-visible.md
 docs/comparisons/four-kinds-of-state.md
+docs/comparisons/claude-code-codex.md
 @part 附录 · 术语与核验方法
 docs/glossary.md
 @back book/backmatter/afterword.md

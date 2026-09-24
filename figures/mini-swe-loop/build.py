@@ -21,8 +21,8 @@ def card(scene: Scene, name: str, x: int, y: int, w: int, h: int,
          stroke: str, fill: str, title: str, detail: str) -> None:
     scene.box(name, x, y, w, h, stroke, fill)
     scene.elements[-1].update(roughness=1, strokeWidth=2)
-    scene.text(f"{name}-title", title, x + 20, y + 17, w - 40, 22, INK, 8)
-    scene.text(f"{name}-detail", detail, x + 20, y + 55, w - 40, 17, MUTED, 8)
+    scene.text(f"{name}-title", title, x + 17, y + 15, w - 34, 27, INK, 8)
+    scene.text(f"{name}-detail", detail, x + 17, y + 62, w - 34, 22, MUTED, 8)
 
 
 def arrow(scene: Scene, name: str, points: list[tuple[int, int]], color: str,
@@ -33,59 +33,54 @@ def arrow(scene: Scene, name: str, points: list[tuple[int, int]], color: str,
         scene.elements[-1]["strokeStyle"] = "dashed"
 
 
-def rule(scene: Scene, name: str, y: int) -> None:
-    scene.arrow(name, [(76, y), (366, y)], "#d5dfe9")
-    scene.elements[-1].update(strokeWidth=1, endArrowhead=None)
-
-
 def build() -> None:
     d = Scene()
-    d.text("title", "mini-SWE-agent：消息尾部决定何时退出", 47, 28, 1170, 35, INK, 8)
-    d.text("subtitle", "DefaultAgent：query → execute_actions → save；末条 role=exit 才停止", 50, 82, 1130, 19, MUTED, 8)
+    d.text("title", "mini-SWE-agent：消息尾部决定退出", 35, 25, 995, 35, INK, 8)
 
-    # The ledger and the loop are different things: arrows into the ledger
-    # describe appends, while the blue loop arrow describes another step().
-    d.box("ledger", 47, 169, 345, 609, "#b9cef0", "#f7faff")
+    # The ledger records appends; the center column is the control flow.
+    d.box("ledger", 35, 132, 285, 548, "#b9cef0", "#f7faff")
     d.elements[-1].update(roughness=1, strokeWidth=2)
-    d.text("ledger-title", "messages[] · 逐步追加", 74, 191, 300, 24, "#2563a6", 8)
-    for index, y in enumerate((273, 352, 431, 510, 589, 668)):
-        rule(d, f"ledger-rule-{index}", y)
+    d.text("ledger-title", "messages[] · 追加", 55, 154, 250, 25, "#2563a6", 8)
+    for index, y in enumerate((218, 286, 354, 422, 490, 558)):
+        d.arrow(f"ledger-rule-{index}", [(55, y), (300, y)], "#d5dfe9")
+        d.elements[-1].update(strokeWidth=1, endArrowhead=None)
     for name, value, y, color in (
-        ("system", "01  system 模板", 293, INK),
-        ("user", "02  user(task)", 372, INK),
-        ("assistant", "03  assistant(action)", 451, VIOLET),
-        ("observation", "04  observation", 530, TEAL),
-        ("repeat", "…   下一轮继续追加", 609, MUTED),
-        ("exit", "末条 exit → 停止", 688, GREEN),
+        ("system", "01  system 模板", 230, INK),
+        ("user", "02  user(task)", 298, INK),
+        ("assistant", "03  assistant(action)", 366, VIOLET),
+        ("observation", "04  observation", 434, TEAL),
+        ("repeat", "…   下一轮继续追加", 502, MUTED),
+        ("exit", "末条 exit → 停止", 570, GREEN),
     ):
-        d.text(name, value, 74, y, 292, 19, color, 8)
+        d.text(name, value, 55, y, 250, 22, color, 8)
 
-    # Draw arrows before cards so they tuck cleanly beneath the card borders.
-    arrow(d, "query-to-execute", [(643, 352), (643, 427)], VIOLET)
-    arrow(d, "execute-to-check", [(643, 537), (643, 603)], TEAL)
-    arrow(d, "continue-loop", [(789, 651), (827, 651), (827, 301), (789, 301)], BLUE)
-    d.text("continue-label", "否 · 下一轮", 835, 554, 140, 18, "#2563a6", 8)
-    arrow(d, "stop-to-return", [(789, 702), (901, 702)], GREEN)
-    d.text("yes-label", "是", 829, 670, 45, 18, GREEN, 8)
-    arrow(d, "query-appends", [(496, 301), (453, 301), (453, 460), (392, 460)], VIOLET)
-    arrow(d, "execute-appends", [(496, 482), (433, 482), (433, 539), (392, 539)], TEAL)
+    # Draw arrows first so the nodes cover their endpoints. The two ledger
+    # routes end at different rows and never cross the main loop.
+    arrow(d, "query-to-execute", [(550, 282), (550, 336)], VIOLET)
+    arrow(d, "execute-to-check", [(550, 452), (550, 538)], TEAL)
+    arrow(d, "query-appends", [(410, 232), (370, 232), (370, 378), (320, 378)], VIOLET)
+    arrow(d, "execute-appends", [(410, 400), (345, 400), (345, 446), (320, 446)], TEAL)
+    arrow(d, "continue-loop", [(690, 576), (725, 576), (725, 224), (690, 224)], BLUE)
+    arrow(d, "stop-to-return", [(690, 610), (790, 610)], GREEN)
 
-    card(d, "query", 496, 242, 293, 110, VIOLET, "#e5dbff",
+    card(d, "query", 410, 166, 280, 116, VIOLET, "#e5dbff",
          "query()", "限额检查 → model.query")
-    card(d, "execute", 496, 427, 293, 110, TEAL, "#c9f4f4",
+    card(d, "execute", 410, 336, 280, 116, TEAL, "#c9f4f4",
          "execute_actions()", "env.execute → 观察")
-    card(d, "stop-check", 496, 603, 293, 128, BLUE, "#d7ebff",
+    card(d, "stop-check", 410, 538, 280, 116, BLUE, "#d7ebff",
          "每轮 save() 之后", "末条 role == exit ?")
-    card(d, "return", 901, 640, 302, 115, GREEN, "#c3fae8",
-         "返回 exit.extra", "不是模型布尔值")
+    d.text("continue-label", "否 · 下一轮", 734, 486, 145, 22, "#2563a6", 8)
+    d.text("yes-label", "是", 744, 578, 30, 22, GREEN, 8)
 
-    # These are possible sources, not a mandatory path after query/execute.
-    d.box("exit-sources", 904, 186, 298, 330, "#f5c46a", "#fff7df")
+    # These are possible sources of exit messages, not a mandatory sequence.
+    d.box("exit-sources", 790, 132, 295, 320, "#f5c46a", "#fff7df")
     d.elements[-1].update(roughness=1, strokeWidth=2)
-    d.text("exit-title", "exit 消息可能来自", 925, 209, 255, 23, "#9a6700", 8)
-    d.text("exit-1", "Submitted\n本地命令完成哨兵", 925, 271, 255, 18, INK, 8)
-    d.text("exit-2", "Limits / Time\n模型请求前的限制", 925, 353, 255, 18, INK, 8)
-    d.text("exit-3", "RepeatedFormatError\n连续解析失败达阈值", 925, 435, 255, 18, INK, 8)
+    d.text("exit-title", "exit 消息可能来自", 808, 154, 255, 24, "#9a6700", 8)
+    d.text("exit-1", "Submitted\n本地命令完成哨兵", 808, 212, 255, 22, INK, 8)
+    d.text("exit-2", "Limits / Time\n模型请求前的限制", 808, 290, 255, 22, INK, 8)
+    d.text("exit-3", "RepeatedFormatError\n连续解析失败达阈值", 808, 368, 255, 22, INK, 8)
+    card(d, "return", 790, 538, 295, 116, GREEN, "#c3fae8",
+         "返回 exit.extra", "不是模型布尔值")
 
     d.save(Path(__file__).with_name("scene.excalidraw"))
 

@@ -11,6 +11,10 @@
 - **权限与恢复**：危险动作在哪里拦截，未知结果怎样对账？
 - **完成判断**：测试、轨迹、文件产物和用户接受分别证明什么？
 
-首篇已起稿：[存下来了，下一轮就一定能看见吗？](persisted-vs-visible.md) 对照 Pi 与 Letta Code 各一条固定源码路径。
+[一轮工具调用后，谁决定下一步？](loop-and-stop.md)以同一个观察点对照 Pi、mini-SWE-agent、OpenCode 和 Kimi Code 的循环与停止契约。它比较的是各自固定源码的一条路径，不是同任务实测。
+
+[存下来了，下一轮就一定能看见吗？](persisted-vs-visible.md)对照 Pi 与 Letta Code 各一条固定源码路径。
 
 状态专题另有[四种常被叫作“记忆”的状态](four-kinds-of-state.md)：Pi、Letta Code、Mem0 与 LangGraph 的存储对象和进入模型的方式并不一样。
+
+[同一测试命令，谁让它执行？](claude-code-codex.md)对照 Claude Code 的官方公开行为和 Codex 的固定源码路径。双方证据粒度不同，因此只比较用户能作出的控制选择，不推断 Claude Code 未公开的内部实现。

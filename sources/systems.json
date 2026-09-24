@@ -17,6 +17,12 @@
     "upstream_license": "pending-review",
     "versions": ["https://github.com/assafelovic/gpt-researcher/tree/6f998577d547b1e54ec662dac63583aa11e3b84b"]
   },
+  "kimi-code": {
+    "scope": "agent-core TurnFlow steer buffer, step boundary, and stop check path",
+    "status": "static-slice-draft",
+    "upstream_license": "MIT",
+    "versions": ["https://github.com/MoonshotAI/kimi-code/tree/75a894e9ad5e8d49509664b3daaa1bbc9bb39432"]
+  },
   "langgraph": {
     "scope": "Python Pregel checkpoint history and fork path",
     "status": "static-slice-draft",
@@ -34,6 +40,12 @@
     "status": "static-slice-draft",
     "upstream_license": "pending-review",
     "versions": ["https://github.com/mem0ai/mem0/tree/f8082a7345dadd9e042ebbc40b57b1498c8f6d63"]
+  },
+  "mimo-code": {
+    "scope": "session checkpoint writer, successful watermark, and overflow rebuild path",
+    "status": "static-slice-draft",
+    "upstream_license": "MIT",
+    "versions": ["https://github.com/XiaomiMiMo/MiMo-Code/tree/a273d3450ee05ba5163320eae59d7716b778e480"]
   },
   "mini-swe-agent": {
     "scope": "DefaultAgent and LocalEnvironment loop and exit path",

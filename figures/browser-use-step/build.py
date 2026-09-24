@@ -9,15 +9,16 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from diagram_style import INK, MUTED, Scene  # noqa: E402
 
 
-def lifeline(scene: Scene, name: str, x: int, y0: int, y1: int) -> None:
-    scene.arrow(name, [(x, y0), (x, y1)], "#c5d1dd")
+def lifeline(scene: Scene, name: str, x: int) -> None:
+    scene.arrow(name, [(x, 139), (x, 603)], "#c5d1dd")
     scene.elements[-1].update(strokeStyle="dashed", strokeWidth=1, endArrowhead=None)
 
 
-def exchange(scene: Scene, name: str, x0: int, x1: int, y: int, label: str, color: str, label_x: int, label_w: int) -> None:
+def exchange(scene: Scene, name: str, x0: int, x1: int, y: int,
+             label: str, color: str, label_x: int, label_w: int) -> None:
     scene.arrow(name, [(x0, y), (x1, y)], color)
     scene.elements[-1].update(strokeWidth=3, roughness=1)
-    scene.text(name + "-label", label, label_x, y - 31, label_w, 16, color, 8)
+    scene.text(name + "-label", label, label_x, y - 31, label_w, 19, color, 8)
 
 
 def build() -> None:
@@ -28,35 +29,32 @@ def build() -> None:
     orange = "#f59e0b"
     green = "#16a34a"
 
-    # Lifelines make ordering explicit; the labels, not color alone, carry meaning.
-    for name, x in (("agent", 135), ("browser", 390), ("model", 645), ("history", 900)):
-        lifeline(d, name + "-lifeline", x, 170, 733)
+    d.text("title", "browser-use · 一轮 step 的观察—行动时序", 30, 20, 840, 29, INK, 8)
+    d.text("timeline", "时间 ↓", 18, 140, 90, 19, MUTED, 8)
 
-    exchange(d, "request-state", 135, 390, 220, "get_browser_state_summary", navy, 158, 250)
-    exchange(d, "state-summary", 390, 135, 300, "BrowserStateSummary", teal, 178, 210)
-    exchange(d, "model-input", 135, 645, 380, "create_state_messages → LLM", purple, 260, 360)
-    exchange(d, "model-output", 645, 135, 460, "AgentOutput.action", purple, 332, 230)
-    exchange(d, "execute-actions", 135, 390, 540, "multi_act → Tools.act", orange, 160, 245)
-    exchange(d, "action-result", 390, 135, 620, "ActionResult", orange, 230, 155)
-    exchange(d, "write-history", 135, 900, 700, "_finalize → AgentHistory", green, 410, 275)
+    lanes = (
+        ("agent", 115, "Agent.step", 30, 170, navy, "#a5d8ff"),
+        ("browser", 345, "Browser + Tools", 245, 200, teal, "#c3fae8"),
+        ("model", 575, "模型", 490, 170, purple, "#d0bfff"),
+        ("history", 805, "History", 720, 170, green, "#d3f9d8"),
+    )
+    for name, x, label, left, width, color, fill in lanes:
+        lifeline(d, name + "-lifeline", x)
+        d.box(name + "-head", left, 85, width, 54, color, fill)
+        d.text(name + "-name", label, left + 13, 101, width - 26, 20, INK, 8)
 
-    d.box("agent-head", 40, 117, 190, 53, navy, "#a5d8ff")
-    d.box("browser-head", 295, 117, 190, 53, teal, "#c3fae8")
-    d.box("model-head", 550, 117, 190, 53, purple, "#d0bfff")
-    d.box("history-head", 805, 117, 190, 53, green, "#d3f9d8")
-    d.text("agent-name", "Agent.step", 62, 129, 155, 19, INK, 8)
-    d.text("browser-name", "Browser + Tools", 308, 129, 170, 19, INK, 8)
-    d.text("model-name", "模型", 610, 129, 100, 19, INK, 8)
-    d.text("history-name", "History", 857, 129, 120, 19, INK, 8)
+    exchange(d, "request-state", 115, 345, 187, "get_browser_state_summary", navy, 128, 275)
+    exchange(d, "state-summary", 345, 115, 253, "BrowserStateSummary", teal, 130, 248)
+    exchange(d, "model-input", 115, 575, 319, "create_state_messages → LLM", purple, 198, 355)
+    exchange(d, "model-output", 575, 115, 385, "AgentOutput.action", purple, 265, 244)
+    exchange(d, "execute-actions", 115, 345, 451, "multi_act → Tools.act", orange, 128, 250)
+    exchange(d, "action-result", 345, 115, 517, "ActionResult", orange, 175, 175)
+    exchange(d, "write-history", 115, 805, 583, "_finalize → AgentHistory（有 last_result 时）", green, 286, 500)
 
-    d.text("title", "browser-use · 一轮 step 的观察—行动时序", 35, 24, 1015, 32, INK, 8)
-    d.text("subtitle", "沿时间向下读。横向箭头是请求或结果；四条泳道分别负责控制、网页、决策与留痕。", 37, 70, 1000, 18, MUTED, 8)
-    d.text("timeline", "时间 ↓", 17, 181, 93, 16, MUTED, 8)
+    d.box("screenshot-note", 30, 621, 860, 96, "#9dbfe8", "#f4f9ff")
+    d.text("screenshot-title", "截图采集：include_screenshot=True", 47, 635, 430, 19, "#2563a6", 8)
+    d.text("screenshot-detail", "模型是否看图：use_vision；历史仅在有截图时存路径", 47, 673, 820, 19, INK, 8)
 
-    d.box("screenshot-note", 39, 769, 956, 91, "#9dbfe8", "#f4f9ff")
-    d.text("screenshot-title", "截图 ≠ 模型必定看图", 59, 782, 370, 21, "#2563a6", 8)
-    d.text("screenshot-detail", "采集请求 include_screenshot=True   ·   模型消息由 use_vision 决定   ·   历史有截图时才保存路径", 59, 817, 900, 17, INK, 8)
-    d.text("footer", "_finalize 只有在有 last_result 时才记历史", 40, 880, 980, 15, MUTED, 8)
     for element in d.elements:
         if element["type"] == "rectangle":
             element["roughness"] = 1

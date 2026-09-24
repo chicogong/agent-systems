@@ -26,6 +26,7 @@ from reportlab.graphics.barcode.qr import QrCodeWidget
 from reportlab.graphics.shapes import Drawing
 from reportlab.platypus import (
     BaseDocTemplate,
+    CondPageBreak,
     Flowable,
     Frame,
     Image,
@@ -45,6 +46,7 @@ from book_cover import cover_drawing
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "book" / "manifest.txt"
 DEFAULT_OUTPUT = ROOT / "output" / "pdf" / "agent-systems-preview.pdf"
+READER_URL = "https://books.aimake.cc/"
 FRONT_COVER = ROOT / "book" / "assets" / "cover.svg"
 DEFAULT_FONT = ROOT / "book" / ".cache" / "NotoSansSC-Regular.ttf"
 FONT_NAME = "BookNoto"
@@ -259,8 +261,8 @@ class BookDoc(BaseDocTemplate):
         canvas.drawString(22 * mm, 31 * mm, "图解 Agent 系统")
         canvas.setFont(FONT_NAME, 9)
         canvas.drawString(22 * mm, 21 * mm, "开放书稿 · 原创图文 CC BY 4.0 · 构建脚本 MIT")
-        canvas.drawString(22 * mm, 12 * mm, "github.com/chicogong/agent-systems")
-        qr = QrCodeWidget("https://github.com/chicogong/agent-systems")
+        canvas.drawString(22 * mm, 12 * mm, "books.aimake.cc")
+        qr = QrCodeWidget(READER_URL)
         qr_w = qr.getBounds()[2]
         qr_size = 31 * mm
         qr_x, qr_y = PAGE_W - 47 * mm, 9 * mm
@@ -270,7 +272,7 @@ class BookDoc(BaseDocTemplate):
         qr_drawing = Drawing(qr_size, qr_size, transform=[qr_size / qr_w, 0, 0, qr_size / qr_w, 0, 0])
         qr_drawing.add(qr)
         renderPDF.draw(qr_drawing, canvas, qr_x, qr_y)
-        canvas.linkURL("https://github.com/chicogong/agent-systems", (22 * mm, 10 * mm, 138 * mm, 19 * mm), relative=0)
+        canvas.linkURL(READER_URL, (22 * mm, 10 * mm, 138 * mm, 19 * mm), relative=0)
         canvas.restoreState()
 
     def decorate(self, canvas, doc):
@@ -466,14 +468,16 @@ def build(output: Path, font_path: Path) -> None:
             first_chapter_in_part = True
         elif kind == "chapter":
             if not first_chapter_in_part:
-                story.append(PageBreak())
+                # Keep a new chapter with its opening text, without leaving
+                # a nearly empty tail page after every short chapter.
+                story.append(CondPageBreak(105 * mm))
             story.extend(chapter_flowables(value, chapter_index, style))
             first_chapter_in_part = False
             chapter_index += 1
     for kind, value in entries:
         if kind != "back":
             continue
-        story.append(PageBreak())
+        story.append(CondPageBreak(70 * mm))
         story.extend(chapter_flowables(value, chapter_index, style, outline_level=0))
         chapter_index += 1
     story.extend([NextPageTemplate("back"), PageBreak(), Spacer(1, 1)])

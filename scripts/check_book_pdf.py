@@ -89,7 +89,7 @@ def check(path: Path) -> None:
     if "图解 Agent 系统" not in title_text:
         raise ValueError("Accessible title page is missing")
     last_text = reader.pages[-1].extract_text() or ""
-    if "不止会用" not in last_text or "github.com/chicogong/agent-systems" not in last_text:
+    if "不止会用" not in last_text or "books.aimake.cc" not in last_text:
         raise ValueError("Back cover is missing or not extractable")
     all_text = "\n".join(page.extract_text() or "" for page in reader.pages)
     for title in ("前言：看见回答背后的系统", "阅读指南：从问题进入", "结语：图会更新", "致谢与贡献", "作者简介"):

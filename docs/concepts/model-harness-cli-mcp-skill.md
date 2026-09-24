@@ -8,7 +8,7 @@
 
 [图的文字版与省略边界](../../figures/agent-stack/README.md) · [可编辑图源](../../figures/agent-stack/scene.excalidraw)
 
-不用看图也可以这样读：用户从 CLI 提交目标与约束；Harness 装配上下文、调用模型，并处理模型提出的动作；Skill 的说明在适用时成为上下文的一部分；本地工具处理文件和测试，MCP 连接工单系统。工具结果回到下一轮，最终交付要以测试和用户目标核对。图中的箭头是**教学抽象**，不是任何产品的内部调用栈；“权限与路由”不保证每个 Harness 都有独立审批或沙箱，有些实现仅继承进程权限。
+不用看图也可以这样读：用户从 CLI 提交目标与约束；Harness 装配上下文、调用外部模型，并处理模型返回的动作建议。在下文的例子里，**模型先建议读取工单 #482，宿主再路由这次调用**；图没有表达 Harness 必然先自行预取工单。Skill 的说明在适用时成为上下文的一部分；本地工具处理文件和测试，MCP 连接工单系统。工具结果回到下一轮，最终交付要以测试和用户目标核对。图中的虚线框只标记一轮决策流，**不表示模型属于 Harness**；箭头也不是任何产品的内部调用栈。有些 Harness 有审批或沙箱，有些没有独立机制而直接继承进程及工具凭据的权限。
 
 ## 同一项任务，先跑通一条路径
 
@@ -19,6 +19,10 @@
 3. 模型结合上下文提出下一步，例如读取处理函数、写回归测试、修改幂等键分支。**提出工具调用不等于工具已经运行。**Harness 仍要按自己的工具路由、执行策略与环境处理；是否另有审批或沙箱，必须查看具体实现。
 4. 本地文件工具执行修改，测试命令返回结果；模型据此继续修正，直到能够说明测试结果和未覆盖的风险。
 5. “在工单写摘要”是另一次外部副作用。只有连接可用、凭据与权限允许，且符合用户“待审核、不推送”的边界，Harness 才可执行；否则应把摘要留作草稿并说明未写入。
+
+把任务缩小到“读工单 #482”：本例由模型建议调用工单工具，Harness 路由并把结果交回模型。再加入 Skill 的“先提取复现条件、再写失败测试”方法；最后加入写摘要这一步，它与读工单可能需要不同权限。这样便能逐步看清**入口 → 建议 → 路由 → 执行 → 观察**。另一种工作流可能由程序预取工单，须查看具体实现，不能从 MCP 或 Skill 名称推断。
+
+路由可走本地工具，也可经 MCP Client 到 Server；它本身不代表存在独立审批或沙箱。若运行器没有额外隔离，实际边界是进程权限、连接凭据与工具实现。[MCP 架构规范](https://modelcontextprotocol.io/specification/2025-11-25/architecture)给出 Host、Client、Server 的协议职责，不规定这次任务应先读哪张工单。
 
 这个顺序借用了公开文档可核对的职责，而**没有声称 Claude Code 或 Codex 一定按以上五步、以相同工具名执行**。[Claude Code 官方说明](https://code.claude.com/docs/en/how-claude-code-works)将其描述为模型推理、工具行动、结果反馈的循环，并明确称 Claude Code 是模型外的 *agentic harness*；[Codex 官方手册](https://developers.openai.com/codex/codex-manual.md)也说明它在模型调用与文件读写、工具调用之间反复推进。两者都不是“模型自己直接改了磁盘”。
 
@@ -34,9 +38,9 @@
 
 “只换一层”是帮助分析的思想实验，不是产品兼容性承诺。例如，Claude Code 的 `claude -p` 和 Codex 的 `codex exec` 都能做非交互式任务，但它们属于不同产品，默认上下文与权限也可能不同；比较结果前须固定任务、代码、可用工具和审批设置。[Claude Code 非交互文档](https://code.claude.com/docs/en/headless) · [Codex 非交互文档](https://developers.openai.com/codex/noninteractive)
 
-上图的模型只指会建议下一步的**生成式编码 Agent 模型**。TypeSafe 的 [Jev 架构说明](https://docs.typesafe.ai/concepts/how-to-build-with-system-one.md)则把 Jev 定位为回答有界、结构化问题的决策模型：它不自己规划，控制流和副作用由代码负责。它不是独立的编码 Agent；输出受类型约束也不保证判断正确。官方[已知局限](https://docs.typesafe.ai/model-jaggedness/jev-1.13.md)列出数字、日期、间接推理及对抗内容等失败。本书尚未实测。
+## 插件放在哪里？
 
-进一步看扩展边界：[MCP 规范](https://modelcontextprotocol.io/specification/2025-11-25/architecture)区分 Host、Client、Server，并定义能力协商；Server 可以公开 Tools、Resources、Prompts。它回答“外部能力如何被连接和呈现”，不回答“这次修复应该怎么做”。后者更适合 Skill。[Claude Code 的扩展指南](https://code.claude.com/docs/en/features-overview)和 [Codex 的自定义指南](https://developers.openai.com/codex/concepts/customization)都把 Skill 与 MCP 视为互补层，而非替代关系。两个产品的项目配置路径和实际调用方式不同，不能把一边的配置文件原样当成另一边的实现证据。
+Tool 是一次可调用操作；Skill 是“如何做”的指导；MCP 是外部能力的连接协议；插件或 Package 是某个生态的**打包与分发方式**。例如 [OpenAI 插件架构](https://developers.openai.com/plugins/concepts/plugins)允许一个插件包含 Skill、MCP Server 或两者；[Pi Package 文档](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/docs/packages.md)展示了不同的组合。安装包不等于权限，扩展代码也可能与 Skill 有不同的执行边界。具体加载方式与更多代码路径见[扩展层专题](extensibility-layers.md)；本章只用它们区分**工作流、操作、协议和分发**。
 
 ## 一条失败路径：工单不是指令
 

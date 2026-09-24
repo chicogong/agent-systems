@@ -17,54 +17,50 @@ PURPLE = "#8b5cf6"
 
 def main() -> None:
     d = Scene()
-    d.text("title", "Letta Code：记忆存放处 ≠ 当前上下文", 38, 25, 1170, 33, INK, 8)
-    d.text("subtitle", "以 local MemFS v1 为例：先区分磁盘中的长期状态，再看哪些内容进入本轮提示。", 40, 78, 1160, 19, MUTED, 8)
+    d.text("title", "Letta Code：记忆存放处 ≠ 当前上下文", 38, 23, 1170, 34, INK, 8)
+    d.text("subtitle", "local MemFS v1：存下的内容，怎样进入本轮提示？", 40, 77, 1150, 23, MUTED, 8)
 
-    # Two-column placement map, then a short lifecycle strip. This is
-    # intentionally not the layered pipeline used by the Pi diagrams.
-    d.box("disk-panel", 36, 143, 559, 488, "#bfd5f5", "#f5f9ff")
-    d.box("context-panel", 632, 143, 559, 488, "#d7c8ff", "#faf7ff")
-    d.text("disk-head", "01  持久状态：MemFS 与历史", 62, 166, 500, 24, BLUE)
-    d.text("context-head", "02  模型本轮可见的上下文", 658, 166, 500, 24, PURPLE)
+    # Storage and visibility are separate columns. Arrow meanings live in
+    # their nodes so the narrow gutter stays clear at book-page size.
+    d.box("disk-panel", 36, 145, 559, 482, "#bfd5f5", "#f5f9ff")
+    d.box("context-panel", 632, 145, 559, 482, "#d7c8ff", "#faf7ff")
+    d.text("disk-head", "01  存放处：MemFS 与历史", 62, 168, 500, 27, BLUE)
+    d.text("context-head", "02  本轮模型可见的上下文", 658, 168, 500, 27, PURPLE)
 
-    d.box("core", 72, 235, 480, 104, BLUE, "#a5d8ff")
-    d.text("core-title", "system/*.md", 94, 255, 425, 25, INK)
-    d.text("core-body", "核心记忆块：身份、偏好、索引", 94, 292, 430, 18, MUTED, 8)
+    d.box("core", 72, 237, 480, 112, BLUE, "#a5d8ff")
+    d.text("core-title", "system/ 下的 Markdown", 94, 255, 425, 27, INK)
+    d.text("core-body", "含子目录 · 默认编入提示", 94, 302, 430, 23, MUTED, 8)
 
-    d.box("external", 72, 385, 480, 104, GREEN, "#c3fae8")
-    d.text("external-title", "外部文件 / skills", 94, 405, 430, 25, INK)
-    d.text("external-body", "正文在外部；需要时再读取", 94, 442, 430, 18, MUTED, 8)
+    d.box("external", 72, 390, 480, 112, GREEN, "#c3fae8")
+    d.text("external-title", "外部文件 / Skills", 94, 408, 430, 27, INK)
+    d.text("external-body", "按需通过工具读取", 94, 455, 430, 23, MUTED, 8)
 
-    d.box("history", 72, 535, 480, 66, ORANGE, "#fff3bf")
-    d.text("history-label", "会话历史 / recall：另一路状态", 94, 554, 430, 21, INK)
+    d.box("history", 72, 541, 480, 65, ORANGE, "#fff3bf")
+    d.text("history-label", "会话历史 / recall", 94, 557, 430, 25, INK)
 
-    d.box("prompt", 668, 235, 480, 156, PURPLE, "#d0bfff")
-    d.text("prompt-title", "system prompt", 690, 256, 424, 26, INK)
-    d.text("prompt-body", "基础指令 + 核心记忆块\n外部文件正文不默认内联", 690, 299, 420, 19, INK, 8)
+    d.box("prompt", 668, 237, 480, 154, PURPLE, "#d0bfff")
+    d.text("prompt-title", "system prompt", 690, 255, 424, 27, INK)
+    d.text("prompt-body", "基础指令 + 核心记忆块\n外部文件正文不默认内联", 690, 301, 425, 23, INK, 8)
 
-    d.box("window", 668, 451, 480, 150, PURPLE, "#e5dbff")
-    d.text("window-title", "当前 conversation", 690, 471, 424, 25, INK)
-    d.text("window-body", "最近消息 + 较早消息的摘要\n需要旧信息时检索 recall", 690, 511, 420, 19, INK, 8)
+    d.box("window", 668, 444, 480, 162, PURPLE, "#e5dbff")
+    d.text("window-title", "当前 conversation", 690, 461, 424, 27, INK)
+    d.text("window-body", "近期消息 + 较早消息摘要\n旧信息可经 recall 检索", 690, 508, 425, 23, INK, 8)
 
-    d.arrow("core-to-prompt", [(552, 286), (609, 286), (609, 280), (668, 280)], BLUE)
-    d.arrow("external-to-window", [(552, 437), (608, 437), (608, 500), (668, 500)], GREEN)
-    d.arrow("history-to-window", [(552, 567), (668, 567)], ORANGE)
-    d.text("core-edge", "默认在场", 555, 243, 100, 18, BLUE)
-    d.text("external-edge", "工具读取", 560, 461, 95, 18, GREEN)
-    d.text("history-edge", "检索 / 摘要", 554, 535, 110, 18, ORANGE)
+    d.arrow("core-to-prompt", [(552, 292), (668, 292)], BLUE)
+    d.arrow("external-to-window", [(552, 446), (609, 446), (609, 484), (668, 484)], GREEN)
+    d.arrow("history-to-window", [(552, 573), (668, 573)], ORANGE)
 
-    d.box("lifecycle", 36, 678, 1155, 176, "#cbd5e1", "#f8fafc")
-    d.text("life-head", "修改记忆后，何时可见？路径不同", 62, 695, 650, 22, INK, 8)
-    d.text("tool-write", "memory() 工具写入", 72, 733, 285, 18, BLUE, 8)
-    d.arrow("tool-commit-arrow", [(331, 750), (392, 750)], BLUE)
-    d.text("tool-commit", "commitMemoryWrite 提交", 410, 733, 400, 18, BLUE, 8)
-    d.text("worker-merge", "memory worker 合并", 72, 770, 300, 18, PURPLE, 8)
-    d.arrow("worker-sync-arrow", [(331, 787), (392, 787)], PURPLE)
-    d.text("worker-sync", "同步", 410, 770, 100, 18, PURPLE, 8)
-    d.arrow("worker-recompile-arrow", [(490, 787), (551, 787)], PURPLE)
-    d.text("worker-recompile", "能力允许时重编译提示", 569, 770, 430, 18, PURPLE, 8)
-    d.text("life-foot", "已编译的当前回合提示不会被文件编辑即时改写；不是每条写入都走同一重编译路径。", 72, 817, 1050, 18, MUTED, 8)
-    d.text("scope", "图示范围：local MemFS v1；API-backed v2 的目录布局另见正文。", 40, 877, 1150, 18, MUTED, 8)
+    d.box("lifecycle", 36, 673, 1155, 179, "#cbd5e1", "#f8fafc")
+    d.text("life-head", "修改记忆后，何时可见？两条不同路径", 62, 690, 1080, 27, INK, 8)
+    d.text("tool-write", "memory() 工具写入", 72, 736, 330, 23, BLUE, 8)
+    d.arrow("tool-commit-arrow", [(363, 751), (418, 751)], BLUE)
+    d.text("tool-commit", "commitMemoryWrite 提交", 436, 736, 660, 23, BLUE, 8)
+    d.text("worker-merge", "memory worker 合并", 72, 779, 330, 23, PURPLE, 8)
+    d.arrow("worker-sync-arrow", [(363, 794), (418, 794)], PURPLE)
+    d.text("worker-sync", "同步", 436, 779, 95, 23, PURPLE, 8)
+    d.arrow("worker-recompile-arrow", [(508, 794), (563, 794)], PURPLE)
+    d.text("worker-recompile", "能力允许时重编译提示", 581, 779, 540, 23, PURPLE, 8)
+    d.text("life-foot", "已编译的当前回合提示，不会被文件编辑即时改写", 72, 819, 1050, 23, MUTED, 8)
 
     for element in d.elements:
         if element["type"] == "rectangle":

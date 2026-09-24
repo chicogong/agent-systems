@@ -10,7 +10,7 @@
 
 ## Skill：发现描述，按需读取正文
 
-Pi 的 `loadSkills` 扫描技能路径并解析 `SKILL.md`；`formatSkillsForPrompt` 把名称、描述和位置放进系统提示，而不是一启动就把全部正文塞进上下文。[加载实现](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/skills.ts#L277-L382) · [官方使用文档](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/docs/skills.md)
+Pi 的 `loadSkills` 扫描技能路径并解析 `SKILL.md`；`formatSkillsForPrompt` 把**可由模型调用的 Skill** 的名称、描述和位置放进系统提示，而不是一启动就把全部正文塞进上下文。设置 `disable-model-invocation: true` 的 Skill 不进入这份提示，但仍可由用户通过 `/skill:name` 显式调用。[加载实现](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/skills.ts#L277-L382) · [官方使用文档](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/docs/skills.md)
 
 当任务相关时，模型可经已有的 `read` 工具读取 `SKILL.md`；用户也可输入 `/skill:name`，由 [`AgentSession._expandSkillCommand`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L1792-L1821) 展开完整内容。Skill 可以带脚本、参考资料和资产，并指导模型调用已有工具去运行脚本；但 Skill 文件本身没有注册新工具或订阅事件的 API。因此“不是可执行插件”不等于“没有运行风险”。
 

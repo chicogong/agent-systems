@@ -6,4 +6,5 @@ tmp/pdfs/
 output/pdf/
 output/markdown/
 output/book-design-review/
+output/review/
 book/.cache/

@@ -16,9 +16,8 @@ def circle(d: Scene, name: str, x: int, y: int, size: int, stroke: str, fill: st
 
 def main() -> None:
     d = Scene()
-    d.text("title", "LangGraph：同一个 thread，可以有多个状态分支", 35, 24, 1370, 34, INK, 8)
-    d.text("subtitle", "checkpoint_id 定位版本；历史快照上 update_state 会写出新的后继，而不是覆盖旧结果。", 37, 79, 1350, 22, MUTED, 8)
-    d.text("thread", "thread_id = T  ·  checkpoint_ns = \"\"（根命名空间）", 57, 155, 1210, 24, MUTED, 8)
+    d.text("title", "从 C₁ 分叉：原结果仍保留", 45, 25, 1120, 31, INK, 8)
+    d.text("thread", "同一 thread_id = T · checkpoint_ns = \"\"", 57, 112, 1110, 23, MUTED, 8)
 
     d.arrow("a-b", [(241, 321), (433, 321)], BLUE)
     d.arrow("b-c", [(594, 321), (797, 321)], BLUE)
@@ -36,14 +35,11 @@ def main() -> None:
     circle(d, "checkpoint-fork-final", 1041, 541, 161, PURPLE, "#e5dbff")
     d.text("fork-final-label", "C₂′\n新结果", 1080, 569, 120, 25, PURPLE, 8)
 
-    d.text("original-edge", "invoke(None,\nC₁.config)", 616, 256, 176, 21, BLUE, 8)
-    d.text("fork-edge", "update_state(C₁.config, {x})", 654, 425, 360, 21, PURPLE, 8)
-    d.text("resume-edge", "invoke(None,\nfork_config)", 854, 553, 180, 21, PURPLE, 8)
-    d.text("history-note", "get_state_history(T) 看同一 thread 的快照；StateSnapshot.parent_config 指向直接父版本。", 59, 745, 1325, 22, MUTED, 8)
-    d.text("lookup-note", "get_state(T) 取当前版本；get_state(T + checkpoint_id) 精确选取历史版本。", 59, 784, 1325, 22, MUTED, 8)
-    d.box("boundary", 45, 843, 1315, 93, "#b9c4d3", "#f7f9fc")
-    d.text("boundary-text", "示意只画关键快照，不代表执行仅写 5 个 checkpoint。\nInMemorySaver 仅适于测试；跨进程持久性取决于实际 saver。", 70, 855, 1265, 21, INK, 8)
-    d.text("footer", "执行状态版本不等于长期语义记忆。", 50, 966, 1280, 18, MUTED, 8)
+    d.text("original-edge", "原执行：节点 B", 612, 270, 220, 23, BLUE, 8)
+    d.text("fork-edge", "update_state(C₁.config, {x})", 654, 425, 390, 23, PURPLE, 8)
+    d.text("resume-edge", "invoke(None, fork_config)\n节点 B 再执行", 849, 470, 330, 23, PURPLE, 8)
+    d.text("lookup-note", "InMemorySaver：未指定 checkpoint_id → 最大 ID；指定 ID → 对应快照", 59, 752, 1140, 23, MUTED, 8)
+    d.text("history-note", "get_state_history(T)：两支可追溯；parent_config：直接父版本", 59, 795, 1120, 23, MUTED, 8)
     for element in d.elements:
         if element["type"] == "arrow":
             element.update(roughness=1, strokeWidth=3)

@@ -32,13 +32,13 @@ def message(scene: Scene, name: str, y: int, x1: int, x2: int,
     stroke(scene, name, [(x1, y), (x2, y)], color, dashed)
     left = lx if lx is not None else min(x1, x2) + 24
     width = lw if lw is not None else abs(x2 - x1) - 48
-    scene.text(f"{name}-label", label, left, y - 41, width, 20, color, 6)
+    scene.text(f"{name}-label", label, left, y - 46, width, 24, color, 6)
 
 
 def build():
     d = Scene()
     d.text("title", "OpenHands：动作先入账，结果后到达", 48, 23, 1200, 36, INK, 6)
-    d.text("subtitle", "LocalConversation.run() + 默认 Agent.step() 的一次工具调用", 50, 77, 1190, 19, MUTED, 6)
+    d.text("subtitle", "LocalConversation.run() + 默认 Agent.step() 的一次工具调用", 50, 77, 1190, 24, MUTED, 6)
 
     lanes = [
         (70, 170, "LocalConversation", BLUE, "#f1f7fe"),
@@ -53,7 +53,7 @@ def build():
         d.elements[-1]["opacity"] = 80
         lane_title = "Local\nConversation" if idx == 0 else title
         d.text(f"lane-{idx}-title", lane_title, x + 14, 170, 175,
-               18 if idx == 0 else 21, color, 8)
+               24, color, 8)
         stroke(d, f"lane-{idx}-line", [(cx, 221), (cx, 960)], color,
                dashed=True, arrow=False)
 
@@ -65,10 +65,10 @@ def build():
             lx=523, lw=510)
 
     message(d, "pause", 559, 480, 170, "WAITING_FOR_CONFIRMATION", AMBER,
-            dashed=True, lx=205, lw=265)
-    message(d, "resume", 655, 170, 480, "再次 run() → 未匹配动作", AMBER,
-            dashed=True, lx=198, lw=278)
-    d.text("direct", "无需确认：同轮继续", 530, 615, 258, 17, GREEN, 6)
+            dashed=True, lx=198, lw=370)
+    message(d, "resume", 655, 170, 480, "获准后再次 run()", AMBER,
+            dashed=True, lx=198, lw=290)
+    d.text("direct", "无需确认：同轮继续", 705, 615, 300, 24, GREEN, 6)
 
     message(d, "execute", 740, 480, 790, "tool(action, conversation)", GREEN,
             lx=505, lw=265)
@@ -78,11 +78,12 @@ def build():
             "ObservationEvent / AgentErrorEvent（回调入账）", GREEN,
             lx=521, lw=550)
 
-    d.box("footer", 72, 1024, 1126, 103, "#dce4ef", "#f7f9fc")
+    d.box("rejection", 72, 1010, 1126, 66, "#dce4ef", "#f7f9fc")
     d.elements[-1]["strokeWidth"] = 2
     d.elements[-1]["roughness"] = 1
-    d.text("footer-text", "拒绝确认 → UserRejectObservation（不执行工具）\n事件顺序不等于并行工具副作用顺序；这张图只画同步 LocalConversation 的局部路径。",
-           94, 1038, 1070, 18, INK, 6)
+    d.text("rejection-text", "拒绝确认 → UserRejectObservation（不执行工具）",
+           94, 1027, 1070, 24, INK, 6)
+    # Keep the parallel-order caveat in the adjacent text version.
     # Reduce vertical intervals while retaining label size at book width.
     for element in d.elements:
         if element["y"] >= 150:

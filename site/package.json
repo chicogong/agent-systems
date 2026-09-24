@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:content": "node scripts/prepare-content.mjs",
+    "dev": "npm run prepare:content && vitepress dev .",
+    "build": "npm run prepare:content && vitepress build .",
+    "build:public": "SITE_MODE=public node scripts/prepare-public.mjs && SITE_MODE=public VITE_PUBLIC_SITE=1 vitepress build . && node scripts/verify-public.mjs",
+    "preview": "vitepress preview ."
+  },
+  "devDependencies": {
+    "vitepress": "1.6.4"
+  },
+  "overrides": {
+    "vite": "6.4.3"
+  }
+}

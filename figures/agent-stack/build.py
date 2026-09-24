@@ -42,33 +42,33 @@ def arrow(d: Scene, name: str, points: list[tuple[int, int]], color: str,
 def build():
     d = Scene()
 
-    # The pale boundary denotes orchestration, not a claim that every product
-    # has one literal process or class named Harness.
+    # The pale boundary marks one decision flow, not a process or ownership
+    # boundary: the model call may cross out of the host process.
     d.box("harness-boundary", 256, 103, 614, 542, "#85b7a7", "#f5fbf8")
     d.elements[-1]["opacity"] = 65
     d.elements[-1]["roughness"] = 1
     d.elements[-1]["strokeWidth"] = 2
     d.elements[-1]["strokeStyle"] = "dashed"
-    label(d, "harness-name", "Harness · 运行与控制", 279, 119, 550, 25, "#217055")
+    label(d, "harness-name", "一轮决策流 · 非进程边界", 279, 119, 550, 25, "#217055")
 
     box(d, "cli", 34, 276, 180, 92, BLUE, "#d9ecff", "CLI / IDE\n接收任务", 23)
     arrow(d, "request", [(214, 320), (295, 320)], BLUE)
 
     box(d, "skill", 312, 187, 222, 74, GREEN, "#dcf8ec", "Skill · 流程知识", 22)
     arrow(d, "skill-to-context", [(405, 261), (405, 315)], GREEN, True)
-    label(d, "skill-edge", "按需读", 421, 274, 112, 18, GREEN)
+    label(d, "skill-edge", "按需读", 421, 271, 112, 22, GREEN)
 
-    box(d, "context", 294, 316, 185, 93, BLUE, "#d9ecff", "装配上下文", 23)
-    arrow(d, "context-to-model", [(479, 363), (540, 363)], PURPLE)
-    box(d, "model", 540, 316, 157, 93, PURPLE, "#e5d8ff", "生成式模型\n建议下一步", 21)
-    arrow(d, "model-to-gate", [(697, 363), (737, 363)], PURPLE)
-    box(d, "gate", 737, 308, 115, 108, ORANGE, "#ffe2b8", "权限\n与路由", 22)
+    box(d, "context", 294, 316, 185, 93, BLUE, "#d9ecff", "Harness\n装配上下文", 22)
+    arrow(d, "context-to-model", [(479, 363), (520, 363)], PURPLE)
+    box(d, "model", 520, 316, 157, 93, PURPLE, "#e5d8ff", "外部模型\n建议读工单", 22)
+    arrow(d, "model-to-gate", [(677, 363), (711, 363)], PURPLE)
+    box(d, "gate", 711, 308, 145, 108, ORANGE, "#ffe2b8", "宿主路由\n依实际权限", 22)
 
-    arrow(d, "gate-to-local", [(852, 332), (926, 282)], ORANGE)
+    arrow(d, "gate-to-local", [(856, 332), (926, 282)], ORANGE)
     box(d, "local", 926, 234, 187, 95, BLUE, "#d9ecff", "本地工具\n执行 / 验证", 22)
 
-    arrow(d, "gate-to-mcp", [(852, 393), (928, 464)], ORANGE)
-    box(d, "mcp", 928, 464, 187, 95, GREEN, "#dcf8ec", "MCP Server\n工具 / 资源", 21)
+    arrow(d, "gate-to-mcp", [(856, 393), (928, 464)], ORANGE)
+    box(d, "mcp", 928, 464, 187, 95, GREEN, "#dcf8ec", "MCP Server\n例：工单工具", 22)
 
     # Feedback is deliberately one loop: results are observations, not a
     # second authority that can bypass the harness.
@@ -76,9 +76,7 @@ def build():
                               (389, 579), (389, 409)], PURPLE)
     arrow(d, "remote-result", [(1115, 512), (1145, 512)], PURPLE)
     d.elements[-1]["endArrowhead"] = None
-    label(d, "observation-text", "工具结果 → 下一轮观察", 514, 597, 382, 20, MUTED)
-
-    label(d, "margin-note", "同一项任务；界面、模型、知识与连接都可替换。", 45, 688, 1030, 22, MUTED)
+    label(d, "observation-text", "工具结果 → 下一轮观察", 514, 597, 382, 22, MUTED)
     d.save(Path(__file__).with_name("scene.excalidraw"))
 
 

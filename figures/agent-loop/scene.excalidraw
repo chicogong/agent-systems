@@ -6,9 +6,9 @@
     {
       "id": "loop-lane",
       "type": "rectangle",
-      "x": 295,
+      "x": 236.0,
       "y": 175,
-      "width": 680,
+      "width": 544.0,
       "height": 345,
       "angle": 0,
       "strokeColor": "#cbd5e1",
@@ -36,9 +36,9 @@
     {
       "id": "task",
       "type": "rectangle",
-      "x": 35,
+      "x": 28.0,
       "y": 255,
-      "width": 220,
+      "width": 176.0,
       "height": 125,
       "angle": 0,
       "strokeColor": "#3578e5",
@@ -66,9 +66,9 @@
     {
       "id": "decision",
       "type": "rectangle",
-      "x": 335,
+      "x": 268.0,
       "y": 270,
-      "width": 180,
+      "width": 144.0,
       "height": 120,
       "angle": 0,
       "strokeColor": "#8056e8",
@@ -96,9 +96,9 @@
     {
       "id": "tool",
       "type": "rectangle",
-      "x": 545,
+      "x": 436.0,
       "y": 270,
-      "width": 180,
+      "width": 144.0,
       "height": 120,
       "angle": 0,
       "strokeColor": "#e88816",
@@ -126,9 +126,9 @@
     {
       "id": "observation",
       "type": "rectangle",
-      "x": 755,
+      "x": 604.0,
       "y": 270,
-      "width": 180,
+      "width": 144.0,
       "height": 120,
       "angle": 0,
       "strokeColor": "#2fa86a",
@@ -156,9 +156,9 @@
     {
       "id": "check",
       "type": "rectangle",
-      "x": 1025,
+      "x": 820.0,
       "y": 205,
-      "width": 220,
+      "width": 176.0,
       "height": 125,
       "angle": 0,
       "strokeColor": "#3578e5",
@@ -186,9 +186,9 @@
     {
       "id": "deliver",
       "type": "rectangle",
-      "x": 1025,
+      "x": 820.0,
       "y": 385,
-      "width": 220,
+      "width": 176.0,
       "height": 125,
       "angle": 0,
       "strokeColor": "#2fa86a",
@@ -216,9 +216,9 @@
     {
       "id": "task-to-decision",
       "type": "arrow",
-      "x": 255,
+      "x": 204.0,
       "y": 320,
-      "width": 80,
+      "width": 64.0,
       "height": 0,
       "angle": 0,
       "strokeColor": "#3578e5",
@@ -244,11 +244,11 @@
       "locked": false,
       "points": [
         [
-          0,
+          0.0,
           0
         ],
         [
-          80,
+          64.0,
           0
         ]
       ],
@@ -262,9 +262,9 @@
     {
       "id": "decision-to-tool",
       "type": "arrow",
-      "x": 515,
+      "x": 412.0,
       "y": 330,
-      "width": 30,
+      "width": 24.0,
       "height": 0,
       "angle": 0,
       "strokeColor": "#8056e8",
@@ -290,11 +290,11 @@
       "locked": false,
       "points": [
         [
-          0,
+          0.0,
           0
         ],
         [
-          30,
+          24.0,
           0
         ]
       ],
@@ -308,9 +308,9 @@
     {
       "id": "tool-to-observation",
       "type": "arrow",
-      "x": 725,
+      "x": 580.0,
       "y": 330,
-      "width": 30,
+      "width": 24.0,
       "height": 0,
       "angle": 0,
       "strokeColor": "#e88816",
@@ -336,11 +336,11 @@
       "locked": false,
       "points": [
         [
-          0,
+          0.0,
           0
         ],
         [
-          30,
+          24.0,
           0
         ]
       ],
@@ -354,9 +354,9 @@
     {
       "id": "observation-to-check",
       "type": "arrow",
-      "x": 935,
+      "x": 748.0,
       "y": 305,
-      "width": 90,
+      "width": 72.0,
       "height": -38,
       "angle": 0,
       "strokeColor": "#2fa86a",
@@ -382,11 +382,11 @@
       "locked": false,
       "points": [
         [
-          0,
+          0.0,
           0
         ],
         [
-          90,
+          72.0,
           -38
         ]
       ],
@@ -400,9 +400,9 @@
     {
       "id": "check-to-deliver",
       "type": "arrow",
-      "x": 1135,
+      "x": 908.0,
       "y": 330,
-      "width": 0,
+      "width": 0.0,
       "height": 55,
       "angle": 0,
       "strokeColor": "#3578e5",
@@ -428,11 +428,11 @@
       "locked": false,
       "points": [
         [
-          0,
+          0.0,
           0
         ],
         [
-          0,
+          0.0,
           55
         ]
       ],
@@ -446,9 +446,9 @@
     {
       "id": "check-failed-correctable",
       "type": "arrow",
-      "x": 1100,
+      "x": 880.0,
       "y": 205,
-      "width": -675,
+      "width": -540.0,
       "height": 65,
       "angle": 0,
       "strokeColor": "#d8891e",
@@ -470,7 +470,24 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "points": [[0, 0], [0, -48], [-675, -48], [-675, 65]],
+      "points": [
+        [
+          0.0,
+          0
+        ],
+        [
+          0.0,
+          -48
+        ],
+        [
+          -540.0,
+          -48
+        ],
+        [
+          -540.0,
+          65
+        ]
+      ],
       "lastCommittedPoint": null,
       "startBinding": null,
       "endBinding": null,
@@ -481,9 +498,9 @@
     {
       "id": "feedback",
       "type": "arrow",
-      "x": 850,
+      "x": 680.0,
       "y": 390,
-      "width": -425,
+      "width": -340.0,
       "height": 0,
       "angle": 0,
       "strokeColor": "#8056e8",
@@ -509,19 +526,19 @@
       "locked": false,
       "points": [
         [
-          0,
+          0.0,
           0
         ],
         [
-          0,
+          0.0,
           65
         ],
         [
-          -425,
+          -340.0,
           65
         ],
         [
-          -425,
+          -340.0,
           0
         ]
       ],
@@ -535,9 +552,9 @@
     {
       "id": "title",
       "type": "text",
-      "x": 35,
+      "x": 28.0,
       "y": 28,
-      "width": 1200,
+      "width": 960.0,
       "height": 48,
       "angle": 0,
       "strokeColor": "#172033",
@@ -570,48 +587,11 @@
       "lineHeight": 1.25
     },
     {
-      "id": "subtitle",
-      "type": "text",
-      "x": 36,
-      "y": 88,
-      "width": 1200,
-      "height": 26,
-      "angle": 0,
-      "strokeColor": "#536477",
-      "backgroundColor": "transparent",
-      "fillStyle": "solid",
-      "strokeWidth": 1,
-      "strokeStyle": "solid",
-      "roughness": 0,
-      "opacity": 100,
-      "groupIds": [],
-      "frameId": null,
-      "index": "a0014",
-      "roundness": null,
-      "seed": 2518,
-      "version": 1,
-      "versionNonce": 7742,
-      "isDeleted": false,
-      "boundElements": [],
-      "updated": 1,
-      "link": null,
-      "locked": false,
-      "text": "一张图看懂：目标进入受控循环，结果经过验证，才算完成。",
-      "fontSize": 20,
-      "fontFamily": 6,
-      "textAlign": "left",
-      "verticalAlign": "top",
-      "containerId": null,
-      "originalText": "一张图看懂：目标进入受控循环，结果经过验证，才算完成。",
-      "autoResize": false,
-      "lineHeight": 1.25
-    },
-    {
       "id": "loop-label",
       "type": "text",
-      "x": 325,
+      "x": 370,
       "y": 190,
-      "width": 400,
+      "width": 315,
       "height": 30,
       "angle": 0,
       "strokeColor": "#8056e8",
@@ -646,9 +626,9 @@
     {
       "id": "task-title",
       "type": "text",
-      "x": 58,
+      "x": 46.4,
       "y": 274,
-      "width": 170,
+      "width": 136.0,
       "height": 32,
       "angle": 0,
       "strokeColor": "#172033",
@@ -683,10 +663,10 @@
     {
       "id": "task-detail",
       "type": "text",
-      "x": 58,
+      "x": 46.4,
       "y": 318,
-      "width": 175,
-      "height": 22,
+      "width": 140.0,
+      "height": 24,
       "angle": 0,
       "strokeColor": "#536477",
       "backgroundColor": "transparent",
@@ -708,7 +688,7 @@
       "link": null,
       "locked": false,
       "text": "目标 · 权限\n完成标准",
-      "fontSize": 17,
+      "fontSize": 18,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
@@ -720,9 +700,9 @@
     {
       "id": "decision-title",
       "type": "text",
-      "x": 355,
+      "x": 284.0,
       "y": 289,
-      "width": 150,
+      "width": 120.0,
       "height": 30,
       "angle": 0,
       "strokeColor": "#172033",
@@ -757,10 +737,10 @@
     {
       "id": "decision-detail",
       "type": "text",
-      "x": 355,
+      "x": 284.0,
       "y": 337,
-      "width": 150,
-      "height": 22,
+      "width": 120.0,
+      "height": 24,
       "angle": 0,
       "strokeColor": "#536477",
       "backgroundColor": "transparent",
@@ -782,7 +762,7 @@
       "link": null,
       "locked": false,
       "text": "选择下一步",
-      "fontSize": 17,
+      "fontSize": 18,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
@@ -794,9 +774,9 @@
     {
       "id": "tool-title",
       "type": "text",
-      "x": 565,
+      "x": 452.0,
       "y": 289,
-      "width": 150,
+      "width": 120.0,
       "height": 30,
       "angle": 0,
       "strokeColor": "#172033",
@@ -831,10 +811,10 @@
     {
       "id": "tool-detail",
       "type": "text",
-      "x": 565,
+      "x": 452.0,
       "y": 337,
-      "width": 150,
-      "height": 22,
+      "width": 120.0,
+      "height": 24,
       "angle": 0,
       "strokeColor": "#536477",
       "backgroundColor": "transparent",
@@ -856,7 +836,7 @@
       "link": null,
       "locked": false,
       "text": "受控读写",
-      "fontSize": 17,
+      "fontSize": 18,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
@@ -868,9 +848,9 @@
     {
       "id": "observation-title",
       "type": "text",
-      "x": 775,
+      "x": 620.0,
       "y": 289,
-      "width": 150,
+      "width": 120.0,
       "height": 30,
       "angle": 0,
       "strokeColor": "#172033",
@@ -905,10 +885,10 @@
     {
       "id": "observation-detail",
       "type": "text",
-      "x": 775,
+      "x": 620.0,
       "y": 337,
-      "width": 150,
-      "height": 22,
+      "width": 120.0,
+      "height": 24,
       "angle": 0,
       "strokeColor": "#536477",
       "backgroundColor": "transparent",
@@ -930,7 +910,7 @@
       "link": null,
       "locked": false,
       "text": "输出 · 错误",
-      "fontSize": 17,
+      "fontSize": 18,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
@@ -942,9 +922,9 @@
     {
       "id": "check-title",
       "type": "text",
-      "x": 1048,
+      "x": 838.4,
       "y": 224,
-      "width": 170,
+      "width": 136.0,
       "height": 31,
       "angle": 0,
       "strokeColor": "#172033",
@@ -979,10 +959,10 @@
     {
       "id": "check-detail",
       "type": "text",
-      "x": 1048,
+      "x": 838.4,
       "y": 272,
-      "width": 170,
-      "height": 22,
+      "width": 136.0,
+      "height": 24,
       "angle": 0,
       "strokeColor": "#536477",
       "backgroundColor": "transparent",
@@ -1004,7 +984,7 @@
       "link": null,
       "locked": false,
       "text": "测试 · 证据",
-      "fontSize": 17,
+      "fontSize": 18,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
@@ -1016,9 +996,9 @@
     {
       "id": "deliver-title",
       "type": "text",
-      "x": 1048,
+      "x": 838.4,
       "y": 404,
-      "width": 170,
+      "width": 136.0,
       "height": 31,
       "angle": 0,
       "strokeColor": "#172033",
@@ -1053,10 +1033,10 @@
     {
       "id": "deliver-detail",
       "type": "text",
-      "x": 1048,
+      "x": 838.4,
       "y": 452,
-      "width": 170,
-      "height": 22,
+      "width": 136.0,
+      "height": 24,
       "angle": 0,
       "strokeColor": "#536477",
       "backgroundColor": "transparent",
@@ -1078,7 +1058,7 @@
       "link": null,
       "locked": false,
       "text": "可复现结果",
-      "fontSize": 17,
+      "fontSize": 18,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
@@ -1090,10 +1070,10 @@
     {
       "id": "feedback-label",
       "type": "text",
-      "x": 550,
+      "x": 440.0,
       "y": 465,
-      "width": 260,
-      "height": 21,
+      "width": 208.0,
+      "height": 24,
       "angle": 0,
       "strokeColor": "#8056e8",
       "backgroundColor": "transparent",
@@ -1115,7 +1095,7 @@
       "link": null,
       "locked": false,
       "text": "未解决 → 继续",
-      "fontSize": 16,
+      "fontSize": 18,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
@@ -1127,10 +1107,10 @@
     {
       "id": "verified-label",
       "type": "text",
-      "x": 1148,
+      "x": 918.4,
       "y": 341,
-      "width": 80,
-      "height": 21,
+      "width": 64.0,
+      "height": 24,
       "angle": 0,
       "strokeColor": "#3578e5",
       "backgroundColor": "transparent",
@@ -1152,7 +1132,7 @@
       "link": null,
       "locked": false,
       "text": "通过",
-      "fontSize": 16,
+      "fontSize": 18,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
@@ -1164,10 +1144,10 @@
     {
       "id": "failed-label",
       "type": "text",
-      "x": 625,
+      "x": 500.0,
       "y": 127,
-      "width": 420,
-      "height": 21,
+      "width": 336.0,
+      "height": 24,
       "angle": 0,
       "strokeColor": "#b66e0a",
       "backgroundColor": "transparent",
@@ -1189,49 +1169,12 @@
       "link": null,
       "locked": false,
       "text": "未通过且可修正 → 再试",
-      "fontSize": 16,
+      "fontSize": 18,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
       "originalText": "未通过且可修正 → 再试",
-      "autoResize": false,
-      "lineHeight": 1.25
-    },
-    {
-      "id": "footer",
-      "type": "text",
-      "x": 40,
-      "y": 555,
-      "width": 1200,
-      "height": 23,
-      "angle": 0,
-      "strokeColor": "#536477",
-      "backgroundColor": "transparent",
-      "fillStyle": "solid",
-      "strokeWidth": 1,
-      "strokeStyle": "solid",
-      "roughness": 0,
-      "opacity": 100,
-      "groupIds": [],
-      "frameId": null,
-      "index": "a0029",
-      "roundness": null,
-      "seed": 3073,
-      "version": 1,
-      "versionNonce": 8537,
-      "isDeleted": false,
-      "boundElements": [],
-      "updated": 1,
-      "link": null,
-      "locked": false,
-      "text": "验证不可修正则失败停止、不交付；后续章节再展开恢复与评测。",
-      "fontSize": 18,
-      "fontFamily": 6,
-      "textAlign": "left",
-      "verticalAlign": "top",
-      "containerId": null,
-      "originalText": "验证不可修正则失败停止、不交付；后续章节再展开恢复与评测。",
       "autoResize": false,
       "lineHeight": 1.25
     }

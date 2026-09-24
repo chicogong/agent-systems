@@ -6,4 +6,6 @@
 
 图中“再次运行”和“直接执行”是条件路径，不表示一个工具调用总要经历两次 `run()`。用户拒绝会产生 `UserRejectObservation`，不会调用工具。完整来源和例外见[关键代码路径](../../docs/systems/openhands/code-walkthrough.md)。
 
+图下的拒绝分支与主路径互斥。图内省去了长注释：结果事件的记录顺序不能推断并行工具副作用的发生顺序；图只描述同步 `LocalConversation` 的局部路径。
+
 本图映射官方 SDK 的固定提交 [`6ebd820d10794f1b52bb06ef6c19512888a1401b`](https://github.com/OpenHands/software-agent-sdk/tree/6ebd820d10794f1b52bb06ef6c19512888a1401b) 中同步 LocalConversation + 默认 Agent 的**静态源码路径**，不是运行轨迹；不覆盖 Agent Server、ACP 后端或工具沙箱实现。

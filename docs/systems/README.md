@@ -20,5 +20,7 @@ Pi 是最早写成的系统案例，用来建立“运行循环 → 交互外壳
 | [OpenClaw](openclaw/README.md) | Gateway 显式 sessionKey 的所有者解析与授权目标 |
 | [GPT Researcher](gpt-researcher/README.md) | Hybrid 本地/网页上下文汇合及空材料边界 |
 | [Qwen Code](qwen-code/README.md) | 延迟工具的 schema 发现与执行双路径 |
+| [Kimi Code](kimi-code/README.md) | 忙时 steer 缓冲如何在 step 边界进入当前 turn |
+| [MiMo Code](mimo-code/README.md) | 长会话 writer、checkpoint watermark 与窗口重建 |
 
-Aider、Cline、Goose、Gemini CLI、Kimi Code 等先列为扩展对照，是否深读由它们能否补充新的设计取舍决定。闭源产品只可依据官方公开资料做边界清晰的参考，不标成开源源码剖面。
+Aider、Cline、Goose、Gemini CLI 等先列为扩展对照，是否深读由它们能否补充新的设计取舍决定。闭源产品只可依据官方公开资料做边界清晰的参考，不标成开源源码剖面。
