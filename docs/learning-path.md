@@ -8,7 +8,7 @@ Agent 可以先理解为一个反复执行的过程：接收目标，依据已�
 
 **要回答：**模型的一次回答，何时变成了能影响外部世界的动作？先读本书的 [Agent loop](concepts/agent-loop.md) 和 [五层职责](concepts/model-harness-cli-mcp-skill.md)，再读 [Hugging Face Agents Course 第一单元](https://huggingface.co/learn/agents-course/unit1/introduction) 的 Think → Act → Observe 示例，以及 [Anthropic 的 Agent 构建模式](https://www.anthropic.com/engineering/building-effective-agents) 对固定工作流与动态 Agent 的区分。前者适合看清最小循环，后者帮助判断什么时候需要多一步路由、并行或委派。
 
-**动手：**拿“查询天气并写一句出门建议”画四格：用户目标、模型提出的工具调用、工具返回的天气、最终建议。在每条箭头旁写谁决定它。再把天气工具改成“发送消息”，标出需要增加的授权检查。纸笔即可，不必运行模型。
+**动手：**拿“查询天气并写一句出门建议”画四格：用户目标、模型提出的工具调用、工具返回的天气、最终建议。在每条箭头旁写谁决定它。再把天气工具改成“发送消息”，标出需要增加的授权检查。纸笔即可，不必运行模型。想看一条可复跑的授权、拒绝与验收轨迹，可接着试读[本地 Agent loop 练习](labs/first-agent-loop.md)：它只用 Python 标准库和固定脚本模拟提案，尚未收入本书 PDF。
 
 **验收：**你能指出工具返回错误时下一轮由谁发起，也能解释为什么提示词里的“请小心”不能代替执行权限。
 
