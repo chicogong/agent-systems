@@ -25,6 +25,8 @@ SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 
 目前 Vercel 项目未连接 Git；部署前先从最终书稿重新构建并通过门禁，再把 `dist/` 部署到已有的 `agent-systems-reader` 项目。不要让 Vercel 构建直接读取私有书稿仓库，也不要上传 PDF 或提交/推送本地工作树来触发部署。
 
+部署后，在同一份构建产物仍在本地时运行 `LIVE_URL=https://books.aimake.cc npm run verify:live`。脚本逐一比较 sitemap 中的 HTML、所有展示 SVG、sitemap/robots/字体说明与本地构建的 SHA-256，并检查四个私有路径仍为 404。它只读取线上公开资源，不改变部署；若随后重新构建了本地 `dist/`，应先确认新产物与线上对应同一提交再比较。
+
 ## 本次验收
 
-2026-09-24 从当前书稿构建出 54 篇正文、8 篇补充页和 25 张展示 SVG；本地门禁验证 63 个 HTML 页面及站内链接、sitemap、canonical、robots 和产物白名单。桌面与 390px 手机视口抽测了首页、新增权限对照、完成证据对照及 GPT Researcher 代码导读：页面无横向溢出、无损坏的正文图片或浏览器脚本错误。线上部署和非作者读者试读是独立验收项；本地检查不能据此称正式出版。
+2026-09-24 从当前书稿构建出 54 篇正文、8 篇补充页和 25 张展示 SVG；本地门禁验证 63 个 HTML 页面及站内链接、sitemap、canonical、robots 和产物白名单。桌面与 390px 手机视口抽测了首页、新增权限对照、完成证据对照及 GPT Researcher 代码导读：页面无横向溢出、无损坏的正文图片或浏览器脚本错误。线上同批内容的 63 个 URL 返回 200，抽查的私有路径返回 404；完整的逐页字节一致性由上述脚本复核。非作者读者试读仍是独立验收项，不能据此称正式出版。
