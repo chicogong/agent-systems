@@ -10,7 +10,7 @@ python3 scripts/build_markdown.py
 
 生成 `output/markdown/agent-systems-md.zip`。解压后，从 `agent-systems-md/README.md` 开始阅读；也可以把**整个** `agent-systems-md` 文件夹作为 Obsidian vault 打开，或复制进已有 vault。保留文件夹内部结构：章节、图的文字版、SVG/PNG 和可编辑 `.excalidraw` 图源使用相对路径。阅读包只收书稿和必要的导航、证据与图稿文件；指向写作计划或构建脚本的少数链接改为仓库链接。它使用标准 Markdown 链接，不依赖 Obsidian 专用插件或 wikilink，也不需要 PDF 的字体或渲染依赖。
 
-生成器逐条检查包内本地链接与图片，缺失即失败。ZIP 不提交 Git；每次书稿构建与每周审稿任务会将它和 PDF 一同上传为待复核 Artifact。Action 使用当前提交 SHA 生成指向包外写作文件的固定仓库链接；日后制作 tag 版本可用 `--ref <tag>`。包内 Markdown 是导出物，改稿请回仓库源文件。
+生成器逐条检查包内本地链接与图片，缺失即失败；两条无需 API Key 的入门练习还带上 `examples/` 下的脚本与测试，可在解压包根目录离线运行。ZIP 不提交 Git；每次书稿构建与每周审稿任务会将它和 PDF 一同上传为待复核 Artifact。Action 使用当前提交 SHA 生成指向包外写作文件的固定仓库链接；日后制作 tag 版本可用 `--ref <tag>`。包内 Markdown 是导出物，改稿请回仓库源文件。
 
 ## PDF 预览
 
@@ -45,4 +45,4 @@ PDF 构建只读书稿与图稿，写入指定输出路径；不会顺手重写�
 
 [封面设计与分辨率说明](assets/README.md)应单独看：目前以原图插画加矢量排版维持选定封面的视觉一致性。原插画放到 A4 页约 131 PPI；PDF 页面导出为 300 DPI 也不会增加插画的原始细节。正式印刷前仍需高清分层素材或忠实重绘；生成图中没有经过核对的 ISBN、页码和许可一律不用。
 
-若要核对纸面版式或向印厂询价，先运行 `python3 scripts/prepare_print_proof.py` 生成 108 页 A4 内文校样及封面、封底参考页。它们是本地临时产物，不是可以直接下单的印刷母版；书脊、出血与最终封面必须依据印厂模板重新制作。
+若要核对纸面版式或向印厂询价，先按[第一册样书询价简报](print-proof-brief.md)确认规格，再运行 `python3 scripts/prepare_print_proof.py` 按**当前** PDF 页数生成 A4 内文校样及封面、封底参考页。脚本会在内文末尾补空白页，实际页数应以本次输出核对，不再写死旧版数字。它们是本地临时产物，不是可以直接下单的印刷母版；书脊、出血与最终封面必须依据印厂模板重新制作。

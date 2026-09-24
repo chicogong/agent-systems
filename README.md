@@ -17,7 +17,7 @@
 | 同一问题为何有不同设计？ | [横向对照](docs/comparisons/README.md) |
 | 先查术语，还是按书的顺序阅读？ | [术语表](docs/glossary.md) · [阅读指南](book/frontmatter/reading-guide.md) |
 
-第一次读可以从[五层职责](docs/concepts/model-harness-cli-mcp-skill.md)进入，再读 [Agent loop](docs/concepts/agent-loop.md)，然后分别看 [Pi 的循环与会话](docs/systems/pi/README.md)、[Codex 的执行审批](docs/systems/codex/README.md) 或 [Letta Code 的记忆可见性](docs/systems/letta/README.md)。这些图各回答一个问题，不合成一张虚构的“通用 Agent 内部架构图”。想按书逐章读，请打开[完整书序目录](book/CONTENTS.md)；[系统索引](docs/systems/README.md)则适合按项目查找。
+第一次接触 Agent，按[渐进学习路线](docs/learning-path.md)先读 [Agent loop](docs/concepts/agent-loop.md)、做[第一条本地练习](docs/labs/first-agent-loop.md)，再读[五层职责](docs/concepts/model-harness-cli-mcp-skill.md)；遇到具体问题时再打开 [Pi 的循环与会话](docs/systems/pi/README.md)、[Codex 的执行审批](docs/systems/codex/README.md)或[Letta Code 的记忆可见性](docs/systems/letta/README.md)。这些图各回答一个问题，不合成一张虚构的“通用 Agent 内部架构图”。想按书逐章读，请打开[完整书序目录](book/CONTENTS.md)；[系统索引](docs/systems/README.md)则适合按项目查找。
 
 ## 在哪里读
 

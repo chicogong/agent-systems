@@ -6,11 +6,11 @@ Agent 可以先理解为一个反复执行的过程：接收目标，依据已�
 
 ## 1. 零基础：认出循环和控制权
 
-**要回答：**模型的一次回答，何时变成了能影响外部世界的动作？先读本书的 [Agent loop](concepts/agent-loop.md) 和 [五层职责](concepts/model-harness-cli-mcp-skill.md)，再读 [Hugging Face Agents Course 第一单元](https://huggingface.co/learn/agents-course/unit1/introduction) 的 Think → Act → Observe 示例，以及 [Anthropic 的 Agent 构建模式](https://www.anthropic.com/engineering/building-effective-agents) 对固定工作流与动态 Agent 的区分。前者适合看清最小循环，后者帮助判断什么时候需要多一步路由、并行或委派。
+**要回答：**模型的一次回答，何时变成了能影响外部世界的动作？先只读本书的 [Agent loop](concepts/agent-loop.md)，再做[本地 Agent loop 练习](labs/first-agent-loop.md)；读懂提案、授权、执行和验收后，再回头看[五层职责](concepts/model-harness-cli-mcp-skill.md)。想看更多例子，可选读 [Hugging Face Agents Course 第一单元](https://huggingface.co/learn/agents-course/unit1/introduction) 的 Think → Act → Observe 示例，以及 [Anthropic 的 Agent 构建模式](https://www.anthropic.com/engineering/building-effective-agents) 对固定工作流与动态 Agent 的区分。外部课是延伸阅读，不是完成本书第一层的前置条件。
 
-**动手：**拿“查询天气并写一句出门建议”画四格：用户目标、模型提出的工具调用、工具返回的天气、最终建议。在每条箭头旁写谁决定它。再把天气工具改成“发送消息”，标出需要增加的授权检查。纸笔即可，不必运行模型。想看一条可复跑的授权、拒绝与验收轨迹，可接着试读[本地 Agent loop 练习](labs/first-agent-loop.md)：它只用 Python 标准库和固定脚本模拟提案，尚未收入本书 PDF。
+**动手：**拿“查询天气并写一句出门建议”画四格：用户目标、模型提出的工具调用、工具返回的天气、最终建议。在每条箭头旁写谁决定它。再把天气工具改成“发送消息”，标出需要增加的授权检查。纸笔即可，不必运行模型。随后运行[本地 Agent loop 练习](labs/first-agent-loop.md)，亲眼比较获准写入、写入被拒与写错配置三条轨迹；它只用 Python 标准库和固定脚本模拟提案，不需要模型账号。
 
-**验收：**你能指出工具返回错误时下一轮由谁发起，也能解释为什么提示词里的“请小心”不能代替执行权限。
+**验收：**你能指出工具返回错误时下一轮由谁发起，也能解释为什么把“请小心”写进模型输入仍不能代替宿主在执行前拒绝一次写入。
 
 ## 2. 能用工具：区分接口、指令和执行边界
 
@@ -35,6 +35,8 @@ Agent 可以先理解为一个反复执行的过程：接收目标，依据已�
 **动手：**设计一个“搜三份资料并写摘要”的小任务合同，写出允许的来源、每一步产物、引用位置、最长运行时间和停止条件。在“抓取完成后、摘要保存前”假设进程崩溃，分别记录已完成、未完成、结果未知的动作。对结果未知的外部写入安排读回或人工对账，再考虑重试。
 
 **验收：**你能分别展示任务结果、工具轨迹、来源证据和恢复记录；其中任何一项缺失，都不把任务标为已验证。进一步的缺口和发布门槛看[路线页](roadmap.md)。
+
+**再做一次最小实验：**如果你已经完成第一层的本地练习，运行[回执丢失后的对账练习](labs/remote-effect.md)。它用四条可重复轨迹说明：操作已发出、收到回执、远端实际接受是三件事；查询不可用时应停在“未知”，而不是盲重试。它是模拟器，不需要真实服务或 API Key。
 
 ## 怎样继续选材料
 

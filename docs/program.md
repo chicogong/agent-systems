@@ -34,7 +34,10 @@
 | --- | --- | --- |
 | [Aider](https://github.com/Aider-AI/aider)、[Cline](https://github.com/cline/cline)、[Goose](https://github.com/aaif-goose/goose)、[Gemini CLI](https://github.com/google-gemini/gemini-cli) | 在循环、上下文装配、授权或工具生命周期上，是否提供与已有案例不同的取舍？ | 至少指出一个现有章节解释不了的问题，并固定可定位的源码版本。 |
 | [AutoGen](https://github.com/microsoft/autogen)、[CrewAI](https://github.com/crewAIInc/crewAI)、[Pydantic AI](https://github.com/pydantic/pydantic-ai) | 框架提供哪些状态、委派与运行保证，哪些仍须应用自己完成？ | 先明确框架与成品 Agent 的比较边界，避免直接拿不同层次排功能榜。 |
+| [OpenAI Agents SDK](https://github.com/openai/openai-agents-python)、[Google ADK](https://github.com/google/adk-python)、[AgentScope](https://github.com/agentscope-ai/agentscope) | 框架的循环、交接、工具、会话和评测各由谁负责？应用还必须补哪些部署与远端副作用协议？ | 优先选择一个与现有 LangGraph 切面形成明确设计对照的路径；先固定源码与官方文档，不以“框架功能表”凑系统数。 |
 | [Letta 历史服务](https://github.com/letta-ai/letta) | 旧版 memory blocks 与当前 Letta Code local MemFS 有何连续或断裂？ | 核对仓库维护状态与版本；只作历史对照，不把旧实现标作现行架构。 |
 | WorkBuddy 等闭源工具的使用路径 | 对同一任务，项目指令、工具接入、审批与交付证据在用户界面上如何呈现？ | 先确认具体产品与官方资料，再用获授权的环境记录可复现实操；只写公开行为，不猜内部架构。 |
 
 新增剖面按[系统模板](systems/TEMPLATE.md)写一个可证伪的问题，固定仓库、commit、关键文件、核对日期与许可，再决定是否需要主图和第二篇。找不到可靠来源或只重复已有解释时，保留为候选，不为凑热门名单扩书。闭源产品只能据官方公开资料作边界清晰的参考，不能写成开源源码剖面。
+
+具体怎样从“读懂机制”走到“能完成一项任务”，以及哪些候选先写、哪些延后，见[学习内容扩展计划](curriculum-expansion.md)。这是一份选题和验收安排，不是已发表章节清单。

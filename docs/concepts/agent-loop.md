@@ -16,6 +16,8 @@ Agent 不只是“模型回答了一次”。对需要行动的任务，宿主�
 
 沿这条线读源码，至少要找到三个控制点：谁组装模型能看到的输入，谁有权执行带副作用的动作，谁决定何时停止。不要把“模型返回一个 tool call”误当成执行日志，也不要把“退出循环”误当成任务成功。图中的最终验证是读者理解完整任务生命周期的**建议检查点**；它不声称下面三个项目都内置同一个验收器。
 
+如果你是第一次读，先[运行本书的本地练习](../labs/first-agent-loop.md)，再回来读下面的真实项目：练习中的 `propose(observations, mode)` 代替模型提案，`run()` 先批准或拒绝写入，`execute()` 才真的改临时文件，终态检查再判断是否达到目标。它把“输入装配”简化成向固定脚本传递 `observations`，没有模拟真实项目的提示词、上下文选择与模型调用。下面的源码案例补上不同实现的复杂性，而不是完成练习的前置知识。
+
 ## 三种具体实现揭示不同边界
 
 在固定版本的 [Pi](../systems/pi/README.md) 中，`Agent.prompt()` 进入运行循环；`runLoop` 组织模型请求、工具结果、steering 与 follow-up。coding-agent 的会话持久化在外壳层，不应画成 agent-core 本身的文件存储。[`runLoop` 源码](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L162-L320)

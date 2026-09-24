@@ -6,6 +6,7 @@
 docs/concepts/model-harness-cli-mcp-skill.md
 docs/concepts/agent-workflow-multiagent.md
 docs/concepts/agent-loop.md
+docs/labs/first-agent-loop.md
 docs/concepts/context-vs-memory.md
 docs/concepts/session-compaction-and-memory.md
 docs/concepts/approval-vs-sandbox.md
@@ -52,6 +53,7 @@ docs/comparisons/persisted-vs-visible.md
 docs/comparisons/four-kinds-of-state.md
 docs/comparisons/claude-code-codex.md
 docs/comparisons/permission-and-recovery.md
+docs/labs/remote-effect.md
 docs/comparisons/completion-and-evidence.md
 @part 附录 · 术语与核验方法
 docs/glossary.md

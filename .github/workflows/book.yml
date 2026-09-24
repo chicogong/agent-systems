@@ -6,6 +6,7 @@ on:
       - 'book/**'
       - 'docs/**'
       - 'figures/**'
+      - 'examples/**'
       - 'scripts/**'
       - 'sources/**'
       - 'README.md'
@@ -19,6 +20,7 @@ on:
       - 'book/**'
       - 'docs/**'
       - 'figures/**'
+      - 'examples/**'
       - 'scripts/**'
       - 'sources/**'
       - 'README.md'
@@ -56,6 +58,8 @@ jobs:
           python scripts/check_repo.py
           python scripts/check_sources.py
           python scripts/build_contents.py --check
+          python -m unittest discover -s examples/first-agent-loop -p 'test_*.py'
+          python -m unittest discover -s examples/remote-effect -p 'test_*.py'
           python scripts/test_build_book.py
           python scripts/test_check_repo.py
           python scripts/test_check_figure_legibility.py

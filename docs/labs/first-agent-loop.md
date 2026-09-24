@@ -4,7 +4,7 @@
 
 这是一条**不需要 API Key、仅用 Python 标准库**的练习。目标不是做一个有用的编码助手，而是亲手观察一个容易被“Agent 已完成”掩盖的区别：**提案不等于执行许可；工具调用成功不等于任务验收。**真实 Agent 的提案通常来自模型；这里的 `propose()` 用固定脚本代替模型，由宿主决定能否执行，再按原任务验证候选成果。因此实验只验证控制流，不证明真实模型的推理质量。
 
-任务是：把配置文件中的 `timeout` 从 30 改为 5，保持 `retries=3`。要求先读配置、获准后再写、检查两个条件，最后只报告“可提交验收”（`candidate_ready`）或“受阻”（`blocked`）；**没有用户接受环节**。程序在系统临时目录创建 `config.json`，运行结束即清理，不改真实项目文件，也不调用网络。
+任务是：把配置文件中的 `timeout` 从 30 改为 5，保持 `retries=3`。要求先读配置、获准后再写、检查两个条件。三条指定模式最后报告“可提交验收”（`candidate_ready`）或“受阻”（`blocked`）；**没有用户接受环节**。程序另设一个 5 步预算上限，耗尽时会返回 `budget_exhausted`，但这三条固定脚本路径都不会走到它。程序在系统临时目录创建 `config.json`，运行结束即清理，不改真实项目文件，也不调用网络。
 
 ## 运行与观察
 
@@ -21,15 +21,27 @@ python3 -m unittest discover -s examples/first-agent-loop -p 'test_*.py'
 
 | 模式 | 最终 `status` | 最终配置 | 应看到的关键事件 |
 | --- | --- | --- | --- |
-| `normal` | `candidate_ready` | `timeout=5, retries=3` | `read → write → check`，写入获准，检查通过。 |
-| `denied` | `blocked` | `timeout=30, retries=3` | 写入前 `approval.granted=false`，随后返回拒绝观察；没有写入。 |
-| `regression` | `blocked` | `timeout=5, retries=0` | 写入执行了，但 `check` 报 `retry rule changed`。 |
+| `normal` | `candidate_ready` | `timeout=5, retries=3` | `proposal: read` → 读结果 → `proposal: write` → `approval.granted=true` → 写结果 → `proposal: check` → 检查通过。 |
+| `denied` | `blocked` | `timeout=30, retries=3` | 会看到 `proposal: write` 和一条 `tool_result`，但 `approval.granted=false`；文件**未改**，结果说明拒绝发生在执行前。 |
+| `regression` | `blocked` | `timeout=5, retries=0` | 写入获准且执行了，但 `check` 的结果是 `ok=false`、`retry rule changed`。 |
+
+例如 `denied` 模式中，关键事件按顺序是：
+
+```json
+[
+  {"event":"proposal","tool":"write","seen_results":1},
+  {"event":"approval","granted":false},
+  {"event":"tool_result","tool":"write","ok":false,"detail":"write denied before execution"}
+]
+```
+
+这是从完整 `events` 数组中摘出的三个相邻对象，不是程序会单独打印的小数组。**提出 `write`、收到拒绝结果，与真的执行 `write` 是三件事。**如果只看到工具名而忽略 `event` 和 `ok`，就会把一次被拒提案误读为写入已发生。
 
 在正常模式中，第二次提案的 `seen_results` 是 1，说明提案函数拿到了 `read` 的结果；第三次提案收到写入结果后才要求 `check`。这只模拟**下一步依赖上次观察**：固定脚本仅检查结果中的工具类型和 `ok`，不会根据读到的配置值规划写入参数。写入是练习宿主的本地工具，审批发生在调用前；`finish` 只是提案函数希望停止，外层 `run()` 仍独立检查配置，再将它标为 `candidate_ready`。这个状态不是“用户已接受”。
 
 ## 沿代码看四个控制点
 
-完整可运行代码在仓库的 `examples/first-agent-loop/demo.py`，断言在同目录 `test_demo.py`。打开它们，按下面四个位置读，不必先理解所有 Python 语法：
+完整可运行代码在仓库的 `examples/first-agent-loop/demo.py`，断言在同目录 `test_demo.py`。打开它们，按下面四个位置读，不必先理解所有 Python 语法。它们把[概念页的三个问题](../concepts/agent-loop.md)拆得更细：输入装配在这里仅是 `observations` 传给提案函数；授权和执行是两个位置；停止后还有独立的终态检查。
 
 1. `propose(observations, mode)` 只返回下一步提案，不能自行写文件。它把上次工具结果当输入；错误或拒绝会让它提出 `stop`。
 2. `run()` 收到 `write` 提案时先记录 `approval`。拒绝时生成一次 `ok=false` 的观察并继续循环，**不调用** `execute()`。
