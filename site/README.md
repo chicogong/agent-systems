@@ -53,4 +53,4 @@ Vercel 部署前须人工核对 `dist/pdf.html`、`dist/book/agent-systems-publi
 
 ## 本次验收
 
-2026-09-24 从当前书稿构建出 54 篇正文、8 篇补充页、1 个反馈页和 25 张展示 SVG；默认与 PDF 模式分别通过 64／65 页的本地门禁。桌面与 390px 手机浏览器抽查首页、PDF 页和反馈页，确认无横向溢出、脚本错误或断开的 PDF 下载；小屏原生 PDF 嵌入区隐藏，保留直接打开链接。已将公共链接版 107 页 PDF 人工部署到 [阅读页](https://books.aimake.cc/pdf)，其 SHA-256 为 `9be69fcd82c3d13b4d3baa54b3827ce44fa353aff7dc378772d07956e4f52dab`。`verify:live` 比对线上 65 个 HTML、25 个 SVG、3 个元数据文件与 PDF 均和本地构建逐字节一致，4 条私有路径返回 404，PDF 响应头包含 `X-Robots-Tag: noindex`。非作者读者试读仍是独立验收项，不能据此称正式出版。
+2026-09-24 从当前书稿构建出 54 篇正文、8 篇补充页、1 个反馈页和 25 张展示 SVG；默认与 PDF 模式分别通过 64／65 页的本地门禁。桌面与 390px 手机浏览器抽查首页、PDF 页和反馈页，确认无横向溢出、脚本错误或断开的 PDF 下载；小屏原生 PDF 嵌入区隐藏，保留直接打开链接。已将公共链接版 107 页 PDF 人工部署到 [阅读页](https://books.aimake.cc/pdf)，其 SHA-256 为 `394c9110cb9ac2b220fc768e6392225a3e2a15fa936892ffc8d652dee804bc1a`。Vercel 部署 `dpl_E6ucmFFhfVVP1A6DVG8NJdqFiw4v` 的 `verify:live` 比对线上 65 个 HTML、25 个 SVG、3 个元数据文件与 PDF 均和本地构建逐字节一致，4 条私有路径返回 404，PDF 响应头包含 `X-Robots-Tag: noindex`。非作者读者试读仍是独立验收项，不能据此称正式出版。
