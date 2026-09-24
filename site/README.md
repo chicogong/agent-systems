@@ -49,7 +49,7 @@ Vercel 部署前须人工核对 `dist/pdf.html`、`dist/book/agent-systems-publi
 
 目前 Vercel 项目未连接 Git；部署前先从最终书稿重新构建并通过门禁，再把 `dist/` 部署到已有的 `agent-systems-reader` 项目。例如从 `site/` 执行 `vercel link --cwd .vitepress/dist --scope chico-projects --project agent-systems-reader --yes`，核对生成的 `dist/vercel.json` 和链接的项目，再执行 `vercel deploy --cwd .vitepress/dist --prod --yes`。不要让 Vercel 构建直接读取私有书稿仓库，也不要把推送工作树等同于网站部署。
 
-部署后，在同一份构建产物仍在本地时运行 `LIVE_URL=https://books.aimake.cc npm run verify:live`。脚本逐一比较 sitemap 中的 HTML、所有展示 SVG、sitemap/robots/字体说明与本地构建的 SHA-256，并检查四个私有路径仍为 404。它只读取线上公开资源，不改变部署；若随后重新构建了本地 `dist/`，应先确认新产物与线上对应同一提交再比较。
+部署后，在**实际部署的同一份 `dist/`** 仍在本地时运行 `LIVE_URL=https://books.aimake.cc npm run verify:live`。脚本逐一比较 sitemap 中的 HTML、所有展示 SVG、sitemap/robots/字体说明与本地构建的 SHA-256，并检查四个私有路径仍为 404。它只读取线上公开资源，不改变部署；不要在验收前重建 `dist/`：实测同一提交的重复 VitePress 构建仍可能产生不同的前端资源哈希，新产物的 HTML 因引用改变而不能与旧部署逐字节比较。
 
 ## 本次验收
 
