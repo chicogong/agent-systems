@@ -4,7 +4,7 @@
 
 <img src="book/assets/cover-preview.png" alt="图解 Agent 系统封面预览" width="240">
 
-这是一部持续写作的预览版指南，不是某个 Agent 项目的说明书。**机制是主线，项目是有版本边界的案例，横向对照解释不同实现的取舍。** [在线阅读站](https://books.aimake.cc/)和[PDF 电子校样](https://books.aimake.cc/pdf)已公开；GitHub 源仓仍保持私有。静态源码阅读不等于运行验证，也不代表已完成整本书的外部试读或正式出版。
+这是一部持续写作的预览版指南，不是某个 Agent 项目的说明书。**机制是主线，项目是有版本边界的案例，横向对照解释不同实现的取舍。** [在线阅读站](https://books.aimake.cc/)和[PDF 电子校样](https://books.aimake.cc/pdf)可公开阅读；本仓库提供可核对的源稿与可编辑图。静态源码阅读不等于运行验证，也不代表已完成整本书的外部试读或正式出版。
 
 ## 从问题进入
 
@@ -36,6 +36,6 @@
 
 每篇系统剖面应说明上游仓库与 commit、读到的源码或官方文档、结论适用范围，以及事实、推断和未知的区别。[来源规则](sources/README.md) · [图稿与导出规则](figures/README.md) · [贡献指南](CONTRIBUTING.md)
 
-原创正文和图采用 [CC BY 4.0](LICENSE-CONTENT.md)，脚本与工作流采用 [MIT](LICENSE-CODE)。上游项目遵守各自许可；链接不表示它们为本书背书。仓库公开、正式出版、许可终审与印刷验收是独立步骤，不由构建成功自动完成。
+原创正文和图采用 [CC BY 4.0](LICENSE-CONTENT.md)，脚本与工作流采用 [MIT](LICENSE-CODE)。上游项目遵守各自许可；链接不表示它们为本书背书。公开预览、正式出版、许可终审与印刷验收是独立步骤，不由构建成功自动完成。
 
 联系作者：[ghr7719@gmail.com](mailto:ghr7719@gmail.com)。读者可用[网站反馈入口](https://books.aimake.cc/feedback)报告内容勘误并附可复现的源码证据；GitHub Issues 是否作为公共反馈入口由维护者另行决定。

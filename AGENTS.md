@@ -1,6 +1,6 @@
 # 图解 Agent 系统：协作约定
 
-本仓库是公开指南的筹备稿。以 `README.md` 为读者入口，以 `docs/roadmap.md` 为当前范围；不要把私人阅读库、聊天记录或账户数据复制进来。
+本仓库维护公开指南的持续预览稿。以 `README.md` 为读者入口，以 `docs/roadmap.md` 为当前范围；不要把私人阅读库、聊天记录或账户数据复制进来。
 
 - `docs/editorial-plan.md` 管写作与验收方法，`docs/program.md` 只管选题；Pi 的首篇计划是历史工单，不作为整本书的目录或当前进度。
 - Markdown 正文是唯一源稿，`book/manifest.txt` 同时控制 PDF 和可携带 Markdown 阅读包的章序。不要在 `output/` 导出物里改稿，也不要为 Obsidian 另写一套正文。

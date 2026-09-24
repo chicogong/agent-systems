@@ -516,7 +516,7 @@ def build(output: Path, font_path: Path, public_links: bool = False) -> None:
         Paragraph("关于本版", style["h1"]),
         Paragraph("本书的项目结论对应各章注明的固定源码版本。除非单独说明，它们是静态代码阅读，不是运行评测或产品安全认证。", style["body"]),
         Paragraph('原创文字与图：<link href="https://creativecommons.org/licenses/by/4.0/legalcode" color="#2563a6">CC BY 4.0</link>。构建脚本：<link href="https://opensource.org/license/mit" color="#2563a6">MIT</link>。正文 <link href="https://github.com/google/fonts/blob/e44c4b011a820c2cbe2fd2cfa8052037d7edb571/ofl/notosanssc/OFL.txt" color="#2563a6">Noto Sans SC</link>、代码 <link href="https://github.com/google/fonts/blob/e44c4b011a820c2cbe2fd2cfa8052037d7edb571/ofl/jetbrainsmono/OFL.txt" color="#2563a6">JetBrains Mono</link> 均依 SIL OFL 1.1 授权。上游项目与其商标、代码遵守各自许可；链接不表示对本书的认可。', style["body"]),
-        Paragraph("正文以 Markdown 为准；PDF 由书稿清单自动生成。章节有意保留研究范围、未覆盖情况和可点击的固定源码链接。" + ("本公共阅读版的内部参考链接只指向在线章节和已发布的图稿；可编辑图源暂未公开。" if public_links else ""), style["body"]),
+        Paragraph("正文以 Markdown 为准；PDF 由书稿清单自动生成。章节有意保留研究范围、未覆盖情况和可点击的固定源码链接。" + ("本公共阅读版的内部参考链接优先指向在线章节和已发布的图稿；可编辑图源可从公开源码仓查看。" if public_links else ""), style["body"]),
         PageBreak(),
     ]
     chapter_index = 0

@@ -52,7 +52,7 @@ if (pdfPublished) {
   }
 }
 const text = (await Promise.all(allFiles.filter((file) => /\.(?:html|js|css|json|xml|txt)$/.test(file)).map((file) => readFile(file, 'utf8')))).join('\n')
-for (const forbidden of ['github.com/chicogong/agent-systems', 'href="/assets/figures/scene.excalidraw"', '下载可编辑图源']) {
+for (const forbidden of ['href="/assets/figures/scene.excalidraw"', '下载可编辑图源']) {
   if (text.includes(forbidden)) throw new Error(`Public output contains forbidden marker: ${forbidden}`)
 }
 
@@ -78,7 +78,7 @@ for (const file of expected) {
   if (file !== 'index.html' && file !== 'feedback.html' && file !== 'pdf.html' && !html.includes('mailto:ghr7719@gmail.com')) throw new Error(`${file}: missing chapter feedback link`)
   if (/图源\s*·\s*PNG 预览|可编辑图源\s*·\s*PNG 预览/.test(html)) throw new Error(`${file}: inert private figure labels leaked into public prose`)
   for (const [, href] of html.matchAll(/href="([^"]+)"/g)) {
-    if (href.includes('github.com/chicogong/agent-systems') || href.endsWith('.excalidraw')) throw new Error(`${file}: private or editable source link ${href}`)
+    if (href.endsWith('.excalidraw')) throw new Error(`${file}: editable source artifact leaked into site ${href}`)
     if (!href.startsWith('/') && !href.startsWith('#')) continue
     const [rawRoute, fragment] = href.split('#')
     const route = rawRoute ? decodeURI(rawRoute.split('?')[0]) : pathname

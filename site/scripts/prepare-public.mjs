@@ -80,9 +80,7 @@ function rewrite(markdown, source) {
   ).join(' · ')).join('\n')
   return withoutPrivateAssets.replace(/(!?)\[([^\]]+)\]\(([^\s)]+)\)/g, (full, image, label, target) => {
     if (target.startsWith('#')) return full
-    if (/^https?:\/\//.test(target)) {
-      return /^https:\/\/github\.com\/chicogong\/agent-systems(?:\/|$)/.test(target) ? label : full
-    }
+    if (/^https?:\/\//.test(target)) return full
     if (/^mailto:[^@\s)]+@[^@\s)]+\.[^@\s)]+$/i.test(target)) return full
     if (/^[a-z]+:/i.test(target) || target.startsWith('//')) throw new Error(source + ': unsupported URL scheme ' + target)
     const { resolved, suffix } = resolve(source, target)
@@ -110,7 +108,7 @@ function rewrite(markdown, source) {
     if (resolved === 'README.md') return '[' + label + '](/)'
     if (routes.has(resolved)) return '[' + label + '](' + routes.get(resolved) + suffix + ')'
     unresolved.add(source + ': ' + target)
-    return label + '（仓库开放后提供）'
+    return '[' + label + '](https://github.com/chicogong/agent-systems/blob/main/' + resolved + suffix + ')'
   })
 }
 function explanation(markdown) {
@@ -185,7 +183,7 @@ description: "《图解 Agent 系统》在线阅读：从 Agent 运行机制到�
 
 从运行机制到开源实现，沿问题读懂 Agent 怎样决策、调用工具、管理上下文与记忆，并在权限和失败边界下完成任务。这是一本持续校稿的免费中文技术书，正文可直接在网页阅读。
 
-> **在线预览稿。** 本站已收录书稿清单中的 ${chapterCount} 篇正文和部分阅读索引与来源说明。${pdfFile ? 'PDF 电子校样可在线阅读' : 'PDF 暂未在本站发布'}；可编辑图源与脚本不随网站发布，能否从源码仓访问取决于仓库可见性。系统剖面以篇内固定源码版本为准，不代表运行评测。
+> **在线预览稿。** 本站已收录书稿清单中的 ${chapterCount} 篇正文和部分阅读索引与来源说明。${pdfFile ? 'PDF 电子校样可在线阅读' : 'PDF 暂未在本站发布'}；可编辑图源与脚本不随网站发布，可从[公开源码仓](https://github.com/chicogong/agent-systems)查看。系统剖面以篇内固定源码版本为准，不代表运行评测。
 
 ## 选择你的阅读路线
 
@@ -209,7 +207,7 @@ ${contents}
 
 ---
 
-原创文字与图：chicogong 与贡献者，按 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 提供；引用的上游项目、商标和外部材料归各自权利人。网站与源码仓分别发布，以 GitHub 页面显示的仓库可见性为准。
+原创文字与图：chicogong 与贡献者，按 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 提供；引用的上游项目、商标和外部材料归各自权利人。网站与[源码仓](https://github.com/chicogong/agent-systems)分别发布。
 `
 await writeFile(path.join(output, 'index.md'), home)
 const generalFeedback = feedbackMailto('《图解 Agent 系统》阅读反馈', '章节或页面：\n问题或建议：\n相关证据/链接（如有）：\n')
@@ -227,7 +225,7 @@ description: "《图解 Agent 系统》的勘误、图稿与阅读体验反馈�
 
 建议包含：页面链接、原句或图中位置、问题说明，以及可公开引用的上游源码或文档链接。请不要通过邮件发送密钥、私有资料或个人敏感信息。
 
-目前没有站内账户、评论区或行为追踪；反馈统一使用邮件，GitHub Issues 暂不作为本网站的反馈入口。重要勘误会在后续版本中修正，并在公开更新说明中标明；收到邮件不代表每项建议都会被采纳。
+目前没有站内账户、评论区或行为追踪。可公开复现的勘误也可提交到[GitHub Issues](https://github.com/chicogong/agent-systems/issues)；涉及个人信息的反馈请使用邮件。重要勘误会在后续版本中修正，并在公开更新说明中标明；收到反馈不代表每项建议都会被采纳。
 `)
 if (pdfFile) {
   const expected = path.join(repo, 'output', 'pdf', pdfName)
@@ -266,5 +264,5 @@ await writeFile(path.join(output, 'public', 'THIRD-PARTY-NOTICES.txt'), 'Diagram
 await mkdir(path.join(output, 'public', 'licenses'), { recursive: true })
 await cp(path.join(site, 'third-party', 'Nunito-OFL.txt'), path.join(output, 'public', 'licenses', 'Nunito-OFL.txt'))
 await cp(path.join(site, 'third-party', 'ComicShanns-MIT.txt'), path.join(output, 'public', 'licenses', 'ComicShanns-MIT.txt'))
-console.log('Prepared ' + chapterCount + ' public book chapters, ' + (paths.length - chapterCount) + ' supplementary pages, ' + figures.size + ' SVG figures, ' + unresolved.size + ' non-book references stripped.')
+console.log('Prepared ' + chapterCount + ' public book chapters, ' + (paths.length - chapterCount) + ' supplementary pages, ' + figures.size + ' SVG figures, ' + unresolved.size + ' non-book references linked to the source repository.')
 if (unresolved.size) console.log([...unresolved].slice(0, 25).join('\n'))

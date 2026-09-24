@@ -102,7 +102,7 @@ def check(path: Path) -> None:
 
 
 def check_public_readiness(path: Path) -> None:
-    """Reject a private-review PDF before it can be used as a public download."""
+    """Reject unsafe URI schemes and broken local reader routes before hosting."""
     reader = PdfReader(str(path))
     blocked: list[str] = []
     reader_host = urlparse(READER_URL).netloc
@@ -117,10 +117,7 @@ def check_public_readiness(path: Path) -> None:
             if not url:
                 continue
             parsed = urlparse(url)
-            private_repo = parsed.netloc == "github.com" and (
-                parsed.path == "/chicogong/agent-systems" or parsed.path.startswith("/chicogong/agent-systems/")
-            )
-            if parsed.scheme != "https" or private_repo or parsed.hostname in {"localhost", "127.0.0.1"} or (parsed.netloc == reader_host and parsed.path not in site_paths):
+            if parsed.scheme != "https" or parsed.hostname in {"localhost", "127.0.0.1"} or (parsed.netloc == reader_host and parsed.path not in site_paths):
                 blocked.append(url)
     if blocked:
         raise ValueError(
@@ -130,13 +127,13 @@ def check_public_readiness(path: Path) -> None:
     all_text = "\n".join(page.extract_text() or "" for page in reader.pages)
     if "可编辑图源 · PNG 预览" in all_text or "图源 · PNG 预览" in all_text:
         raise ValueError("Public PDF advertises private figure assets")
-    print("Public PDF link gate OK: no private-repository, non-HTTPS, or unknown reader-route annotations")
+    print("Public PDF link gate OK: no non-HTTPS or unknown reader-route annotations; external link access needs separate review")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("pdf", nargs="?", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--public-readiness", action="store_true", help="also reject private-repository and non-HTTPS links before public hosting")
+    parser.add_argument("--public-readiness", action="store_true", help="also reject non-HTTPS and unknown reader-route links before public hosting")
     args = parser.parse_args()
     check(args.pdf.resolve())
     if args.public_readiness:
