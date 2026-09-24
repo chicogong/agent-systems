@@ -25,9 +25,9 @@ python3 scripts/check_book_pdf.py
 pdfinfo output/pdf/agent-systems-preview.pdf
 ```
 
-可用 `--output /绝对路径/书名.pdf` 另存。默认 PDF 是**静态源码阅读预览**，不是对全部项目的运行验证，也不是已授权的正式出版物。PDF 自动把图的 SVG 展示路径映射到同目录的 PNG 预览，不修改正文或 `.excalidraw` 图源。章节中的上游代码链接保留为 PDF 可点击外链。封面、标题页、关于本版、目录与封底由构建器插入；致谢和作者简介仍在 Markdown 中。
+可用 `--output /绝对路径/书名.pdf` 另存。默认 PDF 是**静态源码阅读预览**，不是对全部项目的运行验证，也不是已授权的正式出版物。PDF 自动把图的 SVG 展示路径映射到同目录的 PNG 预览，不修改正文或 `.excalidraw` 图源。章节中的上游代码链接保留为 PDF 可点击外链。封面、标题页、关于本版、目录与封底由构建器插入；致谢和作者简介仍在 Markdown 中。“关于本版”会标注书稿提交、UTC 构建日期与工作树是否有未提交修改；最终 PDF 的 SHA-256 另存发布清单，不嵌回文件自身。
 
-默认校样会把未纳入 PDF 的本仓本地链接转成源码仓 URL，**在仓库仍私有时不能直接放到公开网站**。另用同一清单构建公共阅读版：
+默认校样会把未纳入 PDF 的本仓本地链接转成源码仓 URL；若源码仓不可公开访问，它不适合直接放到公共网站。另用同一清单构建公共阅读版：
 
 ```bash
 python3 scripts/build_book.py --public-links --output output/pdf/agent-systems-public-preview.pdf

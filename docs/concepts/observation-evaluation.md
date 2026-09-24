@@ -6,7 +6,7 @@
 
 ![单次运行、跨任务评测与人工复核的证据汇聚](../../figures/observation-evaluation/diagram.svg)
 
-[图的文字版与可编辑图源](../../figures/observation-evaluation/README.md) · [单独打开 SVG 放大阅读](../../figures/observation-evaluation/diagram.svg)。图把单次运行、跨任务评测和实际使用分成不同尺度：每类证据回答不同问题，再汇合成**有范围的结论**。箭头表示产生、关联、检验、汇总或复核，不表示五项检查是必经的线性流水线，也不表示某个产品内置全部环节。
+[图的文字说明](../../figures/observation-evaluation/README.md) · [单独打开 SVG 放大阅读](../../figures/observation-evaluation/diagram.svg)。图把单次运行、跨任务评测和实际使用分成不同尺度：每类证据回答不同问题，再汇合成**有范围的结论**。箭头表示产生、关联、检验、汇总或复核，不表示五项检查是必经的线性流水线，也不表示某个产品内置全部环节。
 
 ## 最小场景：让 Agent 改一个配置
 

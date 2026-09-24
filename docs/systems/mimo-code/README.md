@@ -22,7 +22,7 @@
 
 ![MiMo Code 的提前写入与窗口重建](../../../figures/mimo-code/diagram.svg)
 
-[图的独立文字版、可编辑源与 PNG](../../../figures/mimo-code/README.md)。图中的实线是固定版源码的主 Agent 路径；分支不是成功保证。**触发 writer 与触发重建是两次不同判断**：前者看已完成 assistant 消息的 token 用量与阈值，后者看上下文溢出；前者异步运行，主任务无需等 writer 完成才继续。[循环入口](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prompt.ts#L4815-L4889) · [阈值调度](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prune.ts#L238-L425)。
+[图的文字说明](../../../figures/mimo-code/README.md) · [单独打开 SVG 放大阅读](../../../figures/mimo-code/diagram.svg)。图中的实线是固定版源码的主 Agent 路径；分支不是成功保证。**触发 writer 与触发重建是两次不同判断**：前者看已完成 assistant 消息的 token 用量与阈值，后者看上下文溢出；前者异步运行，主任务无需等 writer 完成才继续。[循环入口](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prompt.ts#L4815-L4889) · [阈值调度](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prune.ts#L238-L425)。
 
 官方文章用约 **20%、45%、70%** 说明“尽早提取”的思路；此提交的*默认实现*按窗口大小选梯度：25K–200K 为 20/40/60/80%，200K–500K 为 10% 至 90% 每 10% 一档，更大窗口每 5% 一档；小于 25K 无默认 checkpoint 阈值。配置还可覆盖阈值。读版本化源码时，不能把文章的示意数字当作固定实现常量。[源码默认值](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prune.ts#L24-L58) · [官方文章](https://mimo.xiaomi.com/blog/mimo-code-long-horizon)。
 
@@ -42,6 +42,6 @@ MiMo Code 的独特取舍也留下一个可检验的问题：writer 从历史中
 
 ## 核验范围与待审
 
-本稿完成固定 SHA 的**静态调用链阅读**及图源本地导出检查；没有在 Bun、真实 provider、长期任务或进程中断下运行此提交。上游自动化测试存在，不能冒充本稿已执行的运行证据。文章中的长任务性能、Max Mode、Goal 和 Dynamic Workflow 不在本篇调用链内，厂商数字未独立复现；设计文章还明确称受约束命令式工具调用格式尚未迁入。后续需第二位审稿者重开源码核对图中每条箭头，再做跨窗口恢复、writer 失败和中断注入实验。公开发布前还需逐项复核许可及第三方内容。
+本稿完成固定 SHA 的**静态调用链阅读**及图源本地导出检查。2026-09-24 又以 Bun 1.3.5 复跑消息起点对齐纯函数的 7 项测试，全部通过；[来源记录](../../../sources/mimo-code.md)列明了命令与覆盖范围。没有启动 writer、数据库、真实 provider 或完整重建循环，也未进行长期任务与进程中断实验；这 7 项通过不能证明长会话恢复可靠。文章中的长任务性能、Max Mode、Goal 和 Dynamic Workflow 不在本篇调用链内，厂商数字未独立复现；设计文章还明确称受约束命令式工具调用格式尚未迁入。后续需第二位审稿者重开源码核对图中每条箭头，再做跨窗口恢复、writer 失败和中断注入实验。公开发布前还需逐项复核许可及第三方内容。
 
 自测：① 为什么 `checkpoint.md` 存在仍可能无法用于重建？② writer 写失败后为何不能前移 watermark？③ 主 Agent 的原始消息留在存储里，为什么下一轮模型仍可能看不到？

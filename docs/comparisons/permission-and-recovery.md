@@ -8,19 +8,19 @@
 
 ![超时后先对账，再决定是否重试](../../figures/permission-and-recovery/diagram.svg)
 
-[图的文字版、可编辑源与 PNG](../../figures/permission-and-recovery/README.md)。图中的虚线表示三类尚未区分的**可能世界**，并非三条都执行过的路径；它是教学抽象，不是四个项目共同的内部调用链。
+[图的文字说明](../../figures/permission-and-recovery/README.md) · [单独打开 SVG 放大阅读](../../figures/permission-and-recovery/diagram.svg)。图中的虚线表示三类尚未区分的**可能世界**，并非三条都执行过的路径；它是教学抽象，不是四个项目共同的内部调用链。
 
 ## 一个请求，三类可能的状态
 
 设想 Agent 要为一个已通过测试的补丁触发部署。操作者同意执行；Agent 发起请求后连接超时，尚未收到部署服务的结果。请求可能没到达、还在途中，也可能已被接收而正在排队、执行或已经完成。**把超时当作失败并原样重试，可能制造第二次部署。**这个例子不暗示下列四套系统都自带部署工具；它只是把同一个判断题放到各自已核对的局部机制上。
 
-第一道问题是“这次动作能不能发出”：策略、人工确认和沙箱在动作前发挥作用。第二道问题是“中断后从哪里继续”：事件、工具状态或 checkpoint 可以留下不同粒度的线索。第三道问题是“部署服务是否已经接受”：必须用部署 ID、幂等键或服务端状态查证，不能从本地 `error`、未配对事件或旧 checkpoint 直接推出。
+第一道问题是“这次动作能不能发出”：策略与人工确认决定动作是否获准启动；沙箱配置在执行前选定，并在执行期间限制进程能访问的资源。第二道问题是“中断后从哪里继续”：事件、工具状态或 checkpoint 可以留下不同粒度的线索。第三道问题是“部署服务是否已经接受”：必须用部署 ID、幂等键或服务端状态查证，不能从本地 `error`、未配对事件或旧 checkpoint 直接推出。
 
 ## 四条路径分别看见了什么
 
 | 固定切面 | 动作前能核对的关口 | 中断后可核对的本地状态 | 不能据此推出 |
 | --- | --- | --- | --- |
-| [Codex：普通 `exec_command`](../systems/codex/README.md) | 命令策略给出 `Forbidden`、`NeedsApproval`、`Skip`；未被禁止后仍要选择执行沙箱。 | 首次沙箱拒绝有**条件性**终止、再询问或第二次尝试；本篇切面没有审计跨进程动作日志。 | `Skip` 等于无沙箱；批准或重试等于远端动作成功。 |
+| [Codex：普通 `exec_command`](../systems/codex/README.md) | 命令策略给出 `Forbidden`、`NeedsApproval`、`Skip`；未被禁止后仍要选择执行沙箱。 | 本篇切面**没有核对跨进程动作日志**；首次沙箱拒绝后有条件性终止、再询问或第二次尝试，这是控制流，不是状态收据。 | `Skip` 等于无沙箱；批准或重试等于远端动作成功。 |
 | [OpenHands：本地会话](../systems/openhands/README.md) | `ActionEvent` 先进入事件路径，需确认时停在 `WAITING_FOR_CONFIRMATION`；拒绝会配对 `UserRejectObservation`，不调用工具。 | 当前分支中无对应结果的动作可由下一次 `Agent.step()` 找回并执行；观察或错误事件可与动作配对。 | “有动作事件”代表工具已运行；找回未配对动作便保证只执行一次。 |
 | [OpenCode：会话处理器](../systems/opencode/README.md) | 这个固定 `session` 切面可见重复调用的 `doom_loop` 许可点；**一般权限规则不在已审计路径内**。 | `ToolPart` 按 `callID` 区分 `pending`、`running`、`completed`、`error`；清理未收束调用时可记为 `interrupted` 错误。 | part 的 `error` 证明外部副作用没有发生；模型流退避等于重试该工具。 |
 | [LangGraph：Python 图与 checkpointer](../systems/langgraph/README.md) | 本篇固定的 checkpoint 切面**没有审计人类批准或工具授权**。 | 可按 thread / namespace / checkpoint 选择图状态，从旧状态创建新分支；可用快照还受 saver 与 `durability` 设置约束。 | 恢复图状态等于撤销已经发生的 HTTP、邮件或部署动作。 |

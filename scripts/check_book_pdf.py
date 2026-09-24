@@ -89,6 +89,9 @@ def check(path: Path) -> None:
     title_text = reader.pages[1].extract_text() or ""
     if "图解 Agent 系统" not in title_text:
         raise ValueError("Accessible title page is missing")
+    about_text = reader.pages[2].extract_text() or ""
+    if "书稿提交" not in about_text or "构建日期" not in about_text or "feedback" not in about_text:
+        raise ValueError("About-this-edition provenance or feedback entry is missing")
     last_text = reader.pages[-1].extract_text() or ""
     if "不止会用" not in last_text or "books.aimake.cc" not in last_text:
         raise ValueError("Back cover is missing or not extractable")

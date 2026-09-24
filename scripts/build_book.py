@@ -8,8 +8,10 @@ visibly in the output instead of silently changing the source documents.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import html
 import re
+import subprocess
 from pathlib import Path
 from urllib.parse import quote, urlparse
 
@@ -81,6 +83,7 @@ def styles(font_path: Path) -> dict[str, ParagraphStyle]:
         "h2": ParagraphStyle("h2", **(base | {"fontName": BOLD_NAME}), fontSize=14, leading=22, spaceBefore=15, spaceAfter=8, keepWithNext=True),
         "h3": ParagraphStyle("h3", **(base | {"fontName": BOLD_NAME}), fontSize=11.5, leading=18, spaceBefore=12, spaceAfter=6, keepWithNext=True),
         "body": ParagraphStyle("body", **base, fontSize=10, leading=18, spaceAfter=9),
+        "list": ParagraphStyle("list", **base, fontSize=10, leading=18, leftIndent=15, firstLineIndent=-15, spaceAfter=7),
         "small": ParagraphStyle("small", **base, fontSize=8.8, leading=15, spaceAfter=6),
         "caption": ParagraphStyle("caption", **(base | {"textColor": MUTED}), fontSize=8.5, leading=14, alignment=TA_CENTER, spaceBefore=5, spaceAfter=14),
         "quote": ParagraphStyle("quote", **(base | {"textColor": MUTED}), fontSize=9, leading=16, leftIndent=12, rightIndent=8, spaceAfter=9),
@@ -95,7 +98,7 @@ TOKEN = re.compile(r"(\[[^\]]+\]\([^)]+\)|`[^`]+`|\*\*[^*]+\*\*)")
 LINK = re.compile(r"^\[([^\]]+)\]\(([^)]+)\)$")
 IMAGE = re.compile(r"^!\[([^\]]*)\]\(([^)]+)\)$")
 HEADING = re.compile(r"^(#{1,3})\s+(.+)$")
-LIST = re.compile(r"^\s*(?:[-*]|\d+\.)\s+(.+)$")
+LIST = re.compile(r"^\s*(?:(?P<bullet>[-*])|(?P<number>\d+)\.)\s+(?P<content>.+)$")
 CHAPTER_KEYS: dict[Path, str] = {}
 PUBLIC_LINKS = False
 PUBLIC_ROUTES: dict[Path, str] = {}
@@ -179,6 +182,12 @@ def code_markup(source: str, preserve_leading: bool = False) -> str:
     return "&#160;" * leading + "".join(parts)
 
 
+def link_label_markup(label: str) -> str:
+    if label.startswith("`") and label.endswith("`") and label.count("`") == 2:
+        return f'<font name="{CODE_NAME}">{html.escape(label[1:-1])}</font>'
+    return html.escape(label)
+
+
 def inline(source: str, current_path: Path | None = None) -> str:
     result: list[str] = []
     for part in TOKEN.split(source):
@@ -186,12 +195,12 @@ def inline(source: str, current_path: Path | None = None) -> str:
         if match:
             label, href = match.groups()
             if urlparse(href).scheme in {"https", "http"}:
-                result.append(f'<link href="{html.escape(href, quote=True)}" color="#2563a6">{html.escape(label)}</link>')
+                result.append(f'<link href="{html.escape(href, quote=True)}" color="#2563a6">{link_label_markup(label)}</link>')
             elif current_path is not None:
                 local_path, _, fragment = href.partition("#")
                 target = (current_path.parent / local_path).resolve()
                 if target in CHAPTER_KEYS:
-                    result.append(f'<link href="#{CHAPTER_KEYS[target]}" color="#2563a6">{html.escape(label)}</link>')
+                    result.append(f'<link href="#{CHAPTER_KEYS[target]}" color="#2563a6">{link_label_markup(label)}</link>')
                 elif PUBLIC_LINKS and target.is_relative_to(ROOT):
                     result.append(public_link(target, label, fragment))
                 elif target.is_relative_to(ROOT) and target.exists():
@@ -199,7 +208,7 @@ def inline(source: str, current_path: Path | None = None) -> str:
                     public_url = f"https://github.com/chicogong/agent-systems/blob/main/{public_path}"
                     if fragment:
                         public_url += f"#{quote(fragment, safe='-')}"
-                    result.append(f'<link href="{html.escape(public_url, quote=True)}" color="#2563a6">{html.escape(label)}</link>')
+                    result.append(f'<link href="{html.escape(public_url, quote=True)}" color="#2563a6">{link_label_markup(label)}</link>')
                 else:
                     result.append(html.escape(label))
             else:
@@ -416,6 +425,8 @@ def chapter_flowables(path: Path, index: int, style: dict[str, ParagraphStyle], 
     lines = path.read_text(encoding="utf-8").splitlines()
     result: list[Flowable] = []
     paragraph: list[str] = []
+    list_kind: str | None = None
+    list_counter = 0
 
     def flush():
         if paragraph:
@@ -431,6 +442,7 @@ def chapter_flowables(path: Path, index: int, style: dict[str, ParagraphStyle], 
             line = re.sub(r"(?:\s*·\s*){2,}", " · ", line)
         if line.startswith("[返回") or line.startswith("[图源]("):
             flush()
+            list_kind = None
             i += 1
             continue
         if not line:
@@ -440,6 +452,8 @@ def chapter_flowables(path: Path, index: int, style: dict[str, ParagraphStyle], 
         heading = HEADING.match(line)
         image = IMAGE.match(line)
         listing = LIST.match(line)
+        if not listing:
+            list_kind = None
         if heading:
             flush()
             level, title = heading.groups()
@@ -483,7 +497,17 @@ def chapter_flowables(path: Path, index: int, style: dict[str, ParagraphStyle], 
             result.append(Paragraph(inline(line.lstrip("> "), path), style["quote"]))
         elif listing:
             flush()
-            result.append(Paragraph("• " + inline(listing.group(1), path), style["body"]))
+            kind = "ordered" if listing.group("number") else "bullet"
+            if kind == "ordered":
+                if list_kind != kind:
+                    list_counter = int(listing.group("number"))
+                else:
+                    list_counter += 1
+                marker = f"{list_counter}."
+            else:
+                marker = "•"
+            list_kind = kind
+            result.append(Paragraph(marker + " " + inline(listing.group("content"), path), style["list"]))
         elif line.startswith("---"):
             flush()
         else:
@@ -491,6 +515,26 @@ def chapter_flowables(path: Path, index: int, style: dict[str, ParagraphStyle], 
         i += 1
     flush()
     return result
+
+
+def chapter_opening_height(flowables: list[Flowable]) -> float:
+    """Keep a near-opening main figure with the title and scope paragraph."""
+    first_image = next((i for i, item in enumerate(flowables[:4]) if isinstance(item, Image)), None)
+    if first_image is None:
+        return 105 * mm
+    opening = flowables[: first_image + 2]  # Include the figure caption.
+    height = sum(
+        item.getSpaceBefore() + item.wrap(CONTENT_W, PAGE_H)[1] + item.getSpaceAfter()
+        for item in opening
+    )
+    return min(max(height + 5 * mm, 105 * mm), 240 * mm)
+
+
+def book_identity() -> tuple[str, bool, str]:
+    commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
+    dirty = bool(subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip())
+    built_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d UTC")
+    return commit, dirty, built_utc
 
 
 def build(output: Path, font_path: Path, public_links: bool = False) -> None:
@@ -504,6 +548,9 @@ def build(output: Path, font_path: Path, public_links: bool = False) -> None:
     CHAPTER_KEYS.update({path: f"chapter-{i}" for i, path in enumerate(paths)})
     if public_links:
         prepare_public_links(paths)
+    commit, dirty, built_utc = book_identity()
+    commit_url = f"https://github.com/chicogong/agent-systems/commit/{commit}"
+    version_note = "含未提交修改，仅供本地校稿；不是该提交的原样产物。" if dirty else "从该提交的干净工作树构建。"
     story: list[Flowable] = [
         Spacer(1, 1),
         PageBreak(),
@@ -514,6 +561,8 @@ def build(output: Path, font_path: Path, public_links: bool = False) -> None:
         Paragraph("chicogong 著", style["subtitle"]),
         PageBreak(),
         Paragraph("关于本版", style["h1"]),
+        Paragraph(f'公开预览 · 书稿提交：<link href="{commit_url}" color="#2563a6">{commit[:12]}</link> · 构建日期：{built_utc}。{version_note}', style["body"]),
+        Paragraph('勘误与阅读反馈：<link href="https://books.aimake.cc/feedback" color="#2563a6">books.aimake.cc/feedback</link>。固定版本的 PDF 应与发布清单中的完整提交和 SHA-256 一起保存；本站 PDF 阅读页是可替换的最新电子校样入口。', style["body"]),
         Paragraph("本书的项目结论对应各章注明的固定源码版本。除非单独说明，它们是静态代码阅读，不是运行评测或产品安全认证。", style["body"]),
         Paragraph('原创文字与图：<link href="https://creativecommons.org/licenses/by/4.0/legalcode" color="#2563a6">CC BY 4.0</link>。构建脚本：<link href="https://opensource.org/license/mit" color="#2563a6">MIT</link>。正文 <link href="https://github.com/google/fonts/blob/e44c4b011a820c2cbe2fd2cfa8052037d7edb571/ofl/notosanssc/OFL.txt" color="#2563a6">Noto Sans SC</link>、代码 <link href="https://github.com/google/fonts/blob/e44c4b011a820c2cbe2fd2cfa8052037d7edb571/ofl/jetbrainsmono/OFL.txt" color="#2563a6">JetBrains Mono</link> 均依 SIL OFL 1.1 授权。上游项目与其商标、代码遵守各自许可；链接不表示对本书的认可。', style["body"]),
         Paragraph("正文以 Markdown 为准；PDF 由书稿清单自动生成。章节有意保留研究范围、未覆盖情况和可点击的固定源码链接。" + ("本公共阅读版的内部参考链接优先指向在线章节和已发布的图稿；可编辑图源可从公开源码仓查看。" if public_links else ""), style["body"]),
@@ -546,11 +595,10 @@ def build(output: Path, font_path: Path, public_links: bool = False) -> None:
             part_index += 1
             first_chapter_in_part = True
         elif kind == "chapter":
+            chapter = chapter_flowables(value, chapter_index, style)
             if not first_chapter_in_part:
-                # Keep a new chapter with its opening text, without leaving
-                # a nearly empty tail page after every short chapter.
-                story.append(CondPageBreak(105 * mm))
-            story.extend(chapter_flowables(value, chapter_index, style))
+                story.append(CondPageBreak(chapter_opening_height(chapter)))
+            story.extend(chapter)
             first_chapter_in_part = False
             chapter_index += 1
     for kind, value in entries:
