@@ -1,0 +1,8 @@
+# License
+
+This repository uses a dual license:
+
+- Original prose and diagrams: [CC BY 4.0](LICENSE-CONTENT.md)
+- Scripts and workflows: [MIT](LICENSE-CODE)
+
+See those files for the full terms. Upstream projects keep their own licenses.

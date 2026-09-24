@@ -4,7 +4,7 @@
 
 **完成不是一个由模型单独写出的状态位，而是一组与原任务逐项对应的、可复查的声明。**读完本篇，应能把“Agent 停了”“工具返回了”“测试绿了”“产物存在”和“委托人接受了”分别写成有范围的结论，不用其中一项替另一项背书。[《循环为何停止》](loop-and-stop.md)研究控制流出口；这里研究**出口之后，报告能说到哪一步**。
 
-> **范围与证据（2026-09-24 核对）。**系统侧只引用本书已固定的 Pi `898ab804`、mini-SWE-agent `04d809ce`、OpenCode `18ef3cc7`、Kimi Code `75a894e9` 的局部源码切面；评价方法引用[观察与评测篇](../concepts/observation-evaluation.md)及其中的官方资料。下文任务、命令输出和验收结果是**教学构造**，并未在四套系统上同配置运行；不据此排名正确率或宣称用户验收。
+> **范围与证据（2026-09-24 核对）。**系统侧只引用本书已固定的 Pi `898ab804`、mini-swe-agent `04d809ce`、OpenCode `18ef3cc7`、Kimi Code `75a894e9` 的局部源码切面；评价方法引用[观察与评测篇](../concepts/observation-evaluation.md)及其中的官方资料。下文任务、命令输出和验收结果是**教学构造**，并未在四套系统上同配置运行；不据此排名正确率或宣称用户验收。
 
 ## 同一任务：改对数字，还要守住原规则
 
@@ -29,11 +29,11 @@
 | 固定源码切面 | 它能提示复核者什么 | 报告“修复完成”还缺什么 |
 | --- | --- | --- |
 | [Pi 核心与 coding-agent](../systems/pi/code-walkthrough.md) | `runLoop` 可发结束事件；工具错误会形成 `isError` 结果；coding-agent 的常规消息另记入会话树。 | 结束事件不是测试断言；会话记录仍要对照实际 diff 和测试输出。 |
-| [mini-SWE-agent 基类／本地环境](../systems/mini-swe-agent/code-walkthrough.md) | 消息尾部 `exit` 让基类循环结束；`Submitted`、限额、连续格式错误可形成不同出口；`save()` 仅在配置路径时落文件。 | `exit` 或提交哨兵不能证明 5 秒与重试条件都满足；默认交互 CLI 也不等于此基类。 |
+| [mini-swe-agent 基类／本地环境](../systems/mini-swe-agent/code-walkthrough.md) | 消息尾部 `exit` 让基类循环结束；`Submitted`、限额、连续格式错误可形成不同出口；`save()` 仅在配置路径时落文件。 | `exit` 或提交哨兵不能证明 5 秒与重试条件都满足；默认交互 CLI 也不等于此基类。 |
 | [OpenCode 会话处理器](../systems/opencode/code-walkthrough.md) | 单个 `ToolPart` 可有 `completed/error` 及结果内容；Session 另有 `busy/retry/idle`。 | `completed` 是调用结果状态，不是任务验收；`idle` 也不能代替文件与断言复核。 |
 | [Kimi Code 单 turn](../systems/kimi-code/code-walkthrough.md) | `turn.ended` 区分 `completed/cancelled/failed`；`maxSteps`、取消与 steer 影响能否继续。 | `completed` 表示这个 turn 正常结束，不证明改动正确、未越界，亦不代表外层 goal 或用户已验收。 |
 
-固定源码依据分别是 [Pi 的回合结束与工具结果](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L279-L320)、[Pi 工具错误包装](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L773-L861)、[mini-SWE-agent 的循环与退出分支](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L88-L124)、[mini-SWE-agent 的本地提交哨兵](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/environments/local.py#L24-L56)、[OpenCode 的调用结果](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L383-L420)、[OpenCode 的会话状态](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/status.ts#L30-L48)、[Kimi Code 的 turn 结束映射](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L441-L510)。这些只证明相应提交中**可能的控制与记录分支**；本篇没有本例的真实执行日志，也没有把某个系统内部状态当作测试结果。
+固定源码依据分别是 [Pi 的回合结束与工具结果](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L279-L320)、[Pi 工具错误包装](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L773-L861)、[mini-swe-agent 的循环与退出分支](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L88-L124)、[mini-swe-agent 的本地提交哨兵](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/environments/local.py#L24-L56)、[OpenCode 的调用结果](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L383-L420)、[OpenCode 的会话状态](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/status.ts#L30-L48)、[Kimi Code 的 turn 结束映射](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L441-L510)。这些只证明相应提交中**可能的控制与记录分支**；本篇没有本例的真实执行日志，也没有把某个系统内部状态当作测试结果。
 
 ## 两个“看上去完成”的失败样本
 

@@ -4,6 +4,12 @@
 
 > 范围：静态阅读 [`langchain-ai/langgraph@bdb85b5aa87a21de68371d2e534b81aeed398f57`](https://github.com/langchain-ai/langgraph/tree/bdb85b5aa87a21de68371d2e534b81aeed398f57) 的 Python `Pregel`、同步执行循环与 `InMemorySaver`。以下是**固定版本的源码路径**，不是本文的运行观察；异步路径、生产 saver 的事务保证和外部服务均未实测。
 
+## 30 秒范围
+
+- **本篇只追**：固定版本 Python `Pregel` / `SyncPregelLoop` 与 `InMemorySaver` 上“加载 checkpoint → 写入新版本 → `update_state` 分叉”的一条路径。
+- **不覆盖**：异步执行、生产 saver 的事务保证、含外部副作用节点的复现实验。
+- **固定 commit**：[`bdb85b5a`](https://github.com/langchain-ai/langgraph/tree/bdb85b5aa87a21de68371d2e534b81aeed398f57)
+
 设想一个两节点图：第一个节点已经产生状态，第二个节点尚待运行。我们想回到这时的状态，改一个值，再沿新状态继续。关键不是“把整个会话倒带”，而是用 `thread_id`、`checkpoint_ns`、`checkpoint_id` 找到一个图状态版本，并从它生成新的版本。[`InMemorySaver` 的键结构](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/checkpoint/langgraph/checkpoint/memory/__init__.py#L68-L83) · [`StateSnapshot` 的字段](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/types.py#L711-L729)
 
 ## 入口：执行先读哪个版本？

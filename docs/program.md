@@ -8,7 +8,7 @@
 
 | 问题线 | 先问什么 | 可提供差异的系统 |
 | --- | --- | --- |
-| 运行循环与工具 | 谁控制下一轮？工具何时开始、停止或失败？ | [Pi](systems/pi/README.md)、[OpenCode](systems/opencode/README.md)、[mini-SWE-agent](systems/mini-swe-agent/README.md)、[Qwen Code](systems/qwen-code/README.md) |
+| 运行循环与工具 | 谁控制下一轮？工具何时开始、停止或失败？ | [Pi](systems/pi/README.md)、[OpenCode](systems/opencode/README.md)、[mini-swe-agent](systems/mini-swe-agent/README.md)、[Qwen Code](systems/qwen-code/README.md) |
 | 执行环境与权限 | 动作由谁授权、在哪里运行、如何记录副作用？ | [Codex](systems/codex/README.md)、[OpenHands](systems/openhands/README.md)、[Browser Use](systems/browser-use/README.md) |
 | 上下文、会话与记忆 | 什么真正进入本轮模型输入，什么只是被保存？ | [Pi](systems/pi/README.md)、[Letta Code](systems/letta/README.md)、[Mem0](systems/mem0/README.md)、[LangGraph](systems/langgraph/README.md) |
 | 编排与常驻系统 | 谁拥有会话，怎样聚合来源或协调执行者？ | [OpenClaw](systems/openclaw/README.md)、[GPT Researcher](systems/gpt-researcher/README.md)、[LangGraph](systems/langgraph/README.md) |
