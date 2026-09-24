@@ -35,7 +35,7 @@ Search Console 的站点所有权验证、提交 sitemap、索引与点击数据
 
 同域名 PDF 采用独立 `/pdf` 页面、浏览器原生预览和显眼的下载后备；小屏不嵌入 PDF 阅读器，避免浏览器不支持时出现黑框。HTML 仍是主要可搜索、可缩放和辅助技术阅读版。PDF 尚未制作语义标签，封面插画也不是 300 PPI 印刷母版。PDF 文件单独由 Vercel 回应 `X-Robots-Tag: noindex`，其阅读说明页仍可被发现；这种非 HTML 索引控制符合 [Google 的说明](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag)。
 
-默认校样会链接到本仓，仓库私有时不能上传。公共阅读版使用同一书稿清单，内部可用链接改到网站；`book.yml` 在每次审稿构建中额外生成并检查它，但仍只上传为私有 Artifact。**不允许直接把默认校样复制到网站。** 人工完成内容、权益、图文和外链审查后，先从最终提交构建公共版，运行 `python3 scripts/check_book_pdf.py output/pdf/agent-systems-public-preview.pdf --public-readiness`，记录该文件的 SHA-256。只有明确指定如下三个变量，网站构建才会再次运行 PDF 检查、比对 SHA 并复制该文件；未设置时维持无 PDF 的默认公开包：
+默认校样会链接到本仓，仓库私有时不能上传。公共阅读版使用同一书稿清单，内部可用链接改到网站；`book.yml` 在每次审稿构建中额外生成并检查它，但仍只上传为私有 Artifact。**不允许直接把默认校样复制到网站。** 每次更新前人工审查内容、权益、图文和外链，再从最终提交构建公共版，运行 `python3 scripts/check_book_pdf.py output/pdf/agent-systems-public-preview.pdf --public-readiness`，记录该文件的 SHA-256。只有明确指定如下三个变量，网站构建才会再次运行 PDF 检查、比对 SHA 并复制该文件；未设置时维持无 PDF 的默认公开包：
 
 ```bash
 cd site
@@ -47,10 +47,10 @@ SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 
 Vercel 部署前须人工核对 `dist/pdf.html`、`dist/book/agent-systems-public-preview.pdf`、`dist/vercel.json` 和构建日志，再从同一份 `dist/` 部署。`verify:live` 会在 PDF 模式下连同文件字节和线上 `X-Robots-Tag` 一起检查。构建和测试通过并非权益许可或作者的公开发布决定。
 
-目前 Vercel 项目未连接 Git；部署前先从最终书稿重新构建并通过门禁，再把 `dist/` 部署到已有的 `agent-systems-reader` 项目。不要让 Vercel 构建直接读取私有书稿仓库，也不要把推送工作树等同于网站部署。
+目前 Vercel 项目未连接 Git；部署前先从最终书稿重新构建并通过门禁，再把 `dist/` 部署到已有的 `agent-systems-reader` 项目。例如从 `site/` 执行 `vercel link --cwd .vitepress/dist --scope chico-projects --project agent-systems-reader --yes`，核对生成的 `dist/vercel.json` 和链接的项目，再执行 `vercel deploy --cwd .vitepress/dist --prod --yes`。不要让 Vercel 构建直接读取私有书稿仓库，也不要把推送工作树等同于网站部署。
 
 部署后，在同一份构建产物仍在本地时运行 `LIVE_URL=https://books.aimake.cc npm run verify:live`。脚本逐一比较 sitemap 中的 HTML、所有展示 SVG、sitemap/robots/字体说明与本地构建的 SHA-256，并检查四个私有路径仍为 404。它只读取线上公开资源，不改变部署；若随后重新构建了本地 `dist/`，应先确认新产物与线上对应同一提交再比较。
 
 ## 本次验收
 
-2026-09-24 从当前书稿构建出 54 篇正文、8 篇补充页、1 个反馈页和 25 张展示 SVG；默认与 PDF 模式分别通过 64／65 页的本地门禁。桌面与 390px 手机浏览器抽查首页、PDF 页和反馈页，确认无横向溢出、脚本错误或断开的 PDF 下载；小屏原生 PDF 嵌入区隐藏，保留直接打开链接。线上字节一致性须在部署后重新执行。非作者读者试读仍是独立验收项，不能据此称正式出版。
+2026-09-24 从当前书稿构建出 54 篇正文、8 篇补充页、1 个反馈页和 25 张展示 SVG；默认与 PDF 模式分别通过 64／65 页的本地门禁。桌面与 390px 手机浏览器抽查首页、PDF 页和反馈页，确认无横向溢出、脚本错误或断开的 PDF 下载；小屏原生 PDF 嵌入区隐藏，保留直接打开链接。已将公共链接版 107 页 PDF 人工部署到 [阅读页](https://books.aimake.cc/pdf)，其 SHA-256 为 `9be69fcd82c3d13b4d3baa54b3827ce44fa353aff7dc378772d07956e4f52dab`。`verify:live` 比对线上 65 个 HTML、25 个 SVG、3 个元数据文件与 PDF 均和本地构建逐字节一致，4 条私有路径返回 404，PDF 响应头包含 `X-Robots-Tag: noindex`。非作者读者试读仍是独立验收项，不能据此称正式出版。
