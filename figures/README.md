@@ -14,6 +14,7 @@
 - 运行与执行：[Pi 分层](pi-architecture/README.md) · [Pi 扩展](pi-extensions/README.md) · [Codex 审批](codex-exec-approval/README.md) · [OpenCode 状态](opencode-tool-state/README.md) · [mini-SWE-agent 消息](mini-swe-loop/README.md) · [Qwen Code 延迟工具](qwen-code-deferred-tools/README.md) · [OpenHands 事件](openhands-action-events/README.md) · [Browser Use 泳道](browser-use-step/README.md) · [Kimi Code 忙时输入](kimi-code/README.md) · [MiMo Code 窗口接力](mimo-code/README.md)
 - 状态与材料：[Letta Code 记忆](letta-memory/README.md) · [Mem0 检索](mem0-retrieval/README.md) · [LangGraph checkpoint](langgraph-checkpoints/README.md) · [OpenClaw 会话](openclaw-session-gates/README.md) · [GPT Researcher 证据](gpt-researcher-evidence/README.md)
 - 横向对照：[四种循环与停止契约](loop-and-stop/README.md) · [Claude Code 与 Codex 的命令关口](claude-code-codex/README.md) · [权限、未知结果与恢复](permission-and-recovery/README.md)
+- 动手时序：[HTTP 先登记、后超时、再对账](http-receipt-timeline/README.md)
 
 ## 视觉校稿进度
 

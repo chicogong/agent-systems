@@ -30,7 +30,9 @@ Agent 可以先理解为一个反复执行的过程：接收目标，依据已�
 
 进入项目之前，可先做[上下文预算练习](labs/context-budget.md)：同样保存的五条记录、同样的输入预算，选择新近记录与优先检索旧约束会产生不同输入。用 `stored_records`、`visible_ids`、`context` 和 `audit` 分别核对，回答“记录还在，为什么这轮看不见”。它不使用真实模型，也不测量 token；读完后再看项目的会话投影与记忆检索，更容易找到各自的边界。
 
-**要回答：** 一次请求具体怎样穿过运行循环、工具和会话？从本书的 [Pi 局部剖面](systems/pi/README.md) 和[官方源码](https://github.com/earendil-works/pi)开始；它把模型接口、Agent 核心与交互外壳分开，适合第一次追调用链。接着选一个不同取舍：[mini-SWE-agent](systems/mini-swe-agent/README.md) 用简短消息账本说明停止契约；[OpenCode](systems/opencode/README.md) 区分工具调用状态与会话状态；[Kimi Code](systems/kimi-code/README.md) 展示忙时 steer 缓冲与 step 边界续跑；[MiMo Code](systems/mimo-code/README.md) 展示长任务 checkpoint 与重建。它们的官方源码入口依次是 [SWE-agent](https://github.com/SWE-agent/mini-swe-agent)、[Anomaly](https://github.com/anomalyco/opencode)、[MoonshotAI](https://github.com/MoonshotAI/kimi-code) 和 [XiaomiMiMo](https://github.com/XiaomiMiMo/MiMo-Code)。每次只选**一个**差异阅读，不必把五个仓库从头读完。
+**要回答：** 一次请求具体怎样穿过运行循环、工具和会话？最短路线只选**一个项目**：建议本书的 [Pi 局部剖面](systems/pi/README.md)及[官方源码](https://github.com/earendil-works/pi)，它把模型接口、Agent 核心与交互外壳分开；也可以直接选下面一个更贴近你问题的案例。读完一个窄路径就能进入第四层，不要求先读 Pi 再读第二个项目。
+
+**可选进阶：** 想比较取舍时，再挑一个不同案例：[mini-SWE-agent](systems/mini-swe-agent/README.md) 用简短消息账本说明停止契约；[OpenCode](systems/opencode/README.md) 区分工具调用状态与会话状态；[Kimi Code](systems/kimi-code/README.md) 展示忙时 steer 缓冲与 step 边界续跑；[MiMo Code](systems/mimo-code/README.md) 展示长任务 checkpoint 与重建。它们的官方源码入口依次是 [SWE-agent](https://github.com/SWE-agent/mini-swe-agent)、[Anomaly](https://github.com/anomalyco/opencode)、[MoonshotAI](https://github.com/MoonshotAI/kimi-code) 和 [XiaomiMiMo](https://github.com/XiaomiMiMo/MiMo-Code)。不必把全部仓库从头读完。
 
 **动手：** 任选一个项目，从本书给出的固定 commit 打开三个源码位置：请求入口、工具结果写回、结束或继续的分支。用不超过八步写出正常路径，再提出一个可证伪的问题，例如“工具超时后会不会重复写入？”找不到代码或运行证据时写“未知”。
 
@@ -47,6 +49,8 @@ Agent 可以先理解为一个反复执行的过程：接收目标，依据已�
 **补一条证据链：** 完成[不可信观察与假完成练习](labs/evidence-contract.md)，对比两份合格引文、引用抓取失败材料、被观察诱导越权三种情况。它让你分别验收宿主拒绝与业务完成，不用一个“success”抹平全部证据；依然是无模型、无网络的确定性模拟，不是完整防注入系统。
 
 **再做一次最小实验：** 先完成第一层的本地练习，再运行[回执丢失后的对账练习](labs/remote-effect.md)。不必先读完本层列出的几个项目：实验沿用“宿主根据证据决定下一步”，只新增远端服务账本和稳定操作 ID。它用四条可重复轨迹说明：操作已发出、收到回执、远端实际接受是三件事；查询不可用时应停在“未知”，而不是盲重试。两个程序彼此独立，不共享配置或运行记录。
+
+**可选的真实传输实验：** 接着做[本地 HTTP 回执练习](labs/http-receipt.md)。它真正启动 loopback 服务、发生读超时，并比较同 ID 重放、两种 404 和内容冲突；业务仍是人造登记账本，不是真实发布服务。网络故障与同步代码比前一条稍复杂，可以先只运行并解释轨迹，之后再读实现。
 
 ## 怎样继续选材料
 

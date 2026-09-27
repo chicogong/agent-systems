@@ -54,6 +54,8 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 python3 -m unittest discover -s examples/first-agent-loop -p 'test_*.py'
 python3 -m unittest discover -s examples/context-budget -p 'test_*.py'
 python3 -m unittest discover -s examples/remote-effect -p 'test_*.py'
+python3 -m unittest discover -s examples/evidence-contract -p 'test_*.py'
+python3 -m unittest discover -s examples/http-receipt -p 'test_*.py'
 python3 scripts/check_figure_legibility.py --strict
 python3 scripts/build_markdown.py
 python3 scripts/build_book.py

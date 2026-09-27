@@ -32,9 +32,9 @@
 
 ## 最容易误解的边界：写入了，不等于系统提示立即改变
 
-`MemoryStore` 的 live entries 可以写回磁盘，但 `format_for_system_prompt()` 返回加载时捕获的快照。普通中途写入不会直接修改这个快照。当前任务仍可从用户消息和工具结果得到新信息，所以不能反过来说“模型完全不知道更新”；只能说“缓存的系统提示记忆块没有被这次写入直接替换”。[写入与快照的分离](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L245-L295)、[快照读取](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L463-L481)
+`MemoryStore` 的当前存储条目（live entries）可以写回磁盘，但 `format_for_system_prompt()` 返回加载时捕获的快照。普通中途写入不会直接修改这个快照。当前任务仍可从用户消息和工具结果得到新信息，所以不能反过来说“模型完全不知道更新”；只能说“缓存的系统提示记忆块没有被这次写入直接替换”。[写入与快照的分离](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L245-L295)、[快照读取](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L463-L481)
 
-也不要把它概括成“整场会话永远冻结”。固定版本的 live agent 压缩提交边界会使提示失效、重载内存并重建提示；保留 seeded prompt 的 detached 路径有例外。更准确的心智模型是：在普通回合间保持稳定，在受控重建边界刷新，而不是每次文件变化都即时更新。[压缩边界](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/conversation_compression.py#L3144-L3188)、[失效时重载](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/system_prompt.py#L790-L820)
+也不要把它概括成“整场会话永远冻结”。固定版本的正常会话（live agent）在压缩提交边界会使提示缓存失效、重读存储并重建系统提示。例外是携带预置系统提示的分离回合（seeded prompt / detached 路径），它可以保留那份预置提示而提前返回；这些是不同执行路径，不是四种记忆。更准确的心智模型是：普通回合保留快照，在允许刷新它的重建边界重读，而不是每次文件变化都即时更新。[压缩边界](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/conversation_compression.py#L3144-L3188)、[失效时重载](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/system_prompt.py#L790-L820)
 
 ## 失败路径与反例
 
@@ -55,7 +55,7 @@
 ## 自测：你能区分哪种“成功”吗
 
 1. `memory` 写入成功后，是否可以断言本轮缓存系统提示中的 MEMORY 块已经换成新值？不能；普通写入不改变快照，提示重建有单独边界。
-2. `skill_manage` 返回 `success: true, staged: true`，可以报告“Skill 已更新，下次必定使用”吗？不能；先是待批准提议，批准、实际落盘、发现并读取各是一步。
+2. `skill_manage` 返回 `success: true, staged: true`，能断言 Skill 已更新且下次必用吗？不能；先是待批准提议，批准、实际落盘、发现并读取各是一步。
 3. 保存了一份排查 Skill，能否证明下一次排查更准确？不能；需要验证内容正确、确实进入输入、执行环境适用，以及最终结果通过验收。
 
 ## 本篇未覆盖

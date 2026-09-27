@@ -10,6 +10,8 @@
 
 图是教学抽象，不是某个产品的完整实现：桌面 Agent 不一定使用 DOM，浏览器 Agent 也不一定只读结构化元素。两者共有的主线是：取当前观察 → 提出动作 → 宿主检查并执行 → 再观察或读回结果。Anthropic 的 Computer Use 官方文档明确由应用运行模型返回的工具调用，而不是模型自己接管操作系统。[官方执行循环](https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool#how-computer-use-works)
 
+图省略了预算耗尽、取消等未完成停止；它们不等于成功，也不能为了完成任务而无限循环。下面的伪逻辑把步数用尽后的 `incomplete_with_evidence` 与满足合同后的停止分开。
+
 ## 四种能力，别混成一个按钮
 
 **截图与坐标**把界面变成像素，模型判断目标位置，执行器移动鼠标、点击或输入。它可表达没有普通网页元素的视觉区域，但目标识别、窗口焦点、截图时效和坐标变换都需要检查。若模型看到的是缩小后的图，不能把图上坐标直接当成物理屏幕坐标。Anthropic 的固定版示例区分截图尺寸与屏幕尺寸，并用 `scale_coordinates()` 转换；这是该示例的实现，不是所有桌面工具共有的 API。[坐标实现](https://github.com/anthropics/claude-quickstarts/blob/dee71163217524eed07d79d00ffea5a7d02cedda/computer-use-demo/computer_use_demo/tools/computer.py#L230-L302)

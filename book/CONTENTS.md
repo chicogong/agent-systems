@@ -78,17 +78,18 @@
 57. [Claude Code 与 Codex：同一修复任务如何执行与受控？](../docs/comparisons/claude-code-codex.md)
 58. [批准过了，超时后能重试吗？](../docs/comparisons/permission-and-recovery.md)
 59. [动手：回执丢失后，先对账还是再执行？](../docs/labs/remote-effect.md)
-60. [Agent 说“完成”时，哪些证据够用？](../docs/comparisons/completion-and-evidence.md)
+60. [动手：真的 HTTP 超时，结果还能判断吗？](../docs/labs/http-receipt.md)
+61. [Agent 说“完成”时，哪些证据够用？](../docs/comparisons/completion-and-evidence.md)
 
 ## 附录 · 术语与核验方法
 
-61. [术语：同一个词别混用](../docs/glossary.md)
+62. [术语：同一个词别混用](../docs/glossary.md)
 
 ## 卷末
 
-62. [结语：图会更新，问题值得留下](../book/backmatter/afterword.md)
-63. [致谢与贡献](../book/backmatter/acknowledgments.md)
-64. [作者简介](../book/backmatter/about-author.md)
+63. [结语：图会更新，问题值得留下](../book/backmatter/afterword.md)
+64. [致谢与贡献](../book/backmatter/acknowledgments.md)
+65. [作者简介](../book/backmatter/about-author.md)
 
 ---
 

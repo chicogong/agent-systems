@@ -41,6 +41,9 @@ SUPPORT_FILES = (
     "examples/evidence-contract/README.md",
     "examples/evidence-contract/demo.py",
     "examples/evidence-contract/test_demo.py",
+    "examples/http-receipt/README.md",
+    "examples/http-receipt/demo.py",
+    "examples/http-receipt/test_demo.py",
 )
 
 

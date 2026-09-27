@@ -19,7 +19,7 @@ export function figureExplanation(markdown) {
   let maintenance = false
   return markdown.split(/\n\s*\n/).filter((part) => {
     const text = part.trim()
-    if (/^##\s/.test(text)) maintenance = /^##\s+(?:生成与核验|构建与验收范围)/.test(text)
+    if (/^##\s/.test(text)) maintenance = /^##\s+(?:生成与核验|构建与验收范围|构建与校准)/.test(text)
     if (maintenance || text.startsWith('#') || text.startsWith('[')) return false
     if (/^!\[[^\]]*\]\([^)]+\)\s*$/.test(text)) return false
     return !text.startsWith('可在此目录') && !text.startsWith('状态：') && !text.startsWith('`build.py`')

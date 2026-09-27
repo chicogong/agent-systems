@@ -61,6 +61,7 @@ body { background: var(--vp-c-bg); }
   .reading-position-previous strong, .reading-position-next strong { font-size: .76rem; }
   .reading-position-contents { padding: .2rem .35rem; font-size: .73rem; }
   .vp-doc table { display: block; overflow-x: auto; }
+  .vp-doc th, .vp-doc td { min-width: 9rem; }
   .vp-doc img[src*='/assets/figures/'][src$='/diagram.svg'] { padding: .25rem; }
   .vp-doc .figure-open { display: none; }
   .vp-doc .book-pdf-preview { display: none; }

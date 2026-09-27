@@ -62,6 +62,7 @@ docs/comparisons/four-kinds-of-state.md
 docs/comparisons/claude-code-codex.md
 docs/comparisons/permission-and-recovery.md
 docs/labs/remote-effect.md
+docs/labs/http-receipt.md
 docs/comparisons/completion-and-evidence.md
 @part 附录 · 术语与核验方法
 docs/glossary.md

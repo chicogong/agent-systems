@@ -10,7 +10,7 @@ python3 scripts/build_markdown.py
 
 生成 `output/markdown/agent-systems-md.zip`。解压后，从 `agent-systems-md/README.md` 开始阅读；也可以把**整个** `agent-systems-md` 文件夹作为 Obsidian vault 打开，或复制进已有 vault。保留文件夹内部结构：章节、图的文字版、SVG/PNG 和可编辑 `.excalidraw` 图源使用相对路径。阅读包只收书稿和必要的导航、证据与图稿文件；指向写作计划或构建脚本的少数链接改为仓库链接。它使用标准 Markdown 链接，不依赖 Obsidian 专用插件或 wikilink，也不需要 PDF 的字体或渲染依赖。
 
-生成器逐条检查包内本地链接与图片，缺失即失败；无需 API Key 的本地行动、上下文预算、远端回执及不可信观察/假完成练习还带上 `examples/` 下的脚本与测试，可在解压包根目录离线运行。ZIP 不提交 Git；每次书稿构建与每周审稿任务会将它和 PDF 一同上传为待复核 Artifact。Action 使用当前提交 SHA 生成指向包外写作文件的固定仓库链接；日后制作 tag 版本可用 `--ref <tag>`。包内 Markdown 是导出物，改稿请回仓库源文件。
+生成器逐条检查包内本地链接与图片，缺失即失败；无需 API Key 的本地行动、上下文预算、远端回执、不可信观察/假完成和本地 HTTP 练习还带上 `examples/` 下的脚本与测试。前四条不连网，HTTP 练习仅启动 loopback 监听，都可在解压包根目录运行，不需外网服务。ZIP 不提交 Git；每次书稿构建与每周审稿任务会将它和 PDF 一同上传为待复核 Artifact。Action 使用当前提交 SHA 生成指向包外写作文件的固定仓库链接；日后制作 tag 版本可用 `--ref <tag>`。包内 Markdown 是导出物，改稿请回仓库源文件。
 
 ## PDF 预览
 
