@@ -94,7 +94,7 @@ def styles(font_path: Path) -> dict[str, ParagraphStyle]:
     }
 
 
-TOKEN = re.compile(r"(\[[^\]]+\]\([^)]+\)|`[^`]+`|\*\*[^*]+\*\*)")
+TOKEN = re.compile(r"(\[[^\]]+\]\([^)]+\)|`[^`]+`|\*\*[^*]+\*\*|(?<!\*)\*[^*\n]+\*(?!\*))")
 LINK = re.compile(r"^\[([^\]]+)\]\(([^)]+)\)$")
 IMAGE = re.compile(r"^!\[([^\]]*)\]\(([^)]+)\)$")
 HEADING = re.compile(r"^(#{1,3})\s+(.+)$")
@@ -149,12 +149,12 @@ def public_link(target: Path, label: str, fragment: str) -> str:
     elif re.fullmatch(r"figures/[^/]+/(?:scene\.excalidraw|preview\.png)", relative):
         return ""
     if not url:
-        return html.escape(label)
+        return link_label_markup(label)
     if fragment and "#" not in url:
         url += "#" + quote(fragment, safe="-_")
     if url.startswith("/"):
         url = READER_URL.rstrip("/") + url
-    return f'<link href="{html.escape(url, quote=True)}" color="#2563a6">{html.escape(label)}</link>'
+    return f'<link href="{html.escape(url, quote=True)}" color="#2563a6">{link_label_markup(label)}</link>'
 
 
 def prepare_public_links(paths: list[Path]) -> None:
@@ -185,7 +185,7 @@ def code_markup(source: str, preserve_leading: bool = False) -> str:
 def link_label_markup(label: str) -> str:
     if label.startswith("`") and label.endswith("`") and label.count("`") == 2:
         return f'<font name="{CODE_NAME}">{html.escape(label[1:-1])}</font>'
-    return html.escape(label)
+    return inline(label)
 
 
 def inline(source: str, current_path: Path | None = None) -> str:
@@ -210,13 +210,15 @@ def inline(source: str, current_path: Path | None = None) -> str:
                         public_url += f"#{quote(fragment, safe='-')}"
                     result.append(f'<link href="{html.escape(public_url, quote=True)}" color="#2563a6">{link_label_markup(label)}</link>')
                 else:
-                    result.append(html.escape(label))
+                    result.append(link_label_markup(label))
             else:
-                result.append(html.escape(label))
+                result.append(link_label_markup(label))
         elif part.startswith("`") and part.endswith("`"):
             result.append(f'<font color="#6b40a0">{code_markup(part[1:-1])}</font>')
         elif part.startswith("**") and part.endswith("**"):
-            result.append(f"<b>{html.escape(part[2:-2])}</b>")
+            result.append(f"<b>{inline(part[2:-2], current_path)}</b>")
+        elif part.startswith("*") and part.endswith("*"):
+            result.append(f"<i>{inline(part[1:-1], current_path)}</i>")
         else:
             result.append(html.escape(part))
     return "".join(result)
@@ -265,8 +267,8 @@ class Part(Paragraph):
 
 class Chapter(Paragraph):
     def __init__(self, text: str, style: ParagraphStyle, key: str, outline_level: int = 1):
-        super().__init__(html.escape(text), style)
-        self.chapter_title = text
+        super().__init__(inline(text), style)
+        self.chapter_title = self.getPlainText()
         self.chapter_key = key
         self.outline_level = outline_level
 

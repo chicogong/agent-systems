@@ -14,13 +14,14 @@
 | `docs/roadmap.md`、`docs/program.md`、本文件 | 当前状态、候选选题、写作方法各一处；历史 Pi 工单不是整本书的路线。 |
 | `scripts/`、`.github/workflows/`、`output/` | 本地构建与检查、定时审稿、忽略提交的 PDF/Markdown 产物。 |
 
-## 三种章节，各负其责
+## 四种章节，各负其责
 
 | 类型 | 回答的问题 | 必须包含 |
 | --- | --- | --- |
 | 机制 `docs/concepts/` | 一类 Agent 设计怎样工作，边界在哪里？ | 一个具体问题、最小例子、主图及文字版、正常路径、失败/反例、至少一个真实系统映射。 |
 | 系统 `docs/systems/<name>/` | 某个固定版本如何实现一条路径？ | 仓库与 commit、范围、入口、关键状态与分支、5–10 步代码导读、停止/失败路径、来源定位和未覆盖项。按[模板](systems/TEMPLATE.md)起稿。 |
 | 对照 `docs/comparisons/` | 同一问题为何有不同取舍？ | 同一比较维度，双方证据的版本、核对日期与粒度；开源实现固定 commit，闭源侧只用官方文档或可复现观察，不作实现层等价断言。写出不同点的原因与代价；证据不足的格子留空。 |
+| 练习 `docs/labs/` | 怎样亲自观察一个机制，并用反例验收？ | 学习目标、前置条件、可复制命令、预期轨迹、一个失败输入、修改后的验收和机制章链接。标准库模拟器明确标为模拟，不借其测试替真实产品背书。 |
 
 图不是装饰，也不替代正文。一张图只回答一个主要问题；按需要使用时序、状态、泳道、层级、数据流或矩阵，不把同一种卡片布局套给所有项目。正文要能在不看图时独立理解，图的文字版要能说明节点、箭头与省略的边界。[图稿规范](../figures/STYLE.md)规定可读字号、线条、颜色与导出检查。
 
@@ -34,6 +35,7 @@
 
 1. **定义读者问题和范围。** 用一句话说明读者读完能判断什么；列出常见误解、正常路径和至少一个失败边界。新系统必须贡献新的设计取舍，而不是因为热度高就入书。
 2. **固定证据。** 记录规范仓库、commit/tag、核对日期、具体文件或官方文档、取得方式与许可。标清源码事实、文档声明、运行观察、工程推断、未知；没有环境与轨迹时不写“实测”。
+   GitHub 的 `#L` 锚点须按固定版本的原始文件核对。网页工具可能压缩空行或重排文本，其提取行号不是源码行号；遇到差异先读 raw 文件或检出固定提交，不能直接据提取结果批量改链接。
 3. **先写因果链，再画图。** 在 Markdown 中走通“输入 → 谁决策 → 谁执行 → 状态/副作用 → 怎样验证或恢复”。图只保留帮助理解的关键关系；把长注释移到图下。
 4. **补关键代码逻辑。** 系统篇沿入口、状态、条件分支、副作用、结束/恢复解释，不堆大段第三方源码。机制篇连接至少一个可核对的系统路径，对照篇引用已写的系统剖面。
 5. **校图文同源。** 从 `.excalidraw` 导出 SVG/PNG，检查线条、箭头、字体、裁切和 README 常见宽度；用文字版复述图意。MCP 交互画布若展示，另查画布，不能把本地导出检查当作画布像素验收。
@@ -47,6 +49,12 @@
 ```bash
 python3 scripts/check_repo.py
 python3 scripts/check_sources.py
+python3 scripts/build_contents.py --check
+python3 -m unittest discover -s scripts -p 'test_*.py'
+python3 -m unittest discover -s examples/first-agent-loop -p 'test_*.py'
+python3 -m unittest discover -s examples/context-budget -p 'test_*.py'
+python3 -m unittest discover -s examples/remote-effect -p 'test_*.py'
+python3 scripts/check_figure_legibility.py --strict
 python3 scripts/build_markdown.py
 python3 scripts/build_book.py
 python3 scripts/check_book_pdf.py

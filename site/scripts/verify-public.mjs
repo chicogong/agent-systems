@@ -74,6 +74,13 @@ const anchors = new Map([...pages].map(([file, html]) => [file, new Set([...html
 const indexPages = new Set(['feedback.html', 'pdf.html', 'concepts.html', 'systems.html', 'comparisons.html', 'sources.html'])
 for (const file of expected) {
   const html = pages.get(file)
+  // Chinese punctuation next to an emphasis delimiter can make Markdown
+  // render literal **. Inspect rendered prose, not code examples or scripts.
+  const withoutCode = html.replace(/<pre\b[^>]*>[\s\S]*?<\/pre>/g, '').replace(/<code\b[^>]*>[\s\S]*?<\/code>/g, '')
+  for (const [, , block] of withoutCode.matchAll(/<(p|li|h[1-6]|td|th)\b[^>]*>([\s\S]*?)<\/\1>/g)) {
+    const prose = block.replace(/<[^>]*>/g, '')
+    if (prose.includes('**')) throw new Error(`${file}: literal Markdown emphasis in rendered prose: ${prose.slice(0, 100)}`)
+  }
   if (html.includes('name="robots" content="noindex')) throw new Error(`${file}: unexpected noindex meta`)
   const pathname = file === 'index.html' ? '/' : `/${file.slice(0, -5)}`
   if (!html.includes(`rel="canonical" href="${origin}${pathname}"`)) throw new Error(`Missing canonical: ${file}`)

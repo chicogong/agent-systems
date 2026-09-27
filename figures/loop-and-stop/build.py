@@ -40,7 +40,7 @@ def build():
     rows = [
         ("pi", "Pi", "tool result → runLoop", "steering：轮间\nfollow-up：结束前\nfinishTurn=end：停", "#3478e5", "#e7f0ff"),
         ("mini", "mini-SWE", "observation → messages[-1]", "尾部非 exit：下一轮\n尾部 exit：返回 extra", "#7957cf", "#f0eaff"),
-        ("open", "OpenCode", "ToolPart → runLoop", "continue / compact：再处理\nblocked / error：停止\n流内 retry：退避等待", "#c87617", "#fff0db"),
+        ("open", "OpenCode", "流事件写 ToolPart\nprocessor → 外层 loop", "continue / compact：再处理\nstop：结束外层循环\n流内 retry：有条件退避", "#c87617", "#fff0db"),
         ("kimi", "Kimi Code", "tool.result → runTurn", "tool_use：下一步\nsteer：等 step 边界\n无续跑或上限：结束", "#138765", "#e2f7ed"),
     ]
     for i, (key, name, gate, outcome, color, fill) in enumerate(rows):
@@ -49,7 +49,7 @@ def build():
         box(s, f"{key}-gate", 215, y, 360, 107, color, "#ffffff")
         box(s, f"{key}-next", 601, y, 417, 107, color, fill)
         label(s, f"{key}-name-text", name, 39, y + 31, 147, 24, color)
-        label(s, f"{key}-gate-text", gate, 230, y + 32, 330, 23)
+        label(s, f"{key}-gate-text", gate, 230, y + (20 if key == "open" else 32), 330, 23)
         label(s, f"{key}-next-text", outcome, 616, y + 12, 385, 22)
         arrow(s, f"{key}-arrow", [(577, y + 54), (597, y + 54)], color)
 

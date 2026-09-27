@@ -64,11 +64,14 @@ def build():
     message(d, "action-event", 452, 480, 1100, "模型 tool_call → ActionEvent（先写入）", PURPLE,
             lx=523, lw=510)
 
+    d.box("confirmation-opt", 122, 482, 500, 208, AMBER, "transparent")
+    d.elements[-1].update(strokeStyle="dashed", strokeWidth=1, roughness=1)
+    d.text("confirmation-opt-label", "仅需确认时", 137, 480, 255, 23, AMBER, 6)
     message(d, "pause", 559, 480, 170, "WAITING_FOR_CONFIRMATION", AMBER,
             dashed=True, lx=198, lw=370)
     message(d, "resume", 655, 170, 480, "获准后再次 run()", AMBER,
             dashed=True, lx=198, lw=290)
-    d.text("direct", "无需确认：同轮继续", 705, 615, 300, 24, GREEN, 6)
+    d.text("direct", "否则：同轮直接执行", 705, 615, 300, 24, GREEN, 6)
 
     message(d, "execute", 740, 480, 790, "tool(action, conversation)", GREEN,
             lx=505, lw=265)

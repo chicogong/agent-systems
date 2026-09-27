@@ -8,6 +8,7 @@ docs/concepts/agent-workflow-multiagent.md
 docs/concepts/agent-loop.md
 docs/labs/first-agent-loop.md
 docs/concepts/context-vs-memory.md
+docs/labs/context-budget.md
 docs/concepts/session-compaction-and-memory.md
 docs/concepts/approval-vs-sandbox.md
 docs/concepts/extensibility-layers.md

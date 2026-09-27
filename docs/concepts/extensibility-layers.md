@@ -18,4 +18,4 @@ Pi 的固定源码版本提供一个具体例子：[`loadSkills` 与 `formatSkil
 
 MCP 的[协议架构](https://modelcontextprotocol.io/specification/2025-11-25/architecture)定义 Host、Client、Server 及能力协商；Server 可公开 Tools、Resources、Prompts。协议支持这些原语，并不意味着每个 Agent 都会接入某个 Server，也不意味着某个远端 Tool 自动拥有宿主的全部权限。当前本书使用这份规范解释术语，具体产品接入还要另读各自固定源码。MCP 规范会演进，本页不会把一版协议的会话细节写成永久事实。
 
-最小判断法：**Skill 告诉 Agent 如何做；Tool 提供一次可调用操作；Extension 改变宿主；Package 负责分发；MCP 规定跨边界交换能力的方式。**这是帮助阅读的抽象，不保证每个产品都沿用这些名称或完全相同的生命周期。
+最小判断法：**Skill 告诉 Agent 如何做；Tool 提供一次可调用操作；Extension 改变宿主；Package 负责分发；MCP 规定跨边界交换能力的方式。** 这是帮助阅读的抽象，不保证每个产品都沿用这些名称或完全相同的生命周期。

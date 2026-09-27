@@ -26,7 +26,7 @@
 
 ## 你可以怎样读
 
-- **第一次接触 Agent：**沿[四层学习路线](docs/learning-path.md)走。先看循环，再运行[提案、执行与验收练习](docs/labs/first-agent-loop.md)；不需要 API Key，Python 标准库即可。随后尝试[回执丢失后的对账练习](docs/labs/remote-effect.md)，理解“没有收到答复”为什么不等于“没有执行”。
+- **第一次接触 Agent：**沿[四层学习路线](docs/learning-path.md)走。先看循环，再运行[提案、执行与验收练习](docs/labs/first-agent-loop.md)；不需要 API Key，Python 标准库即可。随后用[上下文预算练习](docs/labs/context-budget.md)区分保存与可见，再尝试[回执丢失后的对账练习](docs/labs/remote-effect.md)，理解“没有收到答复”为什么不等于“没有执行”。
 - **想读懂一个项目：**从 [Pi 的运行核心与外壳](docs/systems/pi/README.md)或[Codex 的命令审批与执行](docs/systems/codex/README.md)开始。系统篇给出上游仓库、固定 commit、关键源码位置、正常/失败路径与未验证范围，不要求把整个仓库从头读完。
 - **正在设计自己的系统：**按问题查[机制](docs/concepts/README.md)、[跨系统对照](docs/comparisons/README.md)和[术语表](docs/glossary.md)。例如工具权限、上下文预算、记忆可见性、委派交接、checkpoint、评测和外部副作用，不必先选“最佳框架”。
 
@@ -37,7 +37,7 @@
 | **机制图解** | 一条任务怎样经过模型、工具、上下文、记忆、权限和恢复；图旁写明例子与反例 | [Agent loop](docs/concepts/agent-loop.md) · [MCP、Skill 与工具](docs/concepts/mcp-skill-tool-lifecycle.md) · [观察与评测](docs/concepts/observation-evaluation.md) |
 | **开源源码剖面** | 固定版本中的一条可追踪调用链：入口、状态、关键分支、副作用、停止条件 | [Pi](docs/systems/pi/README.md) · [OpenCode](docs/systems/opencode/README.md) · [LangGraph](docs/systems/langgraph/README.md) |
 | **横向对照** | 同一问题的不同设计与代价，不拿不同层次的产品凑功能榜 | [循环与停止](docs/comparisons/loop-and-stop.md) · [四种状态](docs/comparisons/four-kinds-of-state.md) · [权限与恢复](docs/comparisons/permission-and-recovery.md) |
-| **动手练习** | 可运行的输入、预期轨迹、测试、自测题和明确的模拟边界 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [远端结果未知](docs/labs/remote-effect.md) |
+| **动手练习** | 可运行的输入、预期轨迹、测试、自测题和明确的模拟边界 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [上下文预算](docs/labs/context-budget.md) · [远端结果未知](docs/labs/remote-effect.md) |
 
 系统案例覆盖 Pi、Codex、OpenCode、mini-SWE-agent、OpenHands、Browser Use、Qwen Code、Kimi Code、MiMo Code、Letta Code、Mem0、LangGraph、OpenClaw 与 GPT Researcher。它们分属编码助手、运行框架、记忆组件等不同层次；**入书理由是能解释一种架构取舍，不是热度或 Star 数。**逐篇范围见[系统索引](docs/systems/README.md)，候选及后续教学安排见[选题地图](docs/program.md)与[扩写计划](docs/curriculum-expansion.md)。
 
@@ -47,7 +47,7 @@
 | --- | --- |
 | [在线阅读站](https://books.aimake.cc/) | 手机阅读、章节导航、搜索和反馈；公开站按人工发布批次更新。 |
 | [GitHub 书序目录](book/CONTENTS.md) | 直接看唯一的 Markdown 源稿、代码链接、图源和修订历史。 |
-| [可携带 Markdown 阅读包](book/README.md#markdown-阅读包) | 导入 Obsidian 或普通 Markdown 阅读器；相对链接、图与两条入门练习的代码随包保留。 |
+| [可携带 Markdown 阅读包](book/README.md#markdown-阅读包) | 导入 Obsidian 或普通 Markdown 阅读器；相对链接、图与入门练习的代码随包保留。 |
 | [PDF 电子校样](https://books.aimake.cc/pdf) | 固定页序浏览、批注和下载；它不是印刷母版，更新不由每周 Action 自动覆盖。 |
 
 正文只维护一份。`book/manifest.txt` 决定 GitHub 目录、网站、PDF 和阅读包的书序；导出物不是第二份稿件。线上站与本地仓库可能处于不同发布批次，**精确篇数、页数和验收缺口以[当前状态](docs/roadmap.md)为准**。

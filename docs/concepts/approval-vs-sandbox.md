@@ -16,4 +16,4 @@ Agent 请求执行命令时，“问过用户”“在沙箱里跑”“只在�
 
 OpenHands SDK 的局部路径则先记 `ActionEvent`，需要确认时停在 `WAITING_FOR_CONFIRMATION`；获准后工具才可能执行。[确认闸门](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L163-L190) 其 `TerminalTool` 使用 workspace 的 `working_dir`，但这只是工作目录来源；真正的隔离要看所选 workspace 和部署方式。[TerminalTool](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-tools/openhands/tools/terminal/definition.py#L294-L330)
 
-这两个例子不是安全性能评测，也不表示两套产品的授权模型完全可比。本文只建立阅读源码时的提问顺序：**先看谁能发起动作，再看谁能批准，再看执行环境可触达什么，最后检查副作用与结果。**任何一层的“通过”都不能替代后一层的验证。
+这两个例子不是安全性能评测，也不表示两套产品的授权模型完全可比。本文只建立阅读源码时的提问顺序：**先看谁能发起动作，再看谁能批准，再看执行环境可触达什么，最后检查副作用与结果。** 任何一层的“通过”都不能替代后一层的验证。

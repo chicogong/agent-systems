@@ -205,8 +205,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  smallest labels: {'; '.join(report.smallest_labels)}")
         if report.note:
             print(f"  {report.note}")
-    print(f"{len(reports)} figures; {needs_review} need manual review. "
-          "300 PPI does not establish legibility.")
+    print(f"{len(reports)} figures; {needs_review} geometric flags. "
+          "Visual review is still required; 300 PPI does not establish legibility.")
     return 1 if args.strict and needs_review else 0
 
 

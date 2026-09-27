@@ -24,6 +24,7 @@ def gate(scene: Scene, name: str, x: int, w: int, color: str,
     scene.box(name, x, 247, w, 190, color, "#ffffff")
     scene.elements[-1]["roundness"] = None
     scene.elements[-1]["strokeWidth"] = 2
+    scene.elements[-1]["roughness"] = 1
     scene.box(f"{name}-bar", x, 247, w, 9, color, color)
     scene.elements[-1]["roundness"] = None
     scene.elements[-1]["strokeWidth"] = 0
@@ -36,6 +37,7 @@ def arrow(scene: Scene, name: str, points: list[tuple[int, int]], color: str,
           dashed: bool = False):
     scene.arrow(name, points, color)
     scene.elements[-1]["strokeWidth"] = 3
+    scene.elements[-1]["roughness"] = 1
     scene.elements[-1]["strokeStyle"] = "dashed" if dashed else "solid"
 
 
@@ -73,6 +75,7 @@ def build():
 
     d.box("legend", 44, 614, 1269, 72, "#d9e3ed", "#f6f9fc")
     d.elements[-1]["strokeWidth"] = 1
+    d.elements[-1]["roughness"] = 1
     d.text("legend-text", "请求中的 key ≠ 规范化后的授权目标；路由通过 ≠ agent 已执行。",
            67, 632, 1200, 24, INK, 6)
     d.save(Path(__file__).with_name("scene.excalidraw"))

@@ -35,6 +35,9 @@ SUPPORT_FILES = (
     "examples/first-agent-loop/test_demo.py",
     "examples/remote-effect/demo.py",
     "examples/remote-effect/test_demo.py",
+    "examples/context-budget/README.md",
+    "examples/context-budget/demo.py",
+    "examples/context-budget/test_demo.py",
 )
 
 
@@ -102,7 +105,7 @@ def reading_index(entries: list[tuple[str, str]], ref: str) -> str:
         "",
         "解压后可用 Markdown 阅读器打开本文件，或将整个文件夹作为 Obsidian vault 打开。",
         "请保留目录结构，否则章节间的相对链接和图片会失效。",
-        "两条不依赖 API Key 的入门练习还附带 `examples/` 中的可运行源码与测试；",
+        "入门练习还附带 `examples/` 中的可运行源码与测试，不依赖 API Key；",
         "在解压后的阅读包根目录执行章节给出的命令即可。",
         "",
         "也可以按问题进入：[机制](docs/concepts/README.md) · "

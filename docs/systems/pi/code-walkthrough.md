@@ -32,7 +32,7 @@ prompt(input) → runLoop
 
 **二，结束前有明确优先级。**`finishTurn` 若返回 `end`，底层 loop 直接发 `agent_end`，不再走自然停止点的 follow-up 检查。若返回 `continue`，只有没有工具调用或队列消息带来下一轮时，才补一次“只用已有上下文”的回合。耗时的 `prepareNextTurn` 之后，还会在先前未取到 steering 时再检查队列，避免等待期间输入被忽略。[回合决策](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L279-L320) · [准备期间的 steering](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L181-L207)
 
-**三，`continue()` 不是任意重放。**若 Agent 当前最后一条是 assistant，`continue()` 先尝试取 steering，再取 follow-up；两者都没有就报错。普通 continuation 入口至少要有消息，且不允许以 assistant 作为尾消息；真正送到 provider 前，注释还要求经 `convertToLlm` 转换后的尾消息是 user 或 tool result，这一点底层入口无法提前验证。[`Agent.continue()`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L380-L408) · [底层入口与注释](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L62-L99)
+**三，`continue()` 不是任意重放。** 若 Agent 当前最后一条是 assistant，`continue()` 先尝试取 steering，再取 follow-up；两者都没有就报错。普通 continuation 入口至少要有消息，且不允许以 assistant 作为尾消息；真正送到 provider 前，注释还要求经 `convertToLlm` 转换后的尾消息是 user 或 tool result，这一点底层入口无法提前验证。[`Agent.continue()`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L380-L408) · [底层入口与注释](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L62-L99)
 
 ## 错误发生在哪一层，恢复就在哪一层
 

@@ -91,14 +91,16 @@ label("not-proven-body", "全面正确 · 产品可用 · 安全", 939, 704, 325
 
 # Separate incoming channels avoid implying that one form of evidence causes another.
 for key, sy, ey, relation, ly in [
-    ("log", 153, 360, "记录范围", 103),
-    ("trace", 293, 398, "过程关联", 242),
-    ("assert", 433, 436, "条件检验", 385),
-    ("eval", 661, 492, "汇总表现", 625),
-    ("human", 866, 540, "复核体验", 809),
+    ("log", 153, 360, "记录范围", 113),
+    ("trace", 293, 398, "过程关联", 253),
+    ("assert", 433, 436, "条件检验", 393),
+    ("eval", 661, 492, "汇总表现", 621),
+    ("human", 866, 540, "复核体验", 826),
 ]:
-    arrow(f"{key}-conclusion", 727, sy, [(0, 0), (76, 0), (177, ey - sy)])
-    label(f"{key}-relation", relation, 795, ly, 100, 30, 22, "#48596a")
+    # Start inside the 49px margin between node and band edge; put the
+    # relationship above that horizontal segment, not over a converging line.
+    arrow(f"{key}-conclusion", 727, sy, [(0, 0), (144, 0), (177, ey - sy)])
+    label(f"{key}-relation", relation, 755, ly, 100, 30, 22, "#48596a")
 
 scene = {
     "type": "excalidraw", "version": 2, "source": "https://excalidraw.com",

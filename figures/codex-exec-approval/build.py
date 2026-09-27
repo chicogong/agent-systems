@@ -61,14 +61,15 @@ def build():
          "NeedsApproval", "批准继续 · 拒绝停止")
     tile(d, "forbid", 910, 372, 275, 110, RED, "#ffe3e3",
          "Forbidden", "执行前停止")
-    line(d, "policy-skip", [(730, 288), (730, 333), (237, 333), (237, 372)], GREEN)
-    line(d, "policy-ask", [(805, 288), (805, 335), (643, 335), (643, 372)], AMBER)
-    line(d, "policy-forbid", [(885, 288), (885, 335), (1048, 335), (1048, 372)], RED)
+    line(d, "policy-skip", [(730, 288), (730, 316), (237, 316), (237, 372)], GREEN)
+    line(d, "policy-ask", [(805, 288), (805, 345), (643, 345), (643, 372)], AMBER)
+    line(d, "policy-forbid", [(885, 288), (885, 330), (1048, 330), (1048, 372)], RED)
 
     tile(d, "attempt", 490, 594, 410, 112, VIOLET, "#e5dbff",
          "选择沙箱 · 第一次尝试", "执行器选择运行时")
     line(d, "skip-attempt", [(237, 482), (237, 649), (490, 649)], GREEN)
     line(d, "ask-attempt", [(643, 482), (643, 594)], AMBER)
+    d.text("approved", "批准", 660, 530, 80, 22, "#9a6700", 8)
 
     tile(d, "success", 95, 794, 270, 102, GREEN, "#c3fae8",
          "成功", "返回输出或进程会话")

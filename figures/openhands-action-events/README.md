@@ -4,7 +4,7 @@
 
 四条泳道从左到右是 `LocalConversation`、`Agent`、`Tool`、`EventLog`，时间从上往下。用户消息先成为 `MessageEvent`。`run()` 调用 `Agent.step()`；模型产生工具调用后，Agent **先发** `ActionEvent` 进入事件历史。若需确认，本次运行停在 `WAITING_FOR_CONFIRMATION`。再次获准运行时，Agent 找到当前分支上未匹配的动作，再交给工具执行；无须确认的动作则在同一次 step 中直接进入工具。工具把 `Observation` 返回给 Agent；Agent 包装成 `ObservationEvent` 或错误事件，经会话回调写入事件历史。
 
-图中“再次运行”和“直接执行”是条件路径，不表示一个工具调用总要经历两次 `run()`。用户拒绝会产生 `UserRejectObservation`，不会调用工具。完整来源和例外见[关键代码路径](../../docs/systems/openhands/code-walkthrough.md)。
+图中虚线框“仅需确认时”包含等待与获准后再次运行；无须确认时跳过这个区间，在同一次 step 直接执行，不表示一个工具调用总要经历两次 `run()`。用户拒绝会产生 `UserRejectObservation`，不会调用工具。完整来源和例外见[关键代码路径](../../docs/systems/openhands/code-walkthrough.md)。
 
 图下的拒绝分支与主路径互斥。图内省去了长注释：结果事件的记录顺序不能推断并行工具副作用的发生顺序；图只描述同步 `LocalConversation` 的局部路径。
 

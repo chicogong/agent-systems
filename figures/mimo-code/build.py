@@ -24,7 +24,7 @@ def card(d, name, title, detail, x, y, w, h, stroke, fill):
 def main():
     d = Scene()
     d.text("title", "MiMo Code：先写状态，再换窗口", 36, 25, 860, 35, INK, 8)
-    d.text("subtitle", "checkpoint 由阈值触发；重建由溢出触发。", 38, 78, 850, 23, MUTED, 8)
+    d.text("subtitle", "写入已启用：checkpoint 由阈值触发；重建由溢出触发。", 38, 78, 850, 23, MUTED, 8)
 
     d.box("write-stage", 30, 142, 890, 284, "#a7c9f4", "#f4f8ff")
     d.text("write-heading", "① 提前写入 · 主 Agent 继续工作", 54, 158, 810, 28, BLUE, 8)
@@ -44,9 +44,12 @@ def main():
     d.arrow("success-edge", [(475, 669), (250, 669), (250, 707)], GREEN)
     d.arrow("fallback-edge", [(475, 669), (700, 669), (700, 707)], ORANGE)
     card(d, "success", "已有可用状态", "重建边界 → 继续", 54, 707, 390, 124, GREEN, "#eff9f2")
-    card(d, "fallback", "没有可用状态", "现场等待 writer", 506, 707, 390, 124, ORANGE, "#fff4e6")
-    d.text("fallback-foot", "仍失败 / 超时 / 禁用写入", 506, 844, 390, 23, ORANGE, 8)
+    card(d, "fallback", "没有可用状态", "现场启动 / 等待 writer", 506, 707, 390, 124, ORANGE, "#fff4e6")
+    d.arrow("onsite-writer-success", [(506, 798), (444, 798)], GREEN)
+    d.text("onsite-writer-success-label", "成功", 450, 761, 52, 23, GREEN, 8)
+    d.text("fallback-foot", "writer 失败 / 等待超时", 506, 844, 390, 23, ORANGE, 8)
     d.text("fallback-foot2", "→ compaction 边界", 506, 872, 390, 23, ORANGE, 8)
+    d.text("disabled-foot", "禁用 checkpoint / memory write：不走上述重建，直接退化。", 38, 932, 878, 23, MUTED, 8)
 
     for element in d.elements:
         if element["type"] == "rectangle":

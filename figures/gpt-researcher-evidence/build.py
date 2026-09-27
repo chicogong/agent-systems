@@ -38,6 +38,7 @@ def main() -> None:
     d.box("empty-boundary", 717, 525, 333, 78, RED, "#fff6f3")
 
     d.text("heading", "Hybrid：先加载，再并发形成两路 context", 30, 26, 1020, 28, INK, 8)
+    d.text("scope", "仅限非 Granite PromptFamily 的 Hybrid 路径", 32, 72, 1000, 20, MUTED, 8)
     d.text("load-phase", "① 文档加载完成", 32, 112, 230, 20, MUTED, 8)
     d.text("gather-label", "② asyncio.gather · 两路并发", 307, 126, 338, 20, MUTED, 8)
     d.text("loader-label", "DocumentLoader\n或在线加载器\n加载文档", 47, 183, 190, 21, INK, 8)

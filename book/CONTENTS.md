@@ -3,7 +3,7 @@
 
 这里是 GitHub 上的完整阅读目录。章节正文只在各自的 Markdown 文件中维护；
 本页、[在线阅读站](https://books.aimake.cc/)和 PDF 使用同一份书稿清单。
-也可以从[按问题进入](../README.md#从问题进入)开始，或下载[可携带 Markdown 阅读包](README.md#markdown-阅读包)。
+也可以从[选择阅读路线](../README.md#你可以怎样读)开始，或下载[可携带 Markdown 阅读包](README.md#markdown-阅读包)。
 
 ## 卷首
 
@@ -18,69 +18,70 @@
 6. [Agent loop：一次行动怎样闭环](../docs/concepts/agent-loop.md)
 7. [动手：在一条可运行轨迹里分清提案、执行与验收](../docs/labs/first-agent-loop.md)
 8. [上下文、会话、摘要与记忆不是一回事](../docs/concepts/context-vs-memory.md)
-9. [会话变长以后：压缩、记忆和检查点各保留什么](../docs/concepts/session-compaction-and-memory.md)
-10. [审批、沙箱、工作目录：三个不同的边界](../docs/concepts/approval-vs-sandbox.md)
-11. [Tool、Skill、Extension、Package、MCP：到底扩展了什么？](../docs/concepts/extensibility-layers.md)
-12. [从知识库查询到仓库修改：Skill、MCP 与工具权限如何接力](../docs/concepts/mcp-skill-tool-lifecycle.md)
-13. [Jev：把一个判断交给模型，动作仍由代码决定](../docs/concepts/jev-and-system-one.md)
-14. [委派与交接：多执行者怎样对一项任务负责？](../docs/concepts/delegation-and-handoff.md)
-15. [中断、重试与恢复：先确认哪一步已经生效](../docs/concepts/interruption-recovery.md)
-16. [观察、测试与评测：一次通过能说明什么](../docs/concepts/observation-evaluation.md)
+9. [动手：存下的历史，不等于本轮可见上下文](../docs/labs/context-budget.md)
+10. [会话变长以后：压缩、记忆和检查点各保留什么](../docs/concepts/session-compaction-and-memory.md)
+11. [审批、沙箱、工作目录：三个不同的边界](../docs/concepts/approval-vs-sandbox.md)
+12. [Tool、Skill、Extension、Package、MCP：到底扩展了什么？](../docs/concepts/extensibility-layers.md)
+13. [从知识库查询到仓库修改：Skill、MCP 与工具权限如何接力](../docs/concepts/mcp-skill-tool-lifecycle.md)
+14. [Jev：把一个判断交给模型，动作仍由代码决定](../docs/concepts/jev-and-system-one.md)
+15. [委派与交接：多执行者怎样对一项任务负责？](../docs/concepts/delegation-and-handoff.md)
+16. [中断、重试与恢复：先确认哪一步已经生效](../docs/concepts/interruption-recovery.md)
+17. [观察、测试与评测：一次通过能说明什么](../docs/concepts/observation-evaluation.md)
 
 ## 第二部分 · 行动、工具与执行
 
-17. [Pi：小核心与可扩展外壳](../docs/systems/pi/README.md)
-18. [跟着 Pi 代码走一轮](../docs/systems/pi/code-walkthrough.md)
-19. [Pi 的 Extension、Skill 与 Package](../docs/systems/pi/extensions-and-skills.md)
-20. [Codex：一条命令为何会执行、询问或停下？](../docs/systems/codex/README.md)
-21. [跟着 Codex 代码走一次 `exec_command`](../docs/systems/codex/code-walkthrough.md)
-22. [OpenCode：工具调用为何有自己的状态？](../docs/systems/opencode/README.md)
-23. [跟着 OpenCode 代码看一次 ToolPart 状态变化](../docs/systems/opencode/code-walkthrough.md)
-24. [mini-swe-agent：最小循环的停止契约](../docs/systems/mini-swe-agent/README.md)
-25. [读 `DefaultAgent` 的 100 行控制流](../docs/systems/mini-swe-agent/code-walkthrough.md)
-26. [OpenHands：为什么先记录动作，再执行工具？](../docs/systems/openhands/README.md)
-27. [跟着 OpenHands SDK 走一条事件路径](../docs/systems/openhands/code-walkthrough.md)
-28. [browser-use：一轮 step 怎样把网页变成行动与历史？](../docs/systems/browser-use/README.md)
-29. [跟着 browser-use 的 `Agent.step()` 走一轮](../docs/systems/browser-use/code-walkthrough.md)
-30. [Qwen Code：延迟工具为何要分“发现”和“执行”？](../docs/systems/qwen-code/README.md)
-31. [跟着 Qwen Code 的延迟工具桥走两次调用](../docs/systems/qwen-code/code-walkthrough.md)
-32. [Kimi Code：进行中的回合怎样接住新指令？](../docs/systems/kimi-code/README.md)
-33. [代码导读：`steer` 何时成为模型上下文](../docs/systems/kimi-code/code-walkthrough.md)
-34. [MiMo Code：把长会话切成可恢复的窗口](../docs/systems/mimo-code/README.md)
-35. [沿一次 checkpoint 与 rebuild 读代码](../docs/systems/mimo-code/code-walkthrough.md)
+18. [Pi：小核心与可扩展外壳](../docs/systems/pi/README.md)
+19. [跟着 Pi 代码走一轮](../docs/systems/pi/code-walkthrough.md)
+20. [Pi 的 Extension、Skill 与 Package](../docs/systems/pi/extensions-and-skills.md)
+21. [Codex：一条命令为何会执行、询问或停下？](../docs/systems/codex/README.md)
+22. [跟着 Codex 代码走一次 `exec_command`](../docs/systems/codex/code-walkthrough.md)
+23. [OpenCode：工具调用为何有自己的状态？](../docs/systems/opencode/README.md)
+24. [跟着 OpenCode 代码看一次 ToolPart 状态变化](../docs/systems/opencode/code-walkthrough.md)
+25. [mini-swe-agent：最小循环的停止契约](../docs/systems/mini-swe-agent/README.md)
+26. [读 `DefaultAgent` 的 100 行控制流](../docs/systems/mini-swe-agent/code-walkthrough.md)
+27. [OpenHands：为什么先记录动作，再执行工具？](../docs/systems/openhands/README.md)
+28. [跟着 OpenHands SDK 走一条事件路径](../docs/systems/openhands/code-walkthrough.md)
+29. [browser-use：一轮 step 怎样把网页变成行动与历史？](../docs/systems/browser-use/README.md)
+30. [跟着 browser-use 的 `Agent.step()` 走一轮](../docs/systems/browser-use/code-walkthrough.md)
+31. [Qwen Code：延迟工具为何要分“发现”和“执行”？](../docs/systems/qwen-code/README.md)
+32. [跟着 Qwen Code 的延迟工具桥走两次调用](../docs/systems/qwen-code/code-walkthrough.md)
+33. [Kimi Code：进行中的回合怎样接住新指令？](../docs/systems/kimi-code/README.md)
+34. [代码导读：`steer` 何时成为模型上下文](../docs/systems/kimi-code/code-walkthrough.md)
+35. [MiMo Code：把长会话切成可恢复的窗口](../docs/systems/mimo-code/README.md)
+36. [沿一次 checkpoint 与 rebuild 读代码](../docs/systems/mimo-code/code-walkthrough.md)
 
 ## 第三部分 · 状态、记忆与任务上下文
 
-36. [Letta Code：长期记忆为什么不等于当前上下文](../docs/systems/letta/README.md)
-37. [跟着 Letta Code 看 local MemFS v1 的记忆可见性](../docs/systems/letta/code-walkthrough.md)
-38. [Mem0：记忆怎样写入，又怎样被找回](../docs/systems/mem0/README.md)
-39. [跟着 Mem0 代码走一次写入和检索](../docs/systems/mem0/code-walkthrough.md)
-40. [LangGraph：thread 不是一条只能覆盖的状态线](../docs/systems/langgraph/README.md)
-41. [代码走读：checkpoint 如何变成一条新分支](../docs/systems/langgraph/code-walkthrough.md)
-42. [OpenClaw：Gateway 怎样把一次 `agent` 请求交给正确会话？](../docs/systems/openclaw/README.md)
-43. [跟着 OpenClaw Gateway 读显式 `sessionKey` 路由](../docs/systems/openclaw/code-walkthrough.md)
-44. [GPT Researcher：多来源怎样变成报告上下文](../docs/systems/gpt-researcher/README.md)
-45. [代码导读：Hybrid 的两路上下文如何交给报告写作器](../docs/systems/gpt-researcher/code-walkthrough.md)
+37. [Letta Code：长期记忆为什么不等于当前上下文](../docs/systems/letta/README.md)
+38. [跟着 Letta Code 看 local MemFS v1 的记忆可见性](../docs/systems/letta/code-walkthrough.md)
+39. [Mem0：记忆怎样写入，又怎样被找回](../docs/systems/mem0/README.md)
+40. [跟着 Mem0 代码走一次写入和检索](../docs/systems/mem0/code-walkthrough.md)
+41. [LangGraph：thread 不是一条只能覆盖的状态线](../docs/systems/langgraph/README.md)
+42. [代码走读：checkpoint 如何变成一条新分支](../docs/systems/langgraph/code-walkthrough.md)
+43. [OpenClaw：Gateway 怎样把一次 `agent` 请求交给正确会话？](../docs/systems/openclaw/README.md)
+44. [跟着 OpenClaw Gateway 读显式 `sessionKey` 路由](../docs/systems/openclaw/code-walkthrough.md)
+45. [GPT Researcher：多来源怎样变成报告上下文](../docs/systems/gpt-researcher/README.md)
+46. [代码导读：Hybrid 的两路上下文如何交给报告写作器](../docs/systems/gpt-researcher/code-walkthrough.md)
 
 ## 第四部分 · 横向对照
 
-46. [一轮工具调用后，谁决定下一步？](../docs/comparisons/loop-and-stop.md)
-47. [存下来了，下一轮就一定能看见吗？](../docs/comparisons/persisted-vs-visible.md)
-48. [四种常被叫作“记忆”的状态](../docs/comparisons/four-kinds-of-state.md)
-49. [Claude Code 与 Codex：同一修复任务如何执行与受控？](../docs/comparisons/claude-code-codex.md)
-50. [批准过了，超时后能重试吗？](../docs/comparisons/permission-and-recovery.md)
-51. [动手：回执丢失后，先对账还是再执行？](../docs/labs/remote-effect.md)
-52. [Agent 说“完成”时，哪些证据够用？](../docs/comparisons/completion-and-evidence.md)
+47. [一轮工具调用后，谁决定下一步？](../docs/comparisons/loop-and-stop.md)
+48. [存下来了，下一轮就一定能看见吗？](../docs/comparisons/persisted-vs-visible.md)
+49. [四种常被叫作“记忆”的状态](../docs/comparisons/four-kinds-of-state.md)
+50. [Claude Code 与 Codex：同一修复任务如何执行与受控？](../docs/comparisons/claude-code-codex.md)
+51. [批准过了，超时后能重试吗？](../docs/comparisons/permission-and-recovery.md)
+52. [动手：回执丢失后，先对账还是再执行？](../docs/labs/remote-effect.md)
+53. [Agent 说“完成”时，哪些证据够用？](../docs/comparisons/completion-and-evidence.md)
 
 ## 附录 · 术语与核验方法
 
-53. [术语：同一个词别混用](../docs/glossary.md)
+54. [术语：同一个词别混用](../docs/glossary.md)
 
 ## 卷末
 
-54. [结语：图会更新，问题值得留下](../book/backmatter/afterword.md)
-55. [致谢与贡献](../book/backmatter/acknowledgments.md)
-56. [作者简介](../book/backmatter/about-author.md)
+55. [结语：图会更新，问题值得留下](../book/backmatter/afterword.md)
+56. [致谢与贡献](../book/backmatter/acknowledgments.md)
+57. [作者简介](../book/backmatter/about-author.md)
 
 ---
 

@@ -17,7 +17,7 @@ def render() -> str:
         "",
         "这里是 GitHub 上的完整阅读目录。章节正文只在各自的 Markdown 文件中维护；",
         "本页、[在线阅读站](https://books.aimake.cc/)和 PDF 使用同一份书稿清单。",
-        "也可以从[按问题进入](../README.md#从问题进入)开始，或下载[可携带 Markdown 阅读包](README.md#markdown-阅读包)。",
+        "也可以从[选择阅读路线](../README.md#你可以怎样读)开始，或下载[可携带 Markdown 阅读包](README.md#markdown-阅读包)。",
         "",
     ]
     section = ""

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
@@ -51,6 +52,35 @@ class BookListTests(unittest.TestCase):
         rendered = build_book.inline("[`repo@sha`](https://example.com/source)")
         self.assertIn("repo@sha", rendered)
         self.assertNotIn("`", rendered)
+
+    def test_public_link_with_mixed_code_label_keeps_formatting(self) -> None:
+        build_book.prepare_public_links(build_book.manifest_paths())
+        target = build_book.ROOT / "docs/systems/pi/code-walkthrough.md"
+        rendered = build_book.public_link(target, "`steer()` 源码", "")
+        self.assertIn('href="https://books.aimake.cc/systems/pi/code-walkthrough"', rendered)
+        self.assertIn('name="BookCode"', rendered)
+        self.assertNotIn("`", rendered)
+        self.assertIn("源码", rendered)
+
+    def test_emphasis_renders_code_without_markdown_delimiters(self) -> None:
+        rendered = build_book.inline("**提出 `check()`，不等于验收。**")
+        self.assertTrue(rendered.startswith("<b>"))
+        self.assertIn('name="BookCode"', rendered)
+        self.assertNotIn("`", rendered)
+        self.assertNotIn("**", rendered)
+
+    def test_italic_markup_does_not_leak_or_change_code(self) -> None:
+        rendered = build_book.inline("此处的*默认实现*与 `test_*.py` 不同。")
+        self.assertIn("<i>默认实现</i>", rendered)
+        self.assertIn("test_*.py", rendered)
+
+    def test_chapter_and_contents_title_have_no_markdown_ticks(self) -> None:
+        # No font downloads in this parser-only test; production build registers
+        # BookCode before creating chapters.
+        with patch.object(build_book, "CODE_NAME", "Courier"):
+            chapter = build_book.Chapter("读 `exec_command` 的控制流", ParagraphStyle("test-title"), "test-chapter")
+        self.assertEqual(chapter.getPlainText(), "读 exec_command 的控制流")
+        self.assertEqual(chapter.chapter_title, "读 exec_command 的控制流")
 
     def test_opening_height_keeps_early_figure_with_title(self) -> None:
         class FixedHeight(Flowable):
