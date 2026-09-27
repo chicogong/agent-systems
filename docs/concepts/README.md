@@ -16,5 +16,9 @@
 10. [委派与交接：多执行者怎样对一项任务负责？](delegation-and-handoff.md)。
 11. [中断、重试与恢复：如何避免重复副作用？](interruption-recovery.md)。
 12. [观察、测试与评测：一次通过能说明什么？](observation-evaluation.md)。
+13. [沙箱与执行环境：资源合同、生命周期和环境外验收](sandbox-execution.md)。
+14. [Computer / Browser Use：观察通道与宿主动作](computer-and-browser-use.md)。
+
+进阶执行面专题在书序中与 Codex、OpenHands／Browser Use 案例相邻，不要求初读时一次消化所有隔离技术。可以先做[不可信观察与假完成练习](../labs/evidence-contract.md)，再回看这些执行面的风险。
 
 首张[概念总览图](../../figures/agent-loop/README.md)是教学抽象，不代替上述专题的细节图；“多 Agent”一章先解决控制权与执行者数量的区别，委派篇进一步讨论任务合同与对账，但尚无完整运行实验。

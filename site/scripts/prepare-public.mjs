@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { plainLabel, figureExplanation } from './page-metadata.mjs'
 
 const site = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repo = path.resolve(process.env.BOOK_CONTENT_ROOT || path.join(site, '..'))
@@ -36,7 +37,7 @@ const bookTitles = new Map(await Promise.all(bookPaths.map(async ({ source }) =>
   const markdown = await readFile(path.join(repo, source), 'utf8')
   const title = markdown.match(/^#\s+(.+)$/m)?.[1]?.trim()
   if (!title) throw new Error(source + ': missing H1')
-  return [source, title]
+  return [source, plainLabel(title)]
 })))
 const bookPosition = new Map(bookPaths.map(({ source, group }, index) => [source, { index, group }]))
 const supplements = { text: '阅读索引与来源说明', items: [] }
@@ -120,9 +121,7 @@ function rewrite(markdown, source) {
   })
 }
 function explanation(markdown) {
-  return markdown.split(/\n\s*\n/).filter((part) =>
-    !part.startsWith('#') && !part.startsWith('[') && !part.startsWith('可在此目录') && !part.startsWith('状态：')
-  ).join('\n\n').trim()
+  return figureExplanation(markdown)
 }
 function pageDescription(markdown, title) {
   const paragraphs = markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').split(/\n\s*\n/)
@@ -173,7 +172,7 @@ await rm(output, { recursive: true, force: true })
 await mkdir(path.join(output, 'public', 'assets', 'figures'), { recursive: true })
 for (const { source, group } of paths) {
   const original = await readFile(path.join(repo, source), 'utf8')
-  const title = original.match(/^#\s+(.+)$/m)?.[1]?.trim()
+  const title = plainLabel(original.match(/^#\s+(.+)$/m)?.[1])
   if (!title) throw new Error(source + ': missing H1')
   const destination = path.join(output, route(source).slice(1) + '.md')
   group.items.push({ text: title, link: route(source) })

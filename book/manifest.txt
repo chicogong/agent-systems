@@ -17,18 +17,23 @@ docs/concepts/jev-and-system-one.md
 docs/concepts/delegation-and-handoff.md
 docs/concepts/interruption-recovery.md
 docs/concepts/observation-evaluation.md
+docs/labs/evidence-contract.md
 @part 第二部分 · 行动、工具与执行
 docs/systems/pi/README.md
 docs/systems/pi/code-walkthrough.md
 docs/systems/pi/extensions-and-skills.md
+docs/systems/dsh/README.md
+docs/systems/dsh/code-walkthrough.md
 docs/systems/codex/README.md
 docs/systems/codex/code-walkthrough.md
+docs/concepts/sandbox-execution.md
 docs/systems/opencode/README.md
 docs/systems/opencode/code-walkthrough.md
 docs/systems/mini-swe-agent/README.md
 docs/systems/mini-swe-agent/code-walkthrough.md
 docs/systems/openhands/README.md
 docs/systems/openhands/code-walkthrough.md
+docs/concepts/computer-and-browser-use.md
 docs/systems/browser-use/README.md
 docs/systems/browser-use/code-walkthrough.md
 docs/systems/qwen-code/README.md
@@ -40,6 +45,8 @@ docs/systems/mimo-code/code-walkthrough.md
 @part 第三部分 · 状态、记忆与任务上下文
 docs/systems/letta/README.md
 docs/systems/letta/code-walkthrough.md
+docs/systems/hermes/README.md
+docs/systems/hermes/code-walkthrough.md
 docs/systems/mem0/README.md
 docs/systems/mem0/code-walkthrough.md
 docs/systems/langgraph/README.md

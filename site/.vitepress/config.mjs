@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress'
 import { readFileSync } from 'node:fs'
+import { plainLabel } from '../scripts/page-metadata.mjs'
 
 const publicMode = process.env.SITE_MODE === 'public'
 const pdfPublished = publicMode && Boolean(process.env.PUBLIC_PDF_FILE)
@@ -31,7 +32,8 @@ export default defineConfig({
     const canonical = `${siteUrl}/${pathname}`
     const isHome = pathname === ''
     const isArticle = !isHome && !new Set(['feedback', 'pdf', 'concepts', 'systems', 'comparisons', 'sources']).has(pathname)
-    const title = pageData.title || '图解 Agent 系统'
+    const title = plainLabel(pageData.title) || '图解 Agent 系统'
+    pageData.title = title
     const description = pageData.frontmatter.description || '从运行机制、源码导读到横向对照，图解 Agent 系统。'
     pageData.frontmatter.head ??= []
     pageData.frontmatter.head.push(
@@ -68,7 +70,7 @@ export default defineConfig({
       { text: '阅读目录', link: '/' },
       { text: '学习路径', link: '/learning-path' },
       { text: '机制', link: '/concepts/agent-loop' },
-      { text: '项目', link: '/systems/pi' },
+      { text: '项目', link: '/systems' },
       { text: '对照', link: '/comparisons/loop-and-stop' },
       ...(pdfPublished ? [{ text: 'PDF', link: '/pdf' }] : []),
       { text: '反馈', link: '/feedback' }

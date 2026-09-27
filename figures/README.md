@@ -17,6 +17,8 @@
 
 ## 视觉校稿进度
 
+新执行与知识专题：[DSH 工具批次](dsh-tool-batch/README.md) · [沙箱资源与清理](sandbox-execution/README.md) · [Computer / Browser 观察动作](computer-browser-use/README.md) · [Hermes 记忆与待批准写入](hermes-session-memory/README.md)。实际审查范围记录在本轮合稿报告，不把新图的几何检查当作运行验证。
+
 逐张验收应从当前 `scene.excalidraw` 重导 SVG/PNG，复核图片、文字版和正文箭头语义；有 `build.py` 的图还需检查生成脚本的确定性。不能把某次检查的图数与结论沿用到新图。MCP 画布、手机视图、A4 实页和外部读者试读各是独立验收项。
 
 印刷清晰度不能只看独立 PNG 的像素数：原图缩进 A4 正文宽度后，小字号注释仍可能难读。每次改图还要检查成书 PDF 的实际含图页；关键节点文字以约 8 pt 作为人工复核提醒线，过长的技术说明移到图下正文。密集图不能靠持续加大 PNG 像素“修复”。

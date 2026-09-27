@@ -38,6 +38,9 @@ SUPPORT_FILES = (
     "examples/context-budget/README.md",
     "examples/context-budget/demo.py",
     "examples/context-budget/test_demo.py",
+    "examples/evidence-contract/README.md",
+    "examples/evidence-contract/demo.py",
+    "examples/evidence-contract/test_demo.py",
 )
 
 

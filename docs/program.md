@@ -25,6 +25,10 @@
 | [MiMo Code](systems/mimo-code/README.md)、[Kimi Code](systems/kimi-code/README.md) | 开源 CLI + Harness | 长任务 checkpoint/重建与忙时 steer 缓冲/step 边界分别怎样做？ | 已形成各自固定 commit 的局部静态源码稿；后续核运行层时序、失败注入与二次来源。 |
 | [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) | 结构化决策模型，不是编码 Agent | 有界判断怎样嵌入 Skill 选择或路由，而执行权仍留给代码？ | 已有[模型/决策层旁栏](concepts/jev-and-system-one.md)；性能与正确性仍属厂商主张，未独立复现。 |
 | MCP、Agent Skills、CLI 与 Harness | 协议、工作流包、界面与运行器 | 哪个层次能增加能力，哪个层次能授权执行，哪个只改变入口？ | 官方规范/文档加至少一条具体产品接入路径；安全边界与失败路径都要有。 |
+| [DSH / DeepSeek Harness](systems/dsh/README.md) | 插件化运行器 | 能力合同如何替换，工具完成和结果提交为什么分开？ | 固定源码切面；开发者预览的安全声明与实际策略必须一起读，不推断完整隔离。 |
+| [Hermes Agent](systems/hermes/README.md) | 常驻宿主中的知识维护 | 短记忆快照、按需 Skill 和任务后 review 如何分别更新？ | 固定局部实现；不把“自学习”宣称等同于权重训练或已验证效果。 |
+| [沙箱与执行环境](concepts/sandbox-execution.md) | 资源限制、隔离层与生命周期 | Linux 容器、gVisor、microVM、E2B/Daytona 与 OpenShell 各处哪层？ | 第一方文档机制章；不把环境销毁当作副作用回滚，真实隔离实验另审。 |
+| [Computer / Browser Use](concepts/computer-and-browser-use.md) | 观察与动作通道 | 截图、DOM/AX、CDP、原生辅助功能如何组合，结果如何验收？ | 概念章连接既有 Browser Use 固定源码；不推导运行成功率。 |
 
 [Jev、MiMo Code、Kimi Code 研究笔记](field-notes/2026-09-23-jev-mimo-kimi.md)保留初始问题和第一方入口；是否已成书、核验到哪一步，以各章节与[路线页](roadmap.md)为准，不能用早期笔记代替现稿。
 

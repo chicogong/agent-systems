@@ -20,6 +20,8 @@
 
 ## 下一波系统，只补已有章节解释不了的取舍
 
+2026-09-27 已补入 DSH 服务/工具批次、Hermes 知识维护，以及沙箱、Computer／Browser Use 执行面专题，并以[不可信观察与假完成练习](labs/evidence-contract.md)连接宿主许可和证据核验；具体验收范围以[路线页](roadmap.md)为准。下一波先做本地 HTTP 故障、持久化读回和带冲突的贯穿摘要任务，再选择下列新增系统。不因 CLI 名录更长而压缩入门练习。
+
 1. **Gemini CLI：** 官方[策略引擎文档](https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/policy-engine.md)可作为“工具许可为什么不是提示词”的公开入口。先固定源码版本，核对规则优先级与调用点；不把文档写成当前版本的完整实现证明。
 2. **Cline：** 从[官方仓库](https://github.com/cline/cline)核对编辑器内的人工审批、差异预览与恢复记录。读者问题是“当操作发生在 IDE 里，宿主和用户各看见什么”；若证据不足，只写公开使用路径。
 3. **OpenAI Agents SDK 或 Google ADK（二选一先做）：** 分别从[SDK 官方文档](https://github.com/openai/openai-agents-python/blob/main/docs/index.md)与[ADK 官方仓库](https://github.com/google/adk-python)选一条会话/交接/评测路径，和已有 LangGraph 章节按同一个问题对照。它们是构建应用的框架，不是与 Pi、Codex 并列的编码助手榜单。

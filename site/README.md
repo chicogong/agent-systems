@@ -20,7 +20,7 @@ SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 
 - `npm run build:public` 将已发布章节的 Markdown 内链改为站内路由，保留固定版本的公开上游源码链接；未收入网站的本仓页面链接到公开 GitHub 源仓。网站产物仍不包含仓库源文件。
 - 图只复制展示 SVG；同页附图的文字说明和原尺寸 SVG 链接，不复制 `.excalidraw` 或 PNG。未纳入书稿的内部计划页、贡献流程和模板页不作为网站正文发布。
-- `scripts/verify-public.mjs` 对 HTML 页数、书序位置与前后篇链接、站内路由与标题锚点、sitemap、canonical、分享/结构化元信息、robots 和输出文件类型做发布前门禁。默认生成 64 个 HTML 页面；显式启用 PDF 时才生成第 65 页和唯一许可的 PDF 文件。`Check guide structure` 的 `public-site` job 在每次推送/PR 运行默认门禁，不自动部署。
+- `scripts/verify-public.mjs` 对 HTML 页数、书序位置与前后篇链接、站内路由与标题锚点、sitemap、canonical、分享/结构化元信息、robots 和输出文件类型做发布前门禁。页数由当前书稿清单、补充索引和入口页计算，不另维护硬编码的历史页数；显式启用 PDF 时才增加阅读页和唯一许可的 PDF 文件。`Check guide structure` 的 `public-site` job 在每次推送/PR 运行默认门禁，不自动部署。构建先运行导航/元数据标题测试：正文保留代码标记，侧栏、前后篇及分享标题使用纯文本。
 - 首页与每章明确标识“在线预览稿”；静态源码阅读不等于运行实测。站点允许搜索引擎抓取，但 robots 不是访问控制。正文与原创图采用 CC BY 4.0，图内嵌字体的许可另列在 `/THIRD-PARTY-NOTICES.txt`。
 
 ## 搜索发现与阅读反馈

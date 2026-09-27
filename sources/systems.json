@@ -1,4 +1,20 @@
 {
+  "dsh": {
+    "scope": "Cordis service composition, bounded tool batch and approval/executor seams",
+    "status": "static-slice-draft",
+    "upstream_license": "MIT",
+    "license_reviewed_at": "2026-09-27",
+    "license_sources": ["https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/LICENSE"],
+    "versions": ["https://github.com/deepseek-ai/deepseek-harness/tree/477b4f420553e8a52c2fbccc464d7561b239c443"]
+  },
+  "hermes": {
+    "scope": "built-in memory snapshot, Skill read/write approval and post-turn review",
+    "status": "static-slice-draft",
+    "upstream_license": "MIT",
+    "license_reviewed_at": "2026-09-27",
+    "license_sources": ["https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/LICENSE"],
+    "versions": ["https://github.com/NousResearch/hermes-agent/tree/a9109b07f42685f88397008d0d5a6c3d481b3b28"]
+  },
   "browser-use": {
     "scope": "one Agent.step observation-action-history path",
     "status": "static-slice-draft",

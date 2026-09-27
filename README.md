@@ -21,6 +21,9 @@
 | **存着，不等于模型这轮看见** | **超时后为什么要先对账** |
 | [![会话、摘要、记忆与检索进入本轮上下文的区别](figures/context-vs-memory/preview.png)](figures/context-vs-memory/diagram.svg) | [![外部动作超时后的状态查询与重试边界](figures/permission-and-recovery/preview.png)](figures/permission-and-recovery/diagram.svg) |
 | [读上下文与记忆](docs/concepts/context-vs-memory.md) | [读审批、恢复与回执丢失实验](docs/comparisons/permission-and-recovery.md) |
+| **清理沙箱，不等于撤销远端动作** | **知识暂存、正式保存、本轮可见不是一回事** |
+| [![执行环境的资源合同、结果账本与外部验收](figures/sandbox-execution/preview.png)](figures/sandbox-execution/diagram.svg) | [![Hermes 的知识文件、提示快照与待批准写入](figures/hermes-session-memory/preview.png)](figures/hermes-session-memory/diagram.svg) |
+| [读沙箱与生命周期](docs/concepts/sandbox-execution.md) | [读 Hermes 的知识维护路径](docs/systems/hermes/README.md) |
 
 这些是缩略预览，不用缩略图判断小字是否清晰；需要放大时打开 SVG。完整图册及导出约束见[图稿索引](figures/README.md)。
 
@@ -39,7 +42,9 @@
 | **横向对照** | 同一问题的不同设计与代价，不拿不同层次的产品凑功能榜 | [循环与停止](docs/comparisons/loop-and-stop.md) · [四种状态](docs/comparisons/four-kinds-of-state.md) · [权限与恢复](docs/comparisons/permission-and-recovery.md) |
 | **动手练习** | 可运行的输入、预期轨迹、测试、自测题和明确的模拟边界 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [上下文预算](docs/labs/context-budget.md) · [远端结果未知](docs/labs/remote-effect.md) |
 
-系统案例覆盖 Pi、Codex、OpenCode、mini-SWE-agent、OpenHands、Browser Use、Qwen Code、Kimi Code、MiMo Code、Letta Code、Mem0、LangGraph、OpenClaw 与 GPT Researcher。它们分属编码助手、运行框架、记忆组件等不同层次；**入书理由是能解释一种架构取舍，不是热度或 Star 数。**逐篇范围见[系统索引](docs/systems/README.md)，候选及后续教学安排见[选题地图](docs/program.md)与[扩写计划](docs/curriculum-expansion.md)。
+系统案例覆盖 Pi、DSH（DeepSeek Harness）、Codex、OpenCode、mini-SWE-agent、OpenHands、Browser Use、Qwen Code、Kimi Code、MiMo Code、Letta Code、Hermes Agent、Mem0、LangGraph、OpenClaw 与 GPT Researcher。它们分属编码助手、运行框架、记忆组件等不同层次；**入书理由是能解释一种架构取舍，不是热度或 Star 数。**逐篇范围见[系统索引](docs/systems/README.md)，候选及后续教学安排见[选题地图](docs/program.md)与[扩写计划](docs/curriculum-expansion.md)。
+
+执行面也单独讲：[沙箱](docs/concepts/sandbox-execution.md)区分容器、gVisor、microVM、远端环境和策略治理；[Computer／Browser Use](docs/concepts/computer-and-browser-use.md)拆开截图坐标、DOM／AX与宿主动作。再用[不可信观察与假完成练习](docs/labs/evidence-contract.md)检查“危险提案被拒绝”和“工具成功但证据不合格”——不需要先装一套复杂框架。
 
 ## 选择顺手的阅读方式
 

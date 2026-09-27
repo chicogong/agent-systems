@@ -3,6 +3,7 @@
 __pycache__/
 *.pyc
 tmp/pdfs/
+tmp/native-export-cache/
 output/pdf/
 output/markdown/
 output/book-design-review/
