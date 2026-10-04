@@ -12,23 +12,23 @@
 | 系统 | 16 个系统各一条固定版本的静态源码切面和代码导读；新增 DSH 服务/工具批次与 Hermes 知识维护。Kimi Code 的 68 个 mock 测试、MiMo Code 的 7 个纯函数测试另有有限复跑记录 | 已审计整个项目、完成产品端到端运行实测或覆盖所有模式 |
 | 对照 | 6 篇：状态/记忆 2 篇，Claude Code／Codex 使用层 1 篇，循环/停止 1 篇，权限/恢复与完成证据各 1 篇 | 已完成同任务、同配置的跨系统运行实验，或外部读者理解验收 |
 | 图稿 | 31 组可编辑图源、SVG、PNG 与文字说明；新增 Skill／MCP／许可图经同一原生图源导出并检查 PNG、SVG，A4 几何预检 0 个低于 8 pt 的告警；交互画布只确认已显示，尚未取得画布像素回读 | 交互画布在所有环境下与导出像素一致；封面插画已有 300 PPI 印刷原稿或打印样张已通过 |
-| 导出 | 当前本地书稿清单为 65 个 Markdown 单元，包含五篇不需要 API Key 的机制实验，其中 HTTP 属进阶传输实验，业务与故障为人造。2026-10-04 的本地阅读包为 211 个文件、本地 PDF 校样为 143 页；改动涉及的 Agent loop、上下文、MCP／Skill 与完成证据页已抽看实页，不算整书终审。GitHub 目录、网页章序、PDF 和阅读包由同一清单生成。**没有部署这批本地改稿**；默认构建不自动更新网站或 PDF | 已出版、已完成印刷母版、PDF 有永久不变的下载地址，或已通过辅助技术的完整阅读验收 |
+| 导出 | 2026-10-04 的公开预览有 65 个 Markdown 书稿单元、76 个网站页面和 144 页公共 PDF；可携带 Markdown 包为 211 个文件，仍只作为短期 CI 审稿 Artifact 提供。五篇机制实验不需要 API Key，其中 HTTP 属进阶传输实验，业务与故障为人造。GitHub 目录、网站、PDF 和阅读包由同一清单生成；线上提交与 PDF 散列可在 [`/version.json`](https://books.aimake.cc/version.json) 核对 | 已出版、已完成印刷母版、PDF 有永久不变的下载地址，或已通过辅助技术的完整阅读验收 |
 
-上表中的项目剖面属于**固定版本的局部源码阅读**，不是原项目“当前架构”的实时声明。[来源台账](../sources/systems.json)已记录各固定提交的仓库根许可证；子目录、依赖、图像、商标、引用片段和 Apache NOTICE 等仍需正式版权益终审。[在线阅读网站](https://books.aimake.cc/)与[PDF 电子校样](https://books.aimake.cc/pdf)是已发布入口；本地改稿须另行发布并核对字节，不能因为构建成功就称线上已更新。
+上表中的项目剖面属于**固定版本的局部源码阅读**，不是原项目“当前架构”的实时声明。[来源台账](../sources/systems.json)已记录各固定提交的仓库根许可证；子目录、依赖、图像、商标、引用片段和 Apache NOTICE 等仍需正式版权益终审。[在线阅读网站](https://books.aimake.cc/)与[PDF 电子校样](https://books.aimake.cc/pdf)已开放；网站每次只在人工部署并完成线上回读后更新，Git 推送或本地构建都不能代替线上验收。
 
-## 本地收口进度与顺序（2026-10-04）
+## 公开预览发布与下一步（2026-10-04）
 
 - **内容先行：** [Agent loop](concepts/agent-loop.md)已补“读书会资料 → 带出处回答”的正常故事；[上下文](concepts/context-vs-memory.md)、[MCP／Skill](concepts/mcp-skill-tool-lifecycle.md)与[完成证据](comparisons/completion-and-evidence.md)三篇沿同一问题补充正常路径与边界。[出版验收单](publication-checklist.md)将只读图文的理解与可选编程实践分开。书序已改为循环先行；这些是作者侧样章返修，**还没有非作者真人试读**，[Issue #4](https://github.com/chicogong/agent-systems/issues/4)不能仅凭本地构建关闭。
-- **发布可对账：** 本地网站构建已能在页面与 `/version.json` 标注书稿提交及工作树状态，邮件反馈带版本；干净候选模式会拒绝未提交修改。阅读包首页说明其 ref 与实际工作树的区别，GitHub 阅读反馈模板仍是本地草稿。网站本地 75 页构建门禁通过；线上未重部署，当前 GitHub 仍没有可永久下载的正式版本，不能把 [Issue #5](https://github.com/chicogong/agent-systems/issues/5)勾为完成。
+- **发布可对账：** 首轮候选提交 [`715944b`](https://github.com/chicogong/agent-systems/commit/715944bec6f09e65c66d0d73ce6a0355f1769b98) 经 [主分支结构/网站 Action](https://github.com/chicogong/agent-systems/actions/runs/37212049865) 与 [书稿 Action](https://github.com/chicogong/agent-systems/actions/runs/37212049885) 通过，网站已从干净工作树构建并部署。线上回读与构建包逐字节一致：76 个 HTML 页面、31 张展示 SVG、公共 PDF 和 4 个元数据文件；4 条不应公开的路径返回 404。PDF 的 SHA-256 和当前网站提交以 [`/version.json`](https://books.aimake.cc/version.json) 为准。GitHub 阅读反馈表单已合入默认分支，邮件入口保留。Markdown ZIP 仍只是 30 天审稿 Artifact；永久下载、更多渠道与反馈效果未完成，[Issue #5](https://github.com/chicogong/agent-systems/issues/5) 继续开放。
 - **纸书另走印前：** [询价简报](../book/print-proof-brief.md)移除了会过期的内文页数，不把总 PDF 页数当书脊尺寸。当前校样仍有独立章节接在上一章同页开始的情况，须决定纸书起页规则并复看全书；高分辨率封面、许可终审、印厂模板与实物样张仍由 [Issue #1](https://github.com/chicogong/agent-systems/issues/1) 跟踪。
 
-下一步按同一候选提交推进：先补齐三篇样章并做交叉事实审查与非作者试读；再协调未合入 PR 和本地改稿，锁定干净提交；最后从该提交重建 HTML、公共 PDF 与 Markdown 包，逐一核对版本、图与实页，并在人工批准后更新线上入口。印前母版、EPUB、英文版和新增分发平台不应阻塞图解正文的修订，也不能被这次本地构建算作已完成。
+下一步先让非作者读者冷读三篇图解，并复核更广范围的事实、图意、桌面/窄屏和辅助技术阅读；用具体反馈修订正文。维护者另行决定 Markdown 包的永久下载、搜索站点所有权、渠道试发与勘误节奏。印前母版、EPUB、英文版和新增平台不阻塞已审图文的公开预览，也不能被本次上线算作已完成。
 
 ## 图解与 AI 陪读设计（2026-09-28）
 
 在既有[阅读指南](../book/frontmatter/reading-guide.md#和-ai-一起读)增加可选方法：看图、解释、AI 追问或提示、新例子判断与个人理解卡片，并用上下文/记忆给出一个具体用法。README、初读路线与 Agent loop 入口同步连接，取消初读必须先运行练习的要求。没有新增章节、另起源稿或改动图源；通用方法只维护一处。
 
-这是**本地书稿与编辑设计**，不是学习效果验证、模型对话实测或网站已具备聊天功能。首批仍需用三篇图解做真人试读和跨媒介展示验收；当前改稿未部署、PDF 未重导。后续材料复制快捷方式只是候选，暂不建设 API 聊天、学习账号或自动评分。
+这些阅读指引已进入公开预览，仍不是学习效果验证、模型对话实测或网站聊天功能。首批仍需用三篇图解做真人试读和跨媒介展示验收。后续材料复制快捷方式只是候选，暂不建设 API 聊天、学习账号或自动评分。
 
 ## HTTP 学习闭环与教学返修（2026-09-27）
 
