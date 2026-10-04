@@ -37,6 +37,13 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: site/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: site/requirements-test.txt
+      - run: python3 -m pip install -r site/requirements-test.txt
+      - run: python3 -m playwright install --with-deps chromium
       - run: npm ci
         working-directory: site
       - run: npm run build:public
@@ -44,3 +51,20 @@ jobs:
         env:
           SITE_URL: https://books.aimake.cc
           DEPLOY_TARGET: vercel
+      - name: Check mobile and desktop reading
+        working-directory: site
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 &
+          reader_server_pid=$!
+          trap 'kill "$reader_server_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          python3 scripts/check_reader.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reader-browser-qa
+          path: output/review/reader-*.png
+          if-no-files-found: ignore

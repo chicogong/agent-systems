@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs'
 import { plainLabel } from '../scripts/page-metadata.mjs'
 
 const publicMode = process.env.SITE_MODE === 'public'
-const pdfPublished = publicMode && Boolean(process.env.PUBLIC_PDF_FILE)
 const siteUrl = process.env.SITE_URL
 const publicSidebar = publicMode ? JSON.parse(readFileSync(new URL('./generated-sidebar.json', import.meta.url), 'utf8')) : []
 if (publicMode && (!siteUrl || !/^https:\/\/[^/]+$/.test(siteUrl))) {
@@ -31,7 +30,7 @@ export default defineConfig({
     const pathname = pageData.relativePath.replace(/index\.md$/, '').replace(/\.md$/, '')
     const canonical = `${siteUrl}/${pathname}`
     const isHome = pathname === ''
-    const isArticle = !isHome && !new Set(['feedback', 'pdf', 'concepts', 'systems', 'comparisons', 'sources']).has(pathname)
+    const isArticle = !isHome && !new Set(['feedback', 'pdf', 'downloads', 'concepts', 'systems', 'comparisons', 'sources']).has(pathname)
     const title = plainLabel(pageData.title) || '图解 Agent 系统'
     pageData.title = title
     const description = pageData.frontmatter.description || '从运行机制、源码导读到横向对照，图解 Agent 系统。'
@@ -44,7 +43,12 @@ export default defineConfig({
       ['meta', { property: 'og:title', content: title }],
       ['meta', { property: 'og:description', content: description }],
       ['meta', { property: 'og:url', content: canonical }],
-      ['meta', { name: 'twitter:card', content: 'summary' }]
+      ['meta', { property: 'og:image', content: `${siteUrl}/assets/share/book.png` }],
+      ['meta', { property: 'og:image:width', content: '1200' }],
+      ['meta', { property: 'og:image:height', content: '630' }],
+      ['meta', { property: 'og:image:alt', content: '图解 Agent 系统：看懂一次任务，理解一套系统' }],
+      ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+      ['meta', { name: 'twitter:image', content: `${siteUrl}/assets/share/book.png` }]
     )
     const identity = { '@type': 'Person', name: 'chicogong', url: `${siteUrl}/back/about-author` }
     const book = { '@type': 'WebSite', '@id': `${siteUrl}/#website`, name: '图解 Agent 系统', url: `${siteUrl}/`, inLanguage: 'zh-CN' }
@@ -65,14 +69,17 @@ export default defineConfig({
   lastUpdated: false,
   themeConfig: {
     siteTitle: '图解 Agent 系统',
+    sidebarMenuLabel: '目录',
+    returnToTopLabel: '回到顶部',
+    skipToContentLabel: '跳到正文',
     logo: false,
     nav: publicMode ? [
-      { text: '阅读目录', link: '/' },
+      { text: '开始阅读', link: '/' },
       { text: '学习路径', link: '/learning-path' },
       { text: '机制', link: '/concepts/agent-loop' },
       { text: '项目', link: '/systems' },
       { text: '对照', link: '/comparisons/loop-and-stop' },
-      ...(pdfPublished ? [{ text: 'PDF', link: '/pdf' }] : []),
+      { text: '离线阅读', link: '/downloads' },
       { text: '反馈', link: '/feedback' }
     ] : [
       { text: '阅读起点', link: '/' },

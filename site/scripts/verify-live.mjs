@@ -41,10 +41,17 @@ const files = [
   ['/robots.txt', 'robots.txt'],
   ['/THIRD-PARTY-NOTICES.txt', 'THIRD-PARTY-NOTICES.txt'],
   ['/version.json', 'version.json'],
+  ['/licenses/Nunito-OFL.txt', 'licenses/Nunito-OFL.txt'],
+  ['/licenses/ComicShanns-MIT.txt', 'licenses/ComicShanns-MIT.txt'],
+  ['/licenses/Vercel-Analytics-MIT.txt', 'licenses/Vercel-Analytics-MIT.txt'],
+  ['/assets/share/book.png', 'assets/share/book.png'],
+  ['/assets/share/cover.png', 'assets/share/cover.png'],
 ]
 const pdfPath = 'book/agent-systems-public-preview.pdf'
 const hasPdf = await stat(join(dist, pdfPath)).then(() => true, () => false)
 if (hasPdf) files.push(['/' + pdfPath, pdfPath])
+const readingDownloads = (await readdir(join(dist, 'book')).catch(() => [])).filter((name) => name.endsWith('.zip'))
+for (const name of readingDownloads) files.push(['/book/' + name, 'book/' + name])
 
 const failures = []
 for (let start = 0; start < files.length; start += 8) {
@@ -67,10 +74,14 @@ if (hasPdf) {
   const response = await fetch(new URL('/' + pdfPath, site), { method: 'HEAD', signal: AbortSignal.timeout(15000) })
   if (response.headers.get('x-robots-tag') !== 'noindex') failures.push(`${pdfPath}: missing PDF X-Robots-Tag: noindex`)
 }
+for (const name of readingDownloads) {
+  const response = await fetch(new URL('/book/' + name, site), { method: 'HEAD', signal: AbortSignal.timeout(15000) })
+  if (response.headers.get('x-robots-tag') !== 'noindex' || !response.headers.get('content-disposition')?.startsWith('attachment;')) failures.push(`${name}: incorrect archive response headers`)
+}
 
 if (failures.length) {
   console.error(failures.join('\n'))
   process.exitCode = 1
 } else {
-  console.log(`Live ${site.origin}: ${locations.length} HTML pages, ${figures.length} SVG figures, 4 metadata files${hasPdf ? ', and the public PDF' : ''} match the local build byte-for-byte; 4 private paths return 404.`)
+  console.log(`Live ${site.origin}: ${locations.length} HTML pages, ${figures.length} SVG figures, 2 share images, metadata and license notices${hasPdf ? ', public PDF' : ''}${readingDownloads.length ? ', Markdown ZIP' : ''} match the local build byte-for-byte; 4 private paths return 404.`)
 }

@@ -8,6 +8,7 @@ const site = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dist = path.join(site, '.vitepress', 'dist')
 const origin = process.env.SITE_URL
 const pdfPublished = Boolean(process.env.PUBLIC_PDF_FILE)
+const markdownPublished = Boolean(process.env.PUBLIC_MARKDOWN_FILE)
 const pdfPath = 'book/agent-systems-public-preview.pdf'
 if (!origin) throw new Error('SITE_URL is required')
 const version = JSON.parse(await readFile(path.join(dist, 'version.json'), 'utf8'))
@@ -18,6 +19,11 @@ if (version.status !== 'preview' || version.sourceCommit !== currentCommit || ve
 }
 if (process.env.SITE_RELEASE === '1' && !version.sourceClean) throw new Error('Release candidate contains uncommitted source changes')
 if (version.pdfSha256 !== (pdfPublished ? process.env.PUBLIC_PDF_SHA256 : null)) throw new Error('Public PDF version metadata mismatch')
+if (version.markdownSha256 !== (markdownPublished ? process.env.PUBLIC_MARKDOWN_SHA256 : null)) throw new Error('Public Markdown version metadata mismatch')
+if (version.pdfSourceCommit !== (pdfPublished ? process.env.PUBLIC_PDF_COMMIT || currentCommit : null)) throw new Error('PDF source commit mismatch')
+if (version.markdownSourceCommit !== (markdownPublished ? process.env.PUBLIC_MARKDOWN_COMMIT || currentCommit : null)) throw new Error('Markdown source commit mismatch')
+if (version.analytics !== (process.env.VITE_READER_ANALYTICS === '1' ? 'vercel-aggregate-pageviews' : 'disabled')) throw new Error('Analytics disclosure does not match this build')
+const markdownPath = markdownPublished ? `book/agent-systems-md-${version.markdownSourceCommit.slice(0, 12)}.zip` : null
 
 if (process.env.DEPLOY_TARGET === 'vercel') {
   const config = { cleanUrls: true }
@@ -25,10 +31,17 @@ if (process.env.DEPLOY_TARGET === 'vercel') {
     { key: 'X-Robots-Tag', value: 'noindex' },
     { key: 'Content-Disposition', value: 'inline; filename="agent-systems-public-preview.pdf"' }
   ] }]
+  if (markdownPublished) {
+    config.headers ??= []
+    config.headers.push({ source: '/' + markdownPath, headers: [
+      { key: 'X-Robots-Tag', value: 'noindex' },
+      { key: 'Content-Disposition', value: 'attachment; filename="' + path.basename(markdownPath) + '"' }
+    ] })
+  }
   await writeFile(path.join(dist, 'vercel.json'), JSON.stringify(config, null, 2) + '\n')
 }
 const sidebar = JSON.parse(await readFile(path.join(site, '.vitepress', 'generated-sidebar.json'), 'utf8'))
-const expected = ['index.html', 'feedback.html', ...(pdfPublished ? ['pdf.html'] : []), ...sidebar.flatMap((part) => part.items.map((item) => item.link.slice(1) + '.html'))]
+const expected = ['index.html', 'feedback.html', 'downloads.html', ...(pdfPublished ? ['pdf.html'] : []), ...sidebar.flatMap((part) => part.items.map((item) => item.link.slice(1) + '.html'))]
 const chapterCount = (await readFile(path.join(site, '..', 'book', 'manifest.txt'), 'utf8')).split(/\r?\n/).filter((line) => line.trim() && !line.trim().startsWith('#') && !line.trim().startsWith('@part ')).length
 const bookItems = sidebar.flatMap((part) => part.items).slice(0, chapterCount)
 if (bookItems.length !== chapterCount) throw new Error('Sidebar has fewer book chapters than the manifest')
@@ -53,7 +66,19 @@ async function collect(directory) {
   }
 }
 await collect(dist)
-if (allFiles.some((file) => /\.(?:excalidraw|png)$/i.test(file) || (file.endsWith('.pdf') && !(pdfPublished && file === path.join(dist, pdfPath))))) throw new Error('Unexpected source, PDF, or PNG file in public output')
+const allowedPng = new Set(['assets/share/book.png', 'assets/share/cover.png'].map((file) => path.join(dist, file)))
+if (allFiles.some((file) => file.endsWith('.excalidraw') ||
+  (file.endsWith('.png') && !allowedPng.has(file)) ||
+  (file.endsWith('.zip') && file !== (markdownPath && path.join(dist, markdownPath))) ||
+  (file.endsWith('.pdf') && !(pdfPublished && file === path.join(dist, pdfPath))))) throw new Error('Unexpected source or download file in public output')
+for (const [target, source] of [['assets/share/book.png', 'assets/book-share.png'], ['assets/share/cover.png', '../book/assets/cover-preview.png']]) {
+  const [published, original] = await Promise.all([readFile(path.join(dist, target)), readFile(path.join(site, source))])
+  if (!published.equals(original)) throw new Error(`Share artwork differs from approved source: ${target}`)
+}
+if (markdownPublished) {
+  const digest = createHash('sha256').update(await readFile(path.join(dist, markdownPath))).digest('hex')
+  if (digest !== version.markdownSha256) throw new Error('Reading archive digest changed during site build')
+}
 if (pdfPublished) {
   const bytes = await readFile(path.join(dist, pdfPath))
   const digest = createHash('sha256').update(bytes).digest('hex')
@@ -80,7 +105,7 @@ for (const [index, item] of bookItems.entries()) {
   }
 }
 const anchors = new Map([...pages].map(([file, html]) => [file, new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]))]))
-const indexPages = new Set(['feedback.html', 'pdf.html', 'concepts.html', 'systems.html', 'comparisons.html', 'sources.html'])
+const indexPages = new Set(['feedback.html', 'pdf.html', 'downloads.html', 'concepts.html', 'systems.html', 'comparisons.html', 'sources.html'])
 for (const file of expected) {
   const html = pages.get(file)
   if (!html.includes(version.sourceCommit.slice(0, 12))) throw new Error(`${file}: missing reader-visible source revision`)
@@ -94,7 +119,7 @@ for (const file of expected) {
   if (html.includes('name="robots" content="noindex')) throw new Error(`${file}: unexpected noindex meta`)
   const pathname = file === 'index.html' ? '/' : `/${file.slice(0, -5)}`
   if (!html.includes(`rel="canonical" href="${origin}${pathname}"`)) throw new Error(`Missing canonical: ${file}`)
-  for (const marker of ['property="og:title"', 'property="og:description"', `property="og:url" content="${origin}${pathname}"`, 'name="twitter:card"', 'type="application/ld+json"']) {
+  for (const marker of ['property="og:title"', 'property="og:description"', `property="og:url" content="${origin}${pathname}"`, `property="og:image" content="${origin}/assets/share/book.png"`, 'name="twitter:card" content="summary_large_image"', 'type="application/ld+json"']) {
     if (!html.includes(marker)) throw new Error(`${file}: missing social or structured metadata: ${marker}`)
   }
   const structuredData = html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)?.[1]
@@ -105,7 +130,7 @@ for (const file of expected) {
     throw new Error(`${file}: structured data does not match the canonical page`)
   }
   if (file !== 'index.html' && file !== 'feedback.html' && !html.includes('在线预览稿')) throw new Error(`Missing editorial status: ${file}`)
-  if (file !== 'index.html' && file !== 'feedback.html' && file !== 'pdf.html' && !html.includes('mailto:ghr7719@gmail.com')) throw new Error(`${file}: missing chapter feedback link`)
+  if (file !== 'index.html' && file !== 'feedback.html' && file !== 'pdf.html' && file !== 'downloads.html' && !html.includes('mailto:ghr7719@gmail.com')) throw new Error(`${file}: missing chapter feedback link`)
   if (/图源\s*·\s*PNG 预览|可编辑图源\s*·\s*PNG 预览/.test(html)) throw new Error(`${file}: inert private figure labels leaked into public prose`)
   for (const [, href] of html.matchAll(/href="([^"]+)"/g)) {
     if (href.endsWith('.excalidraw')) throw new Error(`${file}: editable source artifact leaked into site ${href}`)

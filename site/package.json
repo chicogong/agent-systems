@@ -5,7 +5,7 @@
     "prepare:content": "node scripts/prepare-content.mjs",
     "dev": "npm run prepare:content && vitepress dev .",
     "build": "npm run prepare:content && vitepress build .",
-    "test": "node --test scripts/test-page-metadata.mjs",
+    "test": "node --test scripts/test-*.mjs",
     "build:public": "npm test && SITE_MODE=public node scripts/prepare-public.mjs && SITE_MODE=public VITE_PUBLIC_SITE=1 vitepress build . && node scripts/verify-public.mjs",
     "verify:live": "node scripts/verify-live.mjs",
     "preview": "vitepress preview ."
@@ -15,5 +15,8 @@
   },
   "overrides": {
     "vite": "6.4.3"
+  },
+  "dependencies": {
+    "@vercel/analytics": "2.0.1"
   }
 }

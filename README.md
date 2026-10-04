@@ -54,7 +54,7 @@
 | --- | --- |
 | [在线阅读站](https://books.aimake.cc/) | 手机阅读、章节导航、搜索和反馈；公开站按人工发布批次更新。 |
 | [GitHub 书序目录](book/CONTENTS.md) | 直接看唯一的 Markdown 源稿、代码链接、图源和修订历史。 |
-| [可携带 Markdown 阅读包](book/README.md#markdown-阅读包) | 导入 Obsidian 或普通 Markdown 阅读器；相对链接、图与入门练习的代码随包保留。 |
+| [可携带 Markdown 阅读包](https://books.aimake.cc/downloads) | 固定版本 ZIP，导入 Obsidian 或普通 Markdown 阅读器；相对链接、图与可选练习的代码随包保留。[自行构建](book/README.md#markdown-阅读包)。 |
 | [PDF 电子校样](https://books.aimake.cc/pdf) | 固定页序浏览、批注和下载；它不是印刷母版，更新不由每周 Action 自动覆盖。 |
 
 正文只维护一份。`book/manifest.txt` 决定 GitHub 目录、网站、PDF 和阅读包的书序；导出物不是第二份稿件。线上站与本地仓库可能处于不同发布批次，**精确篇数、页数和验收缺口以[当前状态](docs/roadmap.md)为准**。
