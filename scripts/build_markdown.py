@@ -94,7 +94,7 @@ def chapter_title(path: str) -> str:
 
 
 def repository_files(ref: str) -> str:
-    if not ref or "/" in ref or ".." in ref:
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", ref) or ".." in ref:
         raise ValueError("Repository ref must be a tag or commit without a slash")
     return f"{REPOSITORY_BASE}/blob/{quote(ref, safe='')}/"
 
@@ -108,6 +108,10 @@ def reading_index(entries: list[tuple[str, str]], ref: str) -> str:
         "这是与 PDF 共用书稿清单的可携带阅读版。正文仍是普通 Markdown，",
         "图使用仓库导出的 SVG；同目录还提供 PNG 预览、可编辑图源和图的文字说明。",
         "章节中的项目结论对应注明的固定源码版本，不能当作实时运行评测。",
+        "",
+        f"本包的仓库外链接使用引用 `{ref}`；正文来自构建时的本地工作树。",
+        "若该引用是会移动的分支或工作树含未提交修改，它不能独自证明本包的精确版本。",
+        "公开固定版应从干净的候选提交构建，并随 ZIP 保存该提交与文件 SHA-256。",
         "",
         "解压后可用 Markdown 阅读器打开本文件，或将整个文件夹作为 Obsidian vault 打开。",
         "请保留目录结构，否则章节间的相对链接和图片会失效。",

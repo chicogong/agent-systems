@@ -8,11 +8,15 @@ VitePress 1.6.4 只负责静态 HTML 呈现。脚本 `scripts/prepare-public.mjs
 
 同仓运行时无需指定内容根目录。独立工作树联调可设 `BOOK_CONTENT_ROOT` 指向待验收的书稿根目录，确保生成的是同一版稿件，而不是旧分支。生产构建必须设置实际 HTTPS 站点域名作为 `SITE_URL`，供 canonical、sitemap 和 robots 使用。
 
+本地预览允许未提交修改，但首页、章节末尾、反馈页和 `/version.json` 会标明“本地未提交稿”，不能拿该提交号声称可复现。准备正式上线的候选版应从**干净书稿工作树**构建，并设置 `SITE_RELEASE=1`；脚本发现未提交修改会拒绝该候选版。`/version.json` 记录完整书稿提交、是否干净及本次纳入的 PDF 散列，不存储账号或读者数据。
+
 ```bash
 cd site
 npm ci
 SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 ```
+
+上述命令用于本地验收。人工确认候选提交后，部署用同一命令额外设置 `SITE_RELEASE=1`，并在部署后运行字节级 `verify:live`；这两个步骤都不能代替正文、权益和图稿审查。
 
 构建输出在 `site/.vitepress/dist/`，不提交到 Git。生成的 `site/content/` 和导航 JSON 也不提交。私有本地小样仍可用 `npm run dev`，但它只有旧的 8 页，不代表公开站覆盖范围。
 
@@ -27,7 +31,7 @@ SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 
 首页先说明本书能解决的问题，再给出初学、实现和架构对照三条路线与一张代表性图；每章仍以原文的具体问题、固定源码证据和边界为主。页面输出唯一 canonical、独立 description、Open Graph 信息与适度的 JSON-LD（首页为 WebSite，正文为 Article）；sitemap 与 robots 同源。结构化数据只是帮助机器理解页面，不保证获得富媒体展示或 AI 引用。不要为了所谓 GEO 在正文堆关键词或编造未核验的结论。
 
-[反馈页](https://books.aimake.cc/feedback)与每章末尾的预填邮件链接使用作者已公开的邮箱，不收集站内评论、账号或阅读行为。GitHub Issues 可用于可公开复现的勘误；私人或敏感信息仍通过邮件沟通。接入公开表单前，要先决定垃圾邮件、隐私告知、数据留存和处理责任。
+[反馈页](https://books.aimake.cc/feedback)与每章末尾的预填邮件链接使用作者已公开的邮箱，邮件预填站点书稿版本；不收集站内评论、账号或阅读行为。GitHub 的阅读反馈表单须先进入默认分支，网站才可称它已启用；公开问题走 GitHub，私人或敏感信息仍走邮件。接入站内表单前，要先决定垃圾邮件、隐私告知、数据留存和处理责任。
 
 Search Console 的站点所有权验证、提交 sitemap、索引与点击数据监测是部署后的账号操作；**构建通过或站点能访问都不等于已经被收录**。
 
@@ -35,7 +39,7 @@ Search Console 的站点所有权验证、提交 sitemap、索引与点击数据
 
 同域名 PDF 采用独立 `/pdf` 页面、浏览器原生预览和显眼的下载后备；小屏不嵌入 PDF 阅读器，避免浏览器不支持时出现黑框。HTML 仍是主要可搜索、可缩放和辅助技术阅读版。PDF 尚未制作语义标签，封面插画也不是 300 PPI 印刷母版。PDF 文件单独由 Vercel 回应 `X-Robots-Tag: noindex`，其阅读说明页仍可被发现；这种非 HTML 索引控制符合 [Google 的说明](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag)。
 
-公共阅读版使用同一书稿清单，内部可用链接改到网站；`book.yml` 在每次审稿构建中额外生成并检查它，但仍只上传为审稿 Artifact。**不允许直接把默认校样复制到网站。** 每次更新前人工审查内容、权益、图文和外链，再从最终提交构建公共版，运行 `python3 scripts/check_book_pdf.py output/pdf/agent-systems-public-preview.pdf --public-readiness`，记录该文件的 SHA-256。只有明确指定如下三个变量，网站构建才会再次运行 PDF 检查、比对 SHA 并复制该文件；未设置时维持无 PDF 的默认公开包：
+公共阅读版使用同一书稿清单，内部可用链接改到网站；`book.yml` 在每次审稿构建中额外生成并检查它，但仍只上传为审稿 Artifact。**不允许直接把默认校样复制到网站。** 每次更新前人工审查内容、权益、图文和外链，再从最终干净提交构建公共版，运行 `python3 scripts/check_book_pdf.py output/pdf/agent-systems-public-preview.pdf --public-readiness --expected-commit <完整提交号>`，记录该文件的 SHA-256。网站构建会复查 PDF 的“关于本版”提交、干净工作树标记和文件散列；仅旧 PDF 恰好通过基本结构检查不能上线。只有明确指定如下三个变量，网站构建才会复制已审文件；未设置时维持无 PDF 的默认公开包：
 
 ```bash
 cd site

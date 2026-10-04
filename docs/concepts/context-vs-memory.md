@@ -16,6 +16,8 @@
 
 图的虚线是“可被选择或检索”，不是自动、无损、可靠的传输。上下文装配会受到窗口预算、策略与权限约束；没被装进去的内容不会神奇地存在于本轮模型输入里。反过来，被装进去也不意味着模型必然正确使用它。
 
+接着[读书会资料助手的正常例子](agent-loop.md#先看一次正常完成)看：`D3` 报名说明即使保存在文件或知识库，读者问“要报名吗”时，它也不一定在这轮输入里。若工具只返回 `D1`、`D2`，助手有时间和地点的依据，却没有报名要求的依据；它应该补读 `D3` 或说明未知。这里的 `D3` 是**外部知识**，不是因为“保存过”就自动变成长期记忆。即使随后检索到 `D3`，仍要检查原文是否确实装进本轮、回答是否正确引用；“存着”“检索到”“看见”“用对”是四个不同关口。
+
 Pi 提供一个可核对的具体例子：其核心在请求前进行 [`transformContext → convertToLlm`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L380-L406)；coding-agent 的 [`SessionManager` 投影当前会话分支](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L543-L582)。这证明 Pi 的“存储状态”和“本次模型消息”有转换边界，不证明所有系统采用同一种存储或摘要算法。[Pi 代码导读](../systems/pi/code-walkthrough.md)有更完整的固定版本路径。
 
 ## 用一份草稿把“存着”与“可见”分开

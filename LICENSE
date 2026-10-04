@@ -1,0 +1,9 @@
+# Licenses
+
+This repository uses separate licenses for different kinds of material:
+
+- Original prose and diagrams: [CC BY 4.0](LICENSE-CONTENT.md)
+- Scripts, workflows, and build configuration: [MIT](LICENSE-CODE)
+
+Third-party material, upstream projects, and excluded assets retain their own
+rights. See the linked license files for scope and exceptions.

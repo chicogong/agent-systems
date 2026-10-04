@@ -12,6 +12,8 @@ python3 scripts/build_markdown.py
 
 生成器逐条检查包内本地链接与图片，缺失即失败；无需 API Key 的本地行动、上下文预算、远端回执、不可信观察/假完成和本地 HTTP 练习还带上 `examples/` 下的脚本与测试。前四条不连网，HTTP 练习仅启动 loopback 监听，都可在解压包根目录运行，不需外网服务。ZIP 不提交 Git；每次书稿构建与每周审稿任务会将它和 PDF 一同上传为待复核 Artifact。Action 使用当前提交 SHA 生成指向包外写作文件的固定仓库链接；日后制作 tag 版本可用 `--ref <tag>`。包内 Markdown 是导出物，改稿请回仓库源文件。
 
+阅读包首页显示构建时用于仓库外链接的 ref；这不是对脏工作树的内容校验。公开固定版须从干净候选提交执行 `python3 scripts/build_markdown.py --ref <完整提交号>`，保存 ZIP 的 SHA-256，并与网站、PDF 各自的版本记录核对；不能把默认的 `main` 链接当成不可变版本。
+
 ## PDF 预览
 
 从仓库根目录构建：

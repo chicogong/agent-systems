@@ -1,0 +1,81 @@
+name: 阅读反馈与勘误
+description: 报告具体章节、练习、图稿或阅读入口的问题。
+title: "[阅读反馈] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢帮助完善《图解 Agent 系统》。请尽量提供具体位置与可复现现象，不必填写姓名、年龄、学校或工作单位。
+
+        **本 Issue 及附件会公开。** 不要上传账号、密钥、私人笔记、未脱敏日志或个人信息。涉及敏感内容请先通过 [作者邮箱](mailto:ghr7719@gmail.com) 沟通，不要在公共 Issue 中粘贴原始材料。
+  - type: dropdown
+    id: category
+    attributes:
+      label: 问题类型
+      options:
+        - 概念或源码主张
+        - 练习、命令或示例代码
+        - 图稿、字体或排版
+        - 网页、PDF 或 Markdown 阅读包
+        - 学习路线或表述不清
+        - 其他具体建议
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: 具体位置
+      description: 网页链接与小节、仓库文件与标题，或 PDF 章节与页码均可。
+      placeholder: "例如：某章链接＋小节标题；PDF 第几页的哪一段"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 阅读版本
+      description: 提交号、下载版本或阅读日期。不知道版本时请写“不知道＋阅读日期”。
+      placeholder: "例如：PDF 的关于本版提交号；在线阅读日期"
+    validations:
+      required: true
+  - type: textarea
+    id: observation
+    attributes:
+      label: 预期与实际
+      description: 你希望理解或完成什么？实际看见了什么，具体卡在哪里？
+      placeholder: |
+        想完成或理解：
+        实际结果或不清楚的句子：
+        已尝试的步骤或提示：
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤与环境（可选）
+      description: 仅在相关时提供命令、退出码、Python/浏览器版本或屏幕宽度。输出与截图请先脱敏。
+      placeholder: |
+        复现步骤：
+        运行或阅读环境：
+        最小、已脱敏的输出：
+  - type: dropdown
+    id: background
+    attributes:
+      label: 与本次练习有关的基础（可选）
+      description: 用于判断是否需要补前置说明，不用提供个人履历。
+      options:
+        - 主要读图文，暂不运行代码
+        - 能运行简单 Python，第一次学习 Agent
+        - 写过 Agent 或相关应用
+        - 不方便说明
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 依据或修改建议（可选）
+      description: 技术勘误可附固定版本源码或官方文档；普通阅读反馈不要求提供解决方案。
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 公开前确认
+      options:
+        - label: 我知道反馈与附件会公开，已移除密钥、私人材料和不必要的个人信息。
+          required: true

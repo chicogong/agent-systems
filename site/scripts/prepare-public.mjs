@@ -13,6 +13,16 @@ const pdfName = 'agent-systems-public-preview.pdf'
 if (pdfFile && process.env.DEPLOY_TARGET !== 'vercel') throw new Error('Public PDF builds require the reviewed Vercel noindex header configuration')
 const origin = process.env.SITE_URL
 if (!origin || !/^https:\/\/[^/]+$/.test(origin)) throw new Error('Set SITE_URL to the intended HTTPS origin')
+const sourceCommit = execFileSync('git', ['-C', repo, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+if (!/^[a-f0-9]{40}$/.test(sourceCommit)) throw new Error('Book source must have a full Git commit')
+const sourceDirty = Boolean(execFileSync('git', ['-C', repo, 'status', '--porcelain', '--untracked-files=normal'], { encoding: 'utf8' }).trim())
+if (process.env.SITE_RELEASE === '1' && sourceDirty) throw new Error('SITE_RELEASE requires a clean book source worktree')
+const sourceVersion = sourceDirty
+  ? `本地未提交稿（基于 ${sourceCommit.slice(0, 12)}，不能仅凭提交号还原）`
+  : `提交 ${sourceCommit}`
+const sourceVersionMarkdown = sourceDirty
+  ? `本地未提交稿，基于 [${sourceCommit.slice(0, 12)}](https://github.com/chicogong/agent-systems/commit/${sourceCommit})；不能仅凭该提交还原本页。`
+  : `书稿提交：[${sourceCommit.slice(0, 12)}](https://github.com/chicogong/agent-systems/commit/${sourceCommit})。`
 
 const manifest = (await readFile(path.join(repo, 'book/manifest.txt'), 'utf8')).split(/\r?\n/)
 const groups = [{ text: '导读', items: [] }]
@@ -186,9 +196,9 @@ for (const { source, group } of paths) {
     transformed += '\n\n## 图的文字说明 · ' + slug + ' {#图的文字说明-' + slug + '}\n\n' + rewrite(explanation(readme), 'figures/' + slug + '/README.md') + '\n'
   }
   const frontmatter = '---\ndescription: ' + JSON.stringify(pageDescription(original, title)) + '\n---\n\n'
-  const feedback = feedbackMailto('《图解 Agent 系统》阅读反馈：' + title, '章节：' + title + '\n页面：' + origin + route(source) + '\n问题或建议：\n相关证据/链接（如有）：\n')
+  const feedback = feedbackMailto('《图解 Agent 系统》阅读反馈：' + title, '章节：' + title + '\n页面：' + origin + route(source) + '\n阅读版本：' + sourceVersion + '\n问题或建议：\n相关证据/链接（如有）：\n')
   await mkdir(path.dirname(destination), { recursive: true })
-  await writeFile(destination, frontmatter + chapterNavigation(source) + transformed + '\n\n---\n\n在线预览稿：书稿仍在校稿，系统篇以文内固定源码版本为准；静态阅读不等于运行验收。发现错误或有改进建议？[按本章填写邮件](' + feedback + ')，或查看[反馈说明](/feedback)。\n')
+  await writeFile(destination, frontmatter + chapterNavigation(source) + transformed + '\n\n---\n\n在线预览稿：书稿仍在校稿，系统篇以文内固定源码版本为准；静态阅读不等于运行验收。发现错误或有改进建议？[按本章填写邮件](' + feedback + ')，或查看[反馈说明](/feedback)。\n\n' + sourceVersionMarkdown + '\n')
 }
 for (const slug of figures) {
   const src = path.join(repo, 'figures', slug, 'diagram.svg')
@@ -208,6 +218,8 @@ description: "《图解 Agent 系统》在线阅读：从 Agent 运行机制到�
 从运行机制到开源实现，沿问题读懂 Agent 怎样决策、调用工具、管理上下文与记忆，并在权限和失败边界下完成任务。这是一本持续校稿的免费中文技术书，正文可直接在网页阅读。
 
 > **在线预览稿。** 本站已收录书稿清单中的 ${chapterCount} 篇正文和部分阅读索引与来源说明。${pdfFile ? 'PDF 电子校样可在线阅读' : 'PDF 暂未在本站发布'}；可编辑图源与脚本不随网站发布，可从[公开源码仓](https://github.com/chicogong/agent-systems)查看。系统剖面以篇内固定源码版本为准，不代表运行评测。
+
+${sourceVersionMarkdown} 线上 HTML、PDF 和离线包可能来自不同发布批次；引用或反馈时请核对各自版本。
 
 ## 选择你的阅读路线
 
@@ -236,7 +248,7 @@ ${contents}
 原创文字与图：chicogong 与贡献者，按 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 提供；引用的上游项目、商标和外部材料归各自权利人。网站与[源码仓](https://github.com/chicogong/agent-systems)分别发布。
 `
 await writeFile(path.join(output, 'index.md'), home)
-const generalFeedback = feedbackMailto('《图解 Agent 系统》阅读反馈', '章节或页面：\n问题或建议：\n相关证据/链接（如有）：\n')
+const generalFeedback = feedbackMailto('《图解 Agent 系统》阅读反馈', '章节或页面：\n阅读版本：' + sourceVersion + '\n问题或建议：\n相关证据/链接（如有）：\n')
 await writeFile(path.join(output, 'feedback.md'), `---
 description: "《图解 Agent 系统》的勘误、图稿与阅读体验反馈方式。"
 ---
@@ -245,9 +257,13 @@ description: "《图解 Agent 系统》的勘误、图稿与阅读体验反馈�
 
 这本书正在校稿。事实、代码路径、图稿、引用、排版与阅读体验方面的反馈都欢迎；请尽可能指出具体章节或页面，以及你核对过的依据。
 
+${sourceVersionMarkdown} PDF 与 Markdown 阅读包有各自的导出版本；请报告你实际阅读的版本或日期。
+
 ## 反馈方式
 
-[发送反馈邮件](${generalFeedback}) 给 **ghr7719@gmail.com**。每章末尾的“按本章填写邮件”会预填章节与页面地址；如果设备没有配置邮件客户端，也可以复制邮箱地址手动发送。
+[发送反馈邮件](${generalFeedback}) 给 **ghr7719@gmail.com**。每章末尾的“按本章填写邮件”会预填章节、页面地址和本次站点构建版本；如果设备没有配置邮件客户端，也可以复制邮箱地址手动发送。
+
+可公开的问题也可从[GitHub 反馈入口](https://github.com/chicogong/agent-systems/issues/new/choose)提交。结构化阅读反馈表单随仓库合入默认分支后才会显示；此前可使用普通 Issue。请填写章节位置、所读版本与实际现象。
 
 建议包含：页面链接、原句或图中位置、问题说明，以及可公开引用的上游源码或文档链接。请不要通过邮件发送密钥、私有资料或个人敏感信息。
 
@@ -262,7 +278,7 @@ if (pdfFile) {
   const actual = createHash('sha256').update(bytes).digest('hex')
   if (actual !== sha) throw new Error('Reviewed PDF digest does not match PUBLIC_PDF_FILE')
   try {
-    execFileSync(process.env.PDF_CHECK_PYTHON || 'python3', [path.join(repo, 'scripts/check_book_pdf.py'), expected, '--public-readiness'], { cwd: repo, encoding: 'utf8' })
+    execFileSync(process.env.PDF_CHECK_PYTHON || 'python3', [path.join(repo, 'scripts/check_book_pdf.py'), expected, '--public-readiness', '--expected-commit', sourceCommit], { cwd: repo, encoding: 'utf8' })
   } catch (error) {
     throw new Error('PDF public-readiness check failed: ' + (error.stdout || error.stderr || error.message))
   }
@@ -276,6 +292,8 @@ description: "《图解 Agent 系统》PDF 电子校样的在线预览、下载�
 
 **在线预览稿。** 这是与本网站正文同源构建的电子阅读版，仍在校稿，并非 300 PPI 印刷母版。需要检索和引用单篇内容时，建议优先使用[在线章节目录](/)；PDF 适合离线通读。图像可放大查看，但 PDF 尚未制作语义标签，使用辅助技术阅读时请用 HTML 正文。
 
+站点 ${sourceVersionMarkdown} 下载的 PDF 另有“关于本版”页和下方 SHA-256；更新时须分别核对，不能仅凭本页的站点提交号判断 PDF 版本。
+
 [打开或下载 PDF 电子校样](/book/${pdfName}) · [返回在线目录](/) · [提交阅读反馈](/feedback)
 
 <object class="book-pdf-preview" data="/book/${pdfName}" type="application/pdf" aria-label="图解 Agent 系统 PDF 电子校样">
@@ -284,6 +302,12 @@ description: "《图解 Agent 系统》PDF 电子校样的在线预览、下载�
 
 文件 SHA-256：\`${actual}\`。本电子校样已将内部可用链接改为在线阅读站链接，未包含可编辑图源。源码仓与网站分别发布。\n`)
 }
+await writeFile(path.join(output, 'public', 'version.json'), JSON.stringify({
+  status: 'preview',
+  sourceCommit,
+  sourceClean: !sourceDirty,
+  pdfSha256: pdfFile ? process.env.PUBLIC_PDF_SHA256 : null
+}, null, 2) + '\n')
 await writeFile(path.join(site, '.vitepress', 'generated-sidebar.json'), JSON.stringify(ordered, null, 2) + '\n')
 await writeFile(path.join(output, 'public', 'robots.txt'), 'User-agent: *\nAllow: /\n\nUser-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: GPTBot\nDisallow: /\n\nSitemap: ' + origin + '/sitemap.xml\n')
 await writeFile(path.join(output, 'public', 'THIRD-PARTY-NOTICES.txt'), 'Diagram font notices\n\nNunito: Copyright 2014 The Nunito Project Authors. SIL Open Font License 1.1.\nhttps://github.com/google/fonts/blob/main/ofl/nunito/OFL.txt\n\nComic Shanns: Copyright 2018 Shannon Miwa. MIT License.\nhttps://github.com/shannpersand/comic-shanns/blob/master/LICENSE\n')

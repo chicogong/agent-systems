@@ -7,7 +7,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from build_markdown import ARCHIVE_ROOT, build, manifest_entries
+from build_markdown import ARCHIVE_ROOT, build, manifest_entries, repository_files
 
 
 class MarkdownArchiveTests(unittest.TestCase):
@@ -46,6 +46,8 @@ class MarkdownArchiveTests(unittest.TestCase):
                 self.assertFalse(any(name.startswith(prefix + "docs/pi-first.md") for name in names))
                 index = archive.read(prefix + "README.md").decode("utf-8")
                 self.assertIn(next(value for kind, value in manifest_entries() if kind == "part"), index)
+                self.assertIn("引用 `main`", index)
+                self.assertIn("不能独自证明本包的精确版本", index)
 
     def test_authoring_links_can_be_pinned_to_a_release(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -54,6 +56,11 @@ class MarkdownArchiveTests(unittest.TestCase):
             with zipfile.ZipFile(archive_path) as archive:
                 index = archive.read(f"{ARCHIVE_ROOT}/README.md").decode("utf-8")
                 self.assertIn("/blob/v1.0.0/CONTRIBUTING.md", index)
+                self.assertIn("引用 `v1.0.0`", index)
+
+    def test_reading_index_rejects_markup_in_ref(self) -> None:
+        with self.assertRaisesRegex(ValueError, "tag or commit"):
+            repository_files("main\n# forged heading")
 
 
 if __name__ == "__main__":

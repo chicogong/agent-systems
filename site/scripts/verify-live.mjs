@@ -40,6 +40,7 @@ const files = [
   ['/sitemap.xml', 'sitemap.xml'],
   ['/robots.txt', 'robots.txt'],
   ['/THIRD-PARTY-NOTICES.txt', 'THIRD-PARTY-NOTICES.txt'],
+  ['/version.json', 'version.json'],
 ]
 const pdfPath = 'book/agent-systems-public-preview.pdf'
 const hasPdf = await stat(join(dist, pdfPath)).then(() => true, () => false)
@@ -71,5 +72,5 @@ if (failures.length) {
   console.error(failures.join('\n'))
   process.exitCode = 1
 } else {
-  console.log(`Live ${site.origin}: ${locations.length} HTML pages, ${figures.length} SVG figures, 3 metadata files${hasPdf ? ', and the public PDF' : ''} match the local build byte-for-byte; 4 private paths return 404.`)
+  console.log(`Live ${site.origin}: ${locations.length} HTML pages, ${figures.length} SVG figures, 4 metadata files${hasPdf ? ', and the public PDF' : ''} match the local build byte-for-byte; 4 private paths return 404.`)
 }

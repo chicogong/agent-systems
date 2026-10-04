@@ -11,6 +11,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import Flowable, Image, Paragraph
 
 import build_book
+from check_book_pdf import matches_clean_provenance
 
 
 class PublicBookLinkTests(unittest.TestCase):
@@ -95,6 +96,18 @@ class BookListTests(unittest.TestCase):
         opening = [FixedHeight(40), FixedHeight(55), figure, FixedHeight(20)]
         self.assertGreater(build_book.chapter_opening_height(opening), 105 * build_book.mm)
         self.assertEqual(build_book.chapter_opening_height(opening[:2]), 105 * build_book.mm)
+
+
+class BookProvenanceTests(unittest.TestCase):
+    def test_public_pdf_requires_matching_clean_source(self) -> None:
+        commit = "a" * 40
+        clean = "书稿提交：aaaaaaaaaaaa · 构建日期：2026-10-04。\n从该提交的干净工作树构建。"
+        dirty = clean.replace("从该提交的干净工作树构建", "含未提交修改，仅供本地校稿")
+        self.assertTrue(matches_clean_provenance(clean, commit))
+        self.assertFalse(matches_clean_provenance(dirty, commit))
+        self.assertFalse(matches_clean_provenance(clean, "b" * 40))
+        with self.assertRaisesRegex(ValueError, "full Git SHA-1"):
+            matches_clean_provenance(clean, "short")
 
 
 if __name__ == "__main__":

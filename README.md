@@ -1,12 +1,12 @@
 # 图解 Agent 系统
 
-**从第一轮 Agent 循环，到 Pi、Codex 等开源实现：看图理解原理，沿代码核对边界，动手验证结果。**
+**用清晰图解看懂 Agent 怎样工作：从工具调用、上下文与记忆，到 Pi、Codex 等真实系统的设计取舍。**
 
 <img src="book/assets/cover-preview.png" alt="《图解 Agent 系统》封面预览" width="220">
 
 [在线阅读](https://books.aimake.cc/) · [从零开始](docs/learning-path.md) · [按书序阅读](book/CONTENTS.md) · [PDF 电子校样](https://books.aimake.cc/pdf) · [反馈勘误](https://books.aimake.cc/feedback)
 
-一个 Agent 不只是“模型会调用工具”。它要决定下一步、获得执行许可、处理工具返回、选择进入下一轮的上下文，并在失败或中断后说明**到底发生了什么**。这本书围绕这些问题展开：先给读得懂的机制图与练习，再走进固定版本的开源代码，最后比较不同设计的取舍。
+一个 Agent 不只是“模型会调用工具”。它要决定下一步、获得执行许可、处理工具返回、选择进入下一轮的上下文，并在失败或中断后说明**到底发生了什么**。这本书围绕这些问题展开：先用图和具体例子讲清正常过程，再比较真实系统的设计取舍。**不写代码、不安装框架，也可以沿图文读懂；源码和动手实验是可选的深入入口。**
 
 这是**持续更新的公开预览稿**，不是产品排行榜，也不是“所有 Agent 共用一套内部架构”的示意图。系统篇只解释已定位的局部源码路径；没有运行过的行为不会写成实测。
 
@@ -29,9 +29,11 @@
 
 ## 你可以怎样读
 
-- **第一次接触 Agent：** 沿[四层学习路线](docs/learning-path.md)走。先看循环，再运行[提案、执行与验收练习](docs/labs/first-agent-loop.md)；不需要 API Key，Python 标准库即可。随后用[上下文预算练习](docs/labs/context-budget.md)区分保存与可见，再尝试[回执丢失后的对账练习](docs/labs/remote-effect.md)，理解“没有收到答复”为什么不等于“没有执行”。
+- **第一次接触 Agent：** 先看 [Agent 循环](docs/concepts/agent-loop.md)、[工具与职责分工](docs/concepts/model-harness-cli-mcp-skill.md)、[上下文与记忆](docs/concepts/context-vs-memory.md)三篇图解，再沿[阅读路线](docs/learning-path.md)选感兴趣的问题。不用先安装框架；想动手时再选[本地循环](docs/labs/first-agent-loop.md)或[上下文预算](docs/labs/context-budget.md)实验，它们不需要 API Key。
 - **想读懂一个项目：** 从 [Pi 的运行核心与外壳](docs/systems/pi/README.md)或[Codex 的命令审批与执行](docs/systems/codex/README.md)开始。系统篇给出上游仓库、固定 commit、关键源码位置、正常/失败路径与未验证范围，不要求把整个仓库从头读完。
 - **正在设计自己的系统：** 按问题查[机制](docs/concepts/README.md)、[跨系统对照](docs/comparisons/README.md)和[术语表](docs/glossary.md)。例如工具权限、上下文预算、记忆可见性、委派交接、checkpoint、评测和外部副作用，不必先选“最佳框架”。
+
+也可以选用[AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读)：让常用助手解释图中一个关系、听你的复述，再换个例子一起检查。书提供图文与来源，AI 帮你展开问题；不需要安装框架，也不把 AI 的肯定回复当成读懂的证明。
 
 ## 内容地图
 

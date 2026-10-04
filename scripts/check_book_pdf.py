@@ -133,11 +133,30 @@ def check_public_readiness(path: Path) -> None:
     print("Public PDF link gate OK: no non-HTTPS or unknown reader-route annotations; external link access needs separate review")
 
 
+def matches_clean_provenance(about_text: str, commit: str) -> bool:
+    """The short visible revision and clean-worktree claim must both agree."""
+    if not re.fullmatch(r"[a-f0-9]{40}", commit):
+        raise ValueError("Expected PDF source commit must be a full Git SHA-1")
+    about = "".join(about_text.split())
+    return f"书稿提交：{commit[:12]}" in about and "从该提交的干净工作树构建" in about
+
+
+def check_provenance(path: Path, commit: str) -> None:
+    """Keep the public PDF on the same clean manuscript revision as the reader site."""
+    reader = PdfReader(str(path))
+    if not matches_clean_provenance(reader.pages[2].extract_text() or "", commit):
+        raise ValueError("PDF about-this-edition page does not match the clean source commit")
+    print(f"PDF source revision OK: {commit}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("pdf", nargs="?", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--public-readiness", action="store_true", help="also reject non-HTTPS and unknown reader-route links before public hosting")
+    parser.add_argument("--expected-commit", help="require the about-this-edition page to identify this clean source commit")
     args = parser.parse_args()
     check(args.pdf.resolve())
     if args.public_readiness:
         check_public_readiness(args.pdf.resolve())
+    if args.expected_commit:
+        check_provenance(args.pdf.resolve(), args.expected_commit)

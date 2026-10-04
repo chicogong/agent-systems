@@ -6,13 +6,15 @@ Agent 可以先理解为一个反复执行的过程：接收目标，依据已�
 
 不用先会搭框架。前两层可只读图、画纸笔流程；要运行练习才需要 Python 3.10 或更新版本。文中的**宿主**指组织模型与工具的程序，**提案**是尚未执行的下一步建议，**副作用**是文件或外部服务实际发生的变化。先把这三个角色分开，再学习接口名称。
 
-初次阅读不用按书序把全部专题一次读完。先跑第一层练习，第二层选工具与许可，第三层只选一个项目，第四层做结果验收；Jev、多执行者、插件服务组合与任务后知识维护都可后读。书序是完整收录顺序，本页是入门最短路线。
+初次阅读不用按书序把全部专题一次读完。**默认先读图与例子，所有动手练习都可跳过。** 从[Agent 循环](concepts/agent-loop.md)看一次正常任务，再读[职责分工](concepts/model-harness-cli-mcp-skill.md)和[上下文与记忆](concepts/context-vs-memory.md)；之后只选一个感兴趣的项目。Jev、多执行者、插件服务组合与任务后知识维护都可后读。书序是完整收录顺序，本页帮助选择深度，不是必须完成的作业路线。
+
+想边读边问，可以选用[AI 陪读方法](../book/frontmatter/reading-guide.md#和-ai-一起读)：先把当前段落和图的文字版交给助手，再用自己的话解释，最后换个例子判断。无需安装 Agent，也不用先让 AI 总结全书；不会使用 AI 不影响本页的阅读路线。
 
 ## 1. 零基础：认出循环和控制权
 
-**要回答：** 模型的一次回答，何时变成了能影响外部世界的动作？先只读本书的 [Agent loop](concepts/agent-loop.md)，再做[本地 Agent loop 练习](labs/first-agent-loop.md)；读懂提案、授权、执行和验收后，再回头看[五层职责](concepts/model-harness-cli-mcp-skill.md)。想看更多例子，可选读 [Hugging Face Agents Course 第一单元](https://huggingface.co/learn/agents-course/unit1/introduction) 的 Think → Act → Observe 示例，以及 [Anthropic 的 Agent 构建模式](https://www.anthropic.com/engineering/building-effective-agents) 对固定工作流与动态 Agent 的区分。外部课是延伸阅读，不是完成本书第一层的前置条件。
+**要回答：** 模型的一次回答，何时变成了能影响外部世界的动作？先读本书的 [Agent loop](concepts/agent-loop.md)和[职责分工](concepts/model-harness-cli-mcp-skill.md)，沿图讲清提案、执行和结果返回；想亲自观察时再选[本地 Agent loop 练习](labs/first-agent-loop.md)。想看更多例子，可选读 [Hugging Face Agents Course 第一单元](https://huggingface.co/learn/agents-course/unit1/introduction) 的 Think → Act → Observe 示例，以及 [Anthropic 的 Agent 构建模式](https://www.anthropic.com/engineering/building-effective-agents) 对固定工作流与动态 Agent 的区分。外部课是延伸阅读，不是完成本书第一层的前置条件。
 
-**动手：** 拿“查询天气并写一句出门建议”画四格：用户目标、模型提出的工具调用、工具返回的天气、最终建议。在每条箭头旁写谁决定它。再把天气工具改成“发送消息”，标出需要增加的授权检查。纸笔即可，不必运行模型。随后运行[本地 Agent loop 练习](labs/first-agent-loop.md)，亲眼比较获准写入、写入被拒与写错配置三条轨迹；它只用 Python 标准库和固定脚本模拟提案，不需要模型账号。
+**动手（可选）：** 拿“查询天气并写一句出门建议”画四格：用户目标、模型提出的工具调用、工具返回的天气、最终建议。在每条箭头旁写谁决定它。再把天气工具改成“发送消息”，标出需要增加的授权检查。纸笔即可，不必运行模型。想观察执行时，可运行[本地 Agent loop 练习](labs/first-agent-loop.md)，比较获准写入、写入被拒与写错配置三条轨迹；它只用 Python 标准库和固定脚本模拟提案，不需要模型账号。
 
 **验收：** 你能指出工具返回错误时下一轮由谁发起，也能解释为什么把“请小心”写进模型输入仍不能代替宿主在执行前拒绝一次写入。对照答案：练习中的 `run()` 把错误结果交给 `propose()`；提案函数据此提出停止。提示词影响提案，真正阻止文件写入的是宿主没有调用执行函数。
 

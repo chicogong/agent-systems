@@ -13,16 +13,16 @@
 
 ## 第一部分 · 基本机制
 
-4. [换模型、Harness、CLI、Skill、MCP：究竟换了哪一层？](../docs/concepts/model-harness-cli-mcp-skill.md)
-5. [Agent、工作流与多 Agent：谁决定下一步？](../docs/concepts/agent-workflow-multiagent.md)
-6. [Agent loop：一次行动怎样闭环](../docs/concepts/agent-loop.md)
+4. [Agent loop：一次行动怎样闭环](../docs/concepts/agent-loop.md)
+5. [换模型、Harness、CLI、Skill、MCP：究竟换了哪一层？](../docs/concepts/model-harness-cli-mcp-skill.md)
+6. [Agent、工作流与多 Agent：谁决定下一步？](../docs/concepts/agent-workflow-multiagent.md)
 7. [动手：在一条可运行轨迹里分清提案、执行与验收](../docs/labs/first-agent-loop.md)
 8. [上下文、会话、摘要与记忆不是一回事](../docs/concepts/context-vs-memory.md)
 9. [动手：存下的历史，不等于本轮可见上下文](../docs/labs/context-budget.md)
 10. [会话变长以后：压缩、记忆和检查点各保留什么](../docs/concepts/session-compaction-and-memory.md)
 11. [审批、沙箱、工作目录：三个不同的边界](../docs/concepts/approval-vs-sandbox.md)
 12. [Tool、Skill、Extension、Package、MCP：到底扩展了什么？](../docs/concepts/extensibility-layers.md)
-13. [从知识库查询到仓库修改：Skill、MCP 与工具权限如何接力](../docs/concepts/mcp-skill-tool-lifecycle.md)
+13. [Skill、MCP 与工具权限如何接力](../docs/concepts/mcp-skill-tool-lifecycle.md)
 14. [Jev：把一个判断交给模型，动作仍由代码决定](../docs/concepts/jev-and-system-one.md)
 15. [委派与交接：多执行者怎样对一项任务负责？](../docs/concepts/delegation-and-handoff.md)
 16. [中断、重试与恢复：先确认哪一步已经生效](../docs/concepts/interruption-recovery.md)

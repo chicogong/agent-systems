@@ -1,5 +1,6 @@
 import { readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -9,6 +10,14 @@ const origin = process.env.SITE_URL
 const pdfPublished = Boolean(process.env.PUBLIC_PDF_FILE)
 const pdfPath = 'book/agent-systems-public-preview.pdf'
 if (!origin) throw new Error('SITE_URL is required')
+const version = JSON.parse(await readFile(path.join(dist, 'version.json'), 'utf8'))
+const currentCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: path.join(site, '..'), encoding: 'utf8' }).trim()
+const currentClean = !execFileSync('git', ['status', '--porcelain', '--untracked-files=normal'], { cwd: path.join(site, '..'), encoding: 'utf8' }).trim()
+if (version.status !== 'preview' || version.sourceCommit !== currentCommit || version.sourceClean !== currentClean) {
+  throw new Error('Public version metadata does not match this source checkout')
+}
+if (process.env.SITE_RELEASE === '1' && !version.sourceClean) throw new Error('Release candidate contains uncommitted source changes')
+if (version.pdfSha256 !== (pdfPublished ? process.env.PUBLIC_PDF_SHA256 : null)) throw new Error('Public PDF version metadata mismatch')
 
 if (process.env.DEPLOY_TARGET === 'vercel') {
   const config = { cleanUrls: true }
@@ -74,6 +83,7 @@ const anchors = new Map([...pages].map(([file, html]) => [file, new Set([...html
 const indexPages = new Set(['feedback.html', 'pdf.html', 'concepts.html', 'systems.html', 'comparisons.html', 'sources.html'])
 for (const file of expected) {
   const html = pages.get(file)
+  if (!html.includes(version.sourceCommit.slice(0, 12))) throw new Error(`${file}: missing reader-visible source revision`)
   // Chinese punctuation next to an emphasis delimiter can make Markdown
   // render literal **. Inspect rendered prose, not code examples or scripts.
   const withoutCode = html.replace(/<pre\b[^>]*>[\s\S]*?<\/pre>/g, '').replace(/<code\b[^>]*>[\s\S]*?<\/code>/g, '')

@@ -3,9 +3,9 @@
 @front book/frontmatter/reading-guide.md
 @front docs/learning-path.md
 @part 第一部分 · 基本机制
+docs/concepts/agent-loop.md
 docs/concepts/model-harness-cli-mcp-skill.md
 docs/concepts/agent-workflow-multiagent.md
-docs/concepts/agent-loop.md
 docs/labs/first-agent-loop.md
 docs/concepts/context-vs-memory.md
 docs/labs/context-budget.md
