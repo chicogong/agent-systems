@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitepress'
 import { readFileSync } from 'node:fs'
 import { plainLabel } from '../scripts/page-metadata.mjs'
+import { svgDimensions } from '../scripts/image-metadata.mjs'
 
 const publicMode = process.env.SITE_MODE === 'public'
 const siteUrl = process.env.SITE_URL
@@ -22,8 +23,34 @@ export default defineConfig({
   srcDir: 'content',
   lang: 'zh-CN',
   title: '图解 Agent 系统',
-  description: publicMode ? '《图解 Agent 系统》在线预览：从运行机制、源码导读到横向对照。' : '沿问题、图与固定版本案例阅读 Agent 系统',
+  description: publicMode ? '《图解 Agent 系统》免费中文预览：用图解、讲解和案例连接入门学习、应用实践与开源实现。' : '沿问题、图与固定版本案例阅读 Agent 系统',
   cleanUrls: true,
+  markdown: {
+    config(md) {
+      const image = md.renderer.rules.image
+      const dimensions = new Map()
+      md.renderer.rules.image = (tokens, index, ...rest) => {
+        const token = tokens[index]
+        const name = token.attrGet('src')?.match(/^\/assets\/figures\/([a-z0-9-]+)\/diagram\.svg$/)?.[1]
+        if (name && publicMode) {
+          if (!dimensions.has(name)) {
+            // Read the reviewed publish asset, including when the book source
+            // was supplied through BOOK_CONTENT_ROOT from another worktree.
+            const svg = readFileSync(new URL(`../content/public/assets/figures/${name}/diagram.svg`, import.meta.url), 'utf8')
+            dimensions.set(name, svgDimensions(svg))
+          }
+          const size = dimensions.get(name)
+          if (size) {
+            token.attrSet('width', String(size.width))
+            token.attrSet('height', String(size.height))
+            token.attrSet('loading', 'lazy')
+            token.attrSet('decoding', 'async')
+          }
+        }
+        return image(tokens, index, ...rest)
+      }
+    }
+  },
   sitemap: publicMode ? { hostname: siteUrl } : undefined,
   transformPageData(pageData) {
     if (!publicMode) return
@@ -33,7 +60,7 @@ export default defineConfig({
     const isArticle = !isHome && !new Set(['feedback', 'pdf', 'downloads', 'concepts', 'systems', 'comparisons', 'sources']).has(pathname)
     const title = plainLabel(pageData.title) || '图解 Agent 系统'
     pageData.title = title
-    const description = pageData.frontmatter.description || '从运行机制、源码导读到横向对照，图解 Agent 系统。'
+    const description = pageData.frontmatter.description || '用图解、讲解和案例学习 Agent，再按兴趣深入应用与开源实现。'
     pageData.frontmatter.head ??= []
     pageData.frontmatter.head.push(
       ['link', { rel: 'canonical', href: canonical }],
@@ -46,7 +73,7 @@ export default defineConfig({
       ['meta', { property: 'og:image', content: `${siteUrl}/assets/share/book.png` }],
       ['meta', { property: 'og:image:width', content: '1200' }],
       ['meta', { property: 'og:image:height', content: '630' }],
-      ['meta', { property: 'og:image:alt', content: '图解 Agent 系统：看懂一次任务，理解一套系统' }],
+      ['meta', { property: 'og:image:alt', content: '图解 Agent 系统：学懂 Agent，把方法用起来' }],
       ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
       ['meta', { name: 'twitter:image', content: `${siteUrl}/assets/share/book.png` }]
     )
@@ -75,7 +102,7 @@ export default defineConfig({
     logo: false,
     nav: publicMode ? [
       { text: '开始阅读', link: '/' },
-      { text: '学习路径', link: '/learning-path' },
+      { text: '学习与应用', link: '/learning-and-practice' },
       { text: '机制', link: '/concepts/agent-loop' },
       { text: '项目', link: '/systems' },
       { text: '对照', link: '/comparisons/loop-and-stop' },

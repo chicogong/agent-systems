@@ -35,7 +35,7 @@ from reportlab.platypus import (
     NextPageTemplate,
     PageBreak,
     PageTemplate,
-    Paragraph,
+    Paragraph as CodeParagraph,
     Spacer,
     Table,
     TableStyle,
@@ -43,6 +43,7 @@ from reportlab.platypus import (
 from reportlab.platypus.tableofcontents import TableOfContents
 
 from book_cover import cover_drawing
+from book_typography import BookParagraph as Paragraph
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -309,16 +310,16 @@ class BookDoc(BaseDocTemplate):
         canvas.setFillColor(dark)
         canvas.setFont(FONT_NAME, 12)
         for offset, line in enumerate((
-            "从运行循环到工具、上下文、记忆与权限，",
-            "用清晰的图解建立机制，用固定版本的源码核对实现。",
-            "每章标明证据边界，提供清晰图稿与文字说明。" if self.public_links else "每章标明证据边界，保留可编辑图源与文字说明。",
+            "用图、例子和讲解，学习 Agent 怎样完成任务。",
+            "把方法用在学习、教学与日常工作中。",
+            "想深入时，再沿开源项目的代码继续读。",
         )):
             canvas.drawString(22 * mm, (211 - 10 * offset) * mm, line)
         canvas.setFont(BOLD_NAME, 13)
         for offset, (title, detail) in enumerate((
-            ("理解机制", "把抽象概念拆成可追问的运行路径"),
-            ("对照源码", "沿固定版本核查入口、状态与副作用"),
-            ("持续修订", "让图文随着证据和项目变化而更新"),
+            ("看图学懂", "从一个具体任务开始，逐步连起模型、工具和资料"),
+            ("把方法用起来", "整理学习卡片、组织课堂讨论，或完成一份工作简报"),
+            ("按兴趣深入", "对照真实系统，选择应用、源码或工程方向继续学习"),
         )):
             y = (162 - offset * 27) * mm
             canvas.setFillColor(green)
@@ -481,7 +482,9 @@ def chapter_flowables(path: Path, index: int, style: dict[str, ParagraphStyle], 
             i += 1
             code_lines = []
             while i < len(lines) and not lines[i].strip().startswith("```"):
-                code_lines.append(Paragraph(code_markup(lines[i], preserve_leading=True) or "&#160;", style["code"]))
+                # Code is not Chinese prose: keep the original wrapper and its
+                # literal indentation/punctuation rather than prose rules.
+                code_lines.append(CodeParagraph(code_markup(lines[i], preserve_leading=True) or "&#160;", style["code"]))
                 i += 1
             if code_lines:
                 block = Table([[code_lines]], colWidths=[CONTENT_W], hAlign="LEFT")
@@ -591,7 +594,7 @@ def build(output: Path, font_path: Path, public_links: bool = False) -> None:
                 Spacer(1, 51 * mm),
                 Part(str(value), style["part"], f"part-{part_index}"),
                 Spacer(1, 5 * mm),
-                Paragraph("固定版本的源码阅读 · 图文相互校验", style["subtitle"]),
+                Paragraph("图解建立理解 · 案例连接应用 · 源码核对实现", style["subtitle"]),
                 PageBreak(),
             ])
             part_index += 1

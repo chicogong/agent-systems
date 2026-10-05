@@ -1,36 +1,42 @@
-# 术语：同一个词别混用
+# 术语表：把名字放回具体任务里
 
-本书把运行时的可见输入、应用存储、模型生成的指令和外部资源分开命名。以下是本书的**工作定义**，不是声称所有项目都采用同一术语或实现。
+遇到陌生词，可以先看这里的一句话解释，再回到正文例子。各项目的名字和接口会有差别，下表按本书的用法说明。
 
-| 术语 | 在本书中的含义 | 继续阅读 |
+| 名称 | 用大白话讲 | 继续阅读 |
 | --- | --- | --- |
-| Agent | 能围绕目标，在反馈中选择后续动作的运行系统；具体边界由宿主实现决定 | [与工作流的区别](concepts/agent-workflow-multiagent.md)、[Pi 分层](systems/pi/README.md) |
-| 工作流 | 由预设步骤和分支组织的过程；其中可以包含 Agent 决策 | [与 Agent 的区别](concepts/agent-workflow-multiagent.md) |
-| 多 Agent / 多执行者 | 任务拆给多个有独立职责的执行者，还需定义交接、合并与冲突处理；与下一步控制权是不同维度 | [控制权与数量](concepts/agent-workflow-multiagent.md) |
-| Agent loop | 在模型请求、工具结果和继续/结束判断之间迭代的控制流程 | [Pi 代码导读](systems/pi/code-walkthrough.md) |
-| Harness / 运行器 | 位于模型外的运行与控制层；组织模型调用、工具路由、上下文和权限等职责，不等于模型本身 | [五层职责](concepts/model-harness-cli-mcp-skill.md) |
-| CLI | 命令行交互界面；不是 Agent 的全部运行机制，换产品的 CLI 也往往同时换了其他层 | [五层职责](concepts/model-harness-cli-mcp-skill.md) |
-| Tool | 带输入、执行与结果的能力接口；模型提出调用不等于已经获准执行 | [Codex 审批](systems/codex/README.md) |
-| Observation | 动作后提供给系统的结果或状态；它不必然准确，也不等于成功验收 | [OpenHands 事件](systems/openhands/README.md) |
-| 当前上下文 | 一次模型请求实际提交的指令、消息和材料 | [上下文与记忆](concepts/context-vs-memory.md) |
-| Token / 输入预算 | Token 是模型分词后的计量单位；输入预算决定本轮能装入多少内容，不等于已保存内容量，也不等于可生成的输出量。字符计数只能作为明确标注的教学近似 | [上下文预算练习](labs/context-budget.md) |
-| 会话记录 | 宿主保留的消息或事件历史，不保证全量进入下一次模型请求 | [状态对照](comparisons/four-kinds-of-state.md) |
-| 压缩摘要 | 将选定历史转写为更短表示的产物；是否进入下一轮由宿主决定 | [上下文与记忆](concepts/context-vs-memory.md) |
-| 长期记忆 | 跨轮次或跨任务保留、可能需检索和注入的状态或知识 | [Letta Code](systems/letta/README.md)、[Mem0](systems/mem0/README.md) |
-| Checkpoint（执行状态） | 一个可定位的图执行状态版本，包含继续执行所需的状态与位置；不等同语义记忆 | [LangGraph](systems/langgraph/README.md) |
-| `checkpoint.md`（上下文续接材料） | 从历史提炼给后续模型窗口使用的任务与线索，可能遗漏或保留旧状态；虽同名，不保证恢复原执行状态 | [MiMo Code](systems/mimo-code/README.md) |
-| 审批 | 某个动作开始前的授权决定；不保证运行中隔离或结果正确 | [审批与沙箱](concepts/approval-vs-sandbox.md) |
-| 操作 ID / 幂等键 | 用于关联请求、查询与重试的标记；只有目标服务的契约与实现提供去重保证时，同一标记才可能避免重复副作用。它本身不是授权或成功证据 | [回执丢失练习](labs/remote-effect.md) |
-| 沙箱/隔离 | 对执行期间可访问资源的边界；不替代用户意图确认 | [审批与沙箱](concepts/approval-vs-sandbox.md) |
-| Skill | 按需读取的任务指导及配套文件，不等于可执行插件本身 | [扩展层次](concepts/extensibility-layers.md) |
-| Extension | 由宿主加载的扩展代码或钩子；其权限取决于宿主和安装环境 | [Pi 扩展](systems/pi/extensions-and-skills.md) |
-| MCP | 宿主与外部能力交换工具、资源等的协议，不等于 Skill 文件格式 | [扩展层次](concepts/extensibility-layers.md) |
-| 源码事实 / 工程推断 | 前者能在固定版本定位到实现；后者是基于证据的解释，必须单独标记 | [来源规则](../sources/README.md) |
+| Agent | 围绕一个目标，边做、边看结果、再选择下一步的运行系统 | [三种任务组织方式](concepts/agent-workflow-multiagent.md) |
+| 工作流 | 提前安排好步骤和分支，再按这些安排执行 | [工作流与 Agent](concepts/agent-workflow-multiagent.md) |
+| 多 Agent／多执行者 | 把工作分给几个执行者，再检查和合并各自结果 | [委派与交接](concepts/delegation-and-handoff.md) |
+| Agent loop | 模型建议动作、工具返回结果，再继续做的循环 | [运行循环](concepts/agent-loop.md) |
+| Harness／运行器／宿主 | 组织模型、工具、输入和权限的运行程序 | [一项任务的分工](concepts/model-harness-cli-mcp-skill.md) |
+| CLI | 命令行界面，通过输入命令与程序交互 | [职责分工](concepts/model-harness-cli-mcp-skill.md) |
+| Tool／工具 | 执行读取、搜索、修改等操作，并返回结果的接口 | [工具怎样接入](concepts/extensibility-layers.md) |
+| Proposal／提案 | 尚未执行的动作建议，例如“读取报名说明” | [运行循环](concepts/agent-loop.md) |
+| Observation／观察 | 工具带回的内容或执行状态，例如文件原文、错误信息 | [OpenHands](systems/openhands/README.md) |
+| 当前上下文 | 模型这次实际收到的指令、消息和材料 | [上下文与记忆](concepts/context-vs-memory.md) |
+| Token | 模型处理文本时，将内容分成小片段后使用的计量单位 | [上下文预算](labs/context-budget.md) |
+| 输入预算 | 为这次输入预留的容量，需要在其中选择材料 | [上下文与记忆](concepts/context-vs-memory.md) |
+| 会话记录 | 应用保存的聊天、操作和结果，供回看或继续使用 | [四类状态](comparisons/four-kinds-of-state.md) |
+| 压缩摘要 | 把较早的长内容概括成短内容，再与近期消息一起使用 | [会话变长以后](concepts/session-compaction-and-memory.md) |
+| 长期记忆 | 跨任务保留的事实、约定或资料，后续需要时读取或检索 | [Letta Code](systems/letta/README.md)、[Mem0](systems/mem0/README.md) |
+| Checkpoint／检查点 | 保存程序执行到某一步的状态，供回看和继续 | [LangGraph](systems/langgraph/README.md) |
+| `checkpoint.md` | MiMo Code 中整理给后续模型窗口的任务和线索文件 | [MiMo Code](systems/mimo-code/README.md) |
+| 审批 | 用户或既定策略决定一次动作是否可以执行 | [审批与沙箱](concepts/approval-vs-sandbox.md) |
+| 沙箱／隔离 | 限定程序运行时能够接触的文件、网络和其他资源 | [沙箱执行环境](concepts/sandbox-execution.md) |
+| 副作用 | 操作实际改变了文件或外部系统，例如写入文件、发送邮件 | [中断与恢复](concepts/interruption-recovery.md) |
+| 操作 ID／幂等键 | 标记一次业务操作，供查询、关联和按接口规则处理重复请求 | [回执丢失](labs/remote-effect.md) |
+| Skill | 按需读取的工作说明及配套资料 | [扩展能力](concepts/extensibility-layers.md) |
+| Extension／扩展 | 由宿主加载的代码，可增加工具或参与运行过程 | [Pi 扩展](systems/pi/extensions-and-skills.md) |
+| MCP | 连接宿主和外部服务，交换工具、资源等能力的协议 | [工具怎样接力](concepts/mcp-skill-tool-lifecycle.md) |
+| 源码事实 | 能在指定代码版本中找到对应实现的说法 | [来源规则](../sources/README.md) |
+| 工程推断 | 根据材料得出的设计解释或建议，正文会说明它的身份 | [来源规则](../sources/README.md) |
 
-读项目图时先问“这是哪个版本、哪条路径、谁保存状态、谁实际执行”。若一幅图没回答这些问题，回到对应文章的范围与来源，不要用通用术语替它补上不存在的机制。
+两个叫 checkpoint 的例子用途不同：LangGraph 保存图执行状态；MiMo Code 的文件提供后续上下文线索。读具体项目时，以章内说明为准。
+
+幂等键也需要配合外部接口规则使用，包括参数是否一致、有效期和重复请求处理。它只是一项请求标识，可靠的重复处理由服务实现。
 
 ## 读完之后
 
-可以从自己熟悉的一次真实任务反向检验本书：模型提出了什么动作，宿主在哪一步决定是否执行，结果如何进入下一轮，以及中断后哪些状态还能找回。找到这些位置，再去比较另一套系统，差异通常比功能列表更清楚。
+选一个熟悉的任务，说清谁提供材料、模型怎样建议下一步、工具做了什么、结果怎样回来。再对照另一套系统，看看安排哪里不同。
 
-本书会继续补齐机制专题、代码导读和横向对照。已有章节锚定各自的源码版本；上游更新时先核对事实、标明变化，再修正文图。欢迎从可复现的源码定位、图文不一致或读者不易理解的具体段落提出改进。构建出的 PDF 是某一时点的阅读快照，不代表所述项目的最新行为。
+本书会持续更新。PDF 是一次书稿的阅读快照，项目的实际行为按对应版本和配置核对。欢迎指出一段难懂的解释，或一个需要修正的图文关系。

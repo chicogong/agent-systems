@@ -96,8 +96,14 @@ def check(path: Path) -> None:
     if "不止会用" not in last_text or "books.aimake.cc" not in last_text:
         raise ValueError("Back cover is missing or not extractable")
     all_text = "\n".join(page.extract_text() or "" for page in reader.pages)
-    for title in ("前言：看见回答背后的系统", "阅读指南：从问题进入", "结语：图会更新", "致谢与贡献", "作者简介"):
-        if title not in all_text:
+    normalized_text = "".join(all_text.split())
+    # Follow the source headings instead of keeping a second list of old titles.
+    # This also covers newly added opening guides without a manual title update.
+    for kind, source in manifest_entries():
+        if kind not in {"front", "back"}:
+            continue
+        title = next(line[2:].strip() for line in source.read_text(encoding="utf-8").splitlines() if line.startswith("# "))
+        if "".join(title.split()) not in normalized_text:
             raise ValueError(f"Book section missing: {title}")
     if "CC BY-SA" in all_text or "ISBN 978-7" in all_text:
         raise ValueError("Stale design placeholder leaked into PDF")

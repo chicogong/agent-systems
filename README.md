@@ -1,52 +1,57 @@
 # 图解 Agent 系统
 
-**用清晰图解看懂 Agent 怎样工作：从工具调用、上下文与记忆，到 Pi、Codex 等真实系统的设计取舍。**
+**在 AI 时代，学懂 Agent，把方法用起来。一本用图解、讲解和具体案例连接入门学习、日常应用与开源实现的中文书。**
 
 <img src="book/assets/cover-preview.png" alt="《图解 Agent 系统》封面预览" width="220">
 
-[在线阅读](https://books.aimake.cc/) · [从零开始](docs/learning-path.md) · [按书序阅读](book/CONTENTS.md) · [PDF 电子校样](https://books.aimake.cc/pdf) · [反馈勘误](https://books.aimake.cc/feedback)
+[在线阅读](https://books.aimake.cc/) · [学习与应用](docs/learning-and-practice.md) · [选择阅读路线](docs/learning-path.md) · [按书序阅读](book/CONTENTS.md) · [PDF 电子校样](https://books.aimake.cc/pdf)
 
-一个 Agent 不只是“模型会调用工具”。它要决定下一步、获得执行许可、处理工具返回、选择进入下一轮的上下文，并在失败或中断后说明**到底发生了什么**。这本书围绕这些问题展开：先用图和具体例子讲清正常过程，再比较真实系统的设计取舍。**不写代码、不安装框架，也可以沿图文读懂；源码和动手实验是可选的深入入口。**
+如果你是学生、老师、对 AI 感兴趣的人，或已经在学习和工作中使用 AI 工具，可以从这里选一个起点：先看具体任务，再学习怎样组织资料、安排步骤和检查结果，愿意深入时再读真实系统的实现。图、例子和讲解会带着你往下走，纸笔就能先试。
 
-这是**持续更新的公开预览稿**，不是产品排行榜，也不是“所有 Agent 共用一套内部架构”的示意图。系统篇只解释已定位的局部源码路径；没有运行过的行为不会写成实测。
+书中从一个资料助手的正常任务展开，解释模型、工具、上下文与记忆如何配合；再连接 Pi、Codex 等项目的设计取舍。想探索 AI 相关职业方向的读者，可以借这些问题寻找值得继续学习的能力，积累一份自己的学习或项目成果；本书不承诺就业、收入或特定工具的使用效果。
+
+这是**持续更新的公开预览稿**。系统篇介绍指定版本中的一条实现路径，章末列出来源和研究范围。
 
 ## 翻几张图，看看书里怎么讲
 
-图不是装饰：每张图只回答一个问题，章节会把正常路径、失败分支、关键代码和适用边界讲清楚。点缩略图可打开原尺寸 SVG；每组图另有可编辑 `.excalidraw` 和不看图也能读的文字版。
+每张图讲清一件事，正文用具体例子说明步骤，代码导读供愿意深入的读者选看。点缩略图可打开原尺寸 SVG；每组图都有可编辑 `.excalidraw` 和文字说明。
 
-| 从目标到可验收结果 | 模型、Harness、CLI、Skill、MCP 怎样分工 |
+| 从目标到一份有出处的回答 | 模型、Harness、CLI、Skill、MCP 怎样分工 |
 | --- | --- |
 | [![Agent 运行循环：任务、决策、执行、观察与验证](figures/agent-loop/preview.png)](figures/agent-loop/diagram.svg) | [![一项任务穿过 Agent 系统的五层职责](figures/agent-stack/preview.png)](figures/agent-stack/diagram.svg) |
-| [读 Agent loop 与第一条练习](docs/concepts/agent-loop.md) | [读五层职责与工具边界](docs/concepts/model-harness-cli-mcp-skill.md) |
-| **存着，不等于模型这轮看见** | **超时后为什么要先对账** |
+| [读 Agent loop](docs/concepts/agent-loop.md) | [读一项任务里的分工](docs/concepts/model-harness-cli-mcp-skill.md) |
+| **资料怎样进入这次回答** | **超时后，先查询原操作** |
 | [![会话、摘要、记忆与检索进入本轮上下文的区别](figures/context-vs-memory/preview.png)](figures/context-vs-memory/diagram.svg) | [![外部动作超时后的状态查询与重试边界](figures/permission-and-recovery/preview.png)](figures/permission-and-recovery/diagram.svg) |
 | [读上下文与记忆](docs/concepts/context-vs-memory.md) | [读审批、恢复与回执丢失实验](docs/comparisons/permission-and-recovery.md) |
-| **清理沙箱，不等于撤销远端动作** | **知识暂存、正式保存、本轮可见不是一回事** |
+| **给代码安排合适的执行环境** | **Hermes 怎样保存和使用记忆** |
 | [![执行环境的资源合同、结果账本与外部验收](figures/sandbox-execution/preview.png)](figures/sandbox-execution/diagram.svg) | [![Hermes 的知识文件、提示快照与待批准写入](figures/hermes-session-memory/preview.png)](figures/hermes-session-memory/diagram.svg) |
 | [读沙箱与生命周期](docs/concepts/sandbox-execution.md) | [读 Hermes 的知识维护路径](docs/systems/hermes/README.md) |
 
-这些是缩略预览，不用缩略图判断小字是否清晰；需要放大时打开 SVG。完整图册及导出约束见[图稿索引](figures/README.md)。
+想看小字时，点图打开原尺寸 SVG。更多图和文字说明见[图稿索引](figures/README.md)。
 
 ## 你可以怎样读
 
-- **第一次接触 Agent：** 先看 [Agent 循环](docs/concepts/agent-loop.md)、[工具与职责分工](docs/concepts/model-harness-cli-mcp-skill.md)、[上下文与记忆](docs/concepts/context-vs-memory.md)三篇图解，再沿[阅读路线](docs/learning-path.md)选感兴趣的问题。不用先安装框架；想动手时再选[本地循环](docs/labs/first-agent-loop.md)或[上下文预算](docs/labs/context-budget.md)实验，它们不需要 API Key。
+- **学生、老师与第一次接触 AI 的读者：** 从[学习与应用导读](docs/learning-and-practice.md)的三份虚构资料开始，看一份带出处的回答怎样形成，再读 [Agent 循环](docs/concepts/agent-loop.md)。学生可以整理知识与问题，老师可以把同一例子改成讨论活动；不用先学习代码。
+- **已经在用 AI，希望用得更好：** 用[学习与应用](docs/learning-and-practice.md#把方法带到你的场景)中的任务卡，练习说清目标、选择资料、区分事实与建议、核对结果。卡住时可选用[AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读)，再读[上下文与记忆](docs/concepts/context-vs-memory.md)。
+- **想探索新方向、积累能力：** 先留下一份自己的解释、简报或图，再沿[阅读路线](docs/learning-path.md)选择使用、源码或工程方向，逐步积累作品和经验。
 - **想读懂一个项目：** 从 [Pi 的运行核心与外壳](docs/systems/pi/README.md)或[Codex 的命令审批与执行](docs/systems/codex/README.md)开始。系统篇给出上游仓库、固定 commit、关键源码位置、正常/失败路径与未验证范围，不要求把整个仓库从头读完。
 - **正在设计自己的系统：** 按问题查[机制](docs/concepts/README.md)、[跨系统对照](docs/comparisons/README.md)和[术语表](docs/glossary.md)。例如工具权限、上下文预算、记忆可见性、委派交接、checkpoint、评测和外部副作用，不必先选“最佳框架”。
 
-也可以选用[AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读)：让常用助手解释图中一个关系、听你的复述，再换个例子一起检查。书提供图文与来源，AI 帮你展开问题；不需要安装框架，也不把 AI 的肯定回复当成读懂的证明。
+也可以选用[AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读)：让常用助手解释图中一个关系、听你的复述，再换个例子一起检查。书提供图文与来源，AI 帮你展开问题，最后用自己的话说明理解。
 
 ## 内容地图
 
 | 章节类型 | 你会得到什么 | 从这里试看 |
 | --- | --- | --- |
+| **学习与应用** | 用一组随书资料尝试回答、教学活动或工作简报，形成自己的任务卡与修改记录 | [把所学用起来](docs/learning-and-practice.md) · [阅读路线](docs/learning-path.md) · [AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读) |
 | **机制图解** | 一条任务怎样经过模型、工具、上下文、记忆、权限和恢复；图旁写明例子与反例 | [Agent loop](docs/concepts/agent-loop.md) · [MCP、Skill 与工具](docs/concepts/mcp-skill-tool-lifecycle.md) · [观察与评测](docs/concepts/observation-evaluation.md) |
-| **开源源码剖面** | 固定版本中的一条可追踪调用链：入口、状态、关键分支、副作用、停止条件 | [Pi](docs/systems/pi/README.md) · [OpenCode](docs/systems/opencode/README.md) · [LangGraph](docs/systems/langgraph/README.md) |
-| **横向对照** | 同一问题的不同设计与代价，不拿不同层次的产品凑功能榜 | [循环与停止](docs/comparisons/loop-and-stop.md) · [四种状态](docs/comparisons/four-kinds-of-state.md) · [权限与恢复](docs/comparisons/permission-and-recovery.md) |
-| **动手练习** | 可运行的输入、预期轨迹、测试、自测题和明确的模拟边界 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [上下文预算](docs/labs/context-budget.md) · [远端结果未知](docs/labs/remote-effect.md) · [真实本地 HTTP 回执](docs/labs/http-receipt.md) |
+| **开源项目讲解** | 一个版本里的具体步骤，以及连接这些步骤的关键代码 | [Pi](docs/systems/pi/README.md) · [OpenCode](docs/systems/opencode/README.md) · [LangGraph](docs/systems/langgraph/README.md) |
+| **横向对照** | 围绕同一个问题，比较不同做法和取舍 | [循环与停止](docs/comparisons/loop-and-stop.md) · [四种状态](docs/comparisons/four-kinds-of-state.md) · [权限与恢复](docs/comparisons/permission-and-recovery.md) |
+| **可选小实验** | 用随书脚本观察读取、输入选择、结果查询和错误处理 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [上下文预算](docs/labs/context-budget.md) · [远端结果查询](docs/labs/remote-effect.md) · [本地 HTTP 回执](docs/labs/http-receipt.md) |
 
 系统案例覆盖 Pi、DSH（DeepSeek Harness）、Codex、OpenCode、mini-SWE-agent、OpenHands、Browser Use、Qwen Code、Kimi Code、MiMo Code、Letta Code、Hermes Agent、Mem0、LangGraph、OpenClaw 与 GPT Researcher。它们分属编码助手、运行框架、记忆组件等不同层次；**入书理由是能解释一种架构取舍，不是热度或 Star 数。** 逐篇范围见[系统索引](docs/systems/README.md)，候选及后续教学安排见[选题地图](docs/program.md)与[扩写计划](docs/curriculum-expansion.md)。
 
-执行面也单独讲：[沙箱](docs/concepts/sandbox-execution.md)区分容器、gVisor、microVM、远端环境和策略治理；[Computer／Browser Use](docs/concepts/computer-and-browser-use.md)拆开截图坐标、DOM／AX与宿主动作。再用[不可信观察与假完成练习](docs/labs/evidence-contract.md)检查“危险提案被拒绝”和“工具成功但证据不合格”——不需要先装一套复杂框架。
+也介绍[沙箱](docs/concepts/sandbox-execution.md)，说明怎样安排代码运行的文件、网络和资源；[Computer／Browser Use](docs/concepts/computer-and-browser-use.md)用填表任务讲清观察页面、执行操作和读取结果。想进一步观察检查过程，可以选择[资料与工具权限小实验](docs/labs/evidence-contract.md)。
 
 ## 选择顺手的阅读方式
 

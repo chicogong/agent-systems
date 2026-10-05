@@ -1,5 +1,5 @@
 import DefaultTheme from 'vitepress/theme-without-fonts'
-import { h } from 'vue'
+import { h, onMounted } from 'vue'
 import ReaderActions from './ReaderActions.vue'
 import { inject, pageview } from '@vercel/analytics'
 import { sanitizeAnalyticsEvent } from '../../scripts/analytics-policy.mjs'
@@ -7,7 +7,7 @@ import './style.css'
 
 const publicMode = import.meta.env.VITE_PUBLIC_SITE === '1'
 
-function installFigureViewer() {
+function installReaderControls() {
   if (document.querySelector('.figure-viewer')) return
   const dialog = document.createElement('dialog')
   dialog.className = 'figure-viewer'
@@ -29,30 +29,60 @@ function installFigureViewer() {
     }
     dialog.showModal()
   })
-  const markFigures = () => document.querySelectorAll('.vp-doc img[src*="/assets/figures/"][src$="/diagram.svg"]').forEach((img) => {
-    if (img.closest('a')) return
-    if (img.parentElement?.querySelector('.figure-open')) return
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.className = 'figure-open'
-    button.textContent = '放大图稿'
-    button.setAttribute('aria-label', `放大图稿：${img.alt}`)
-    img.insertAdjacentElement('afterend', button)
+  const restoreSearchFocus = () => requestAnimationFrame(() => {
+    if (!document.querySelector('.VPLocalSearchBox')) {
+      document.querySelector('#local-search button')?.focus()
+    }
   })
-  markFigures()
-  new MutationObserver(markFigures).observe(document.body, { childList: true, subtree: true })
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && event.target.closest?.('.VPLocalSearchBox')) {
+      restoreSearchFocus()
+    }
+  }, true)
+  document.addEventListener('click', (event) => {
+    if (event.target.closest?.('.VPLocalSearchBox .back-button, .VPLocalSearchBox .backdrop')) {
+      restoreSearchFocus()
+    }
+  }, true)
+  const markControls = () => {
+    document.querySelectorAll('.vp-doc img[src*="/assets/figures/"][src$="/diagram.svg"]').forEach((img) => {
+      if (img.closest('a')) return
+      if (img.parentElement?.querySelector('.figure-open')) return
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'figure-open'
+      button.textContent = '放大图稿'
+      button.setAttribute('aria-label', `放大图稿：${img.alt}`)
+      img.insertAdjacentElement('afterend', button)
+    })
+    // VitePress 1.6 labels the search field with an icon-only element.
+    // Supply text for aria-labelledby without changing the visible control.
+    const label = document.getElementById('localsearch-label')
+    if (label && !label.querySelector('.reader-search-label')) {
+      const text = document.createElement('span')
+      text.className = 'reader-search-label'
+      text.textContent = label.title || '搜索正文'
+      label.append(text)
+    }
+  }
+  markControls()
+  new MutationObserver(markControls).observe(document.body, { childList: true, subtree: true })
 }
 
 export default {
   ...DefaultTheme,
-  Layout: () => h(DefaultTheme.Layout, null, {
-    'doc-footer-before': () => h(ReaderActions)
-  }),
+  Layout: {
+    setup() {
+      // Add interactive controls after Vue has hydrated the server markup.
+      onMounted(installReaderControls)
+      return () => h(DefaultTheme.Layout, null, {
+        'doc-footer-before': () => h(ReaderActions)
+      })
+    }
+  },
   enhanceApp(context) {
     DefaultTheme.enhanceApp?.(context)
     if (typeof window !== 'undefined') {
-      if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', installFigureViewer, { once: true })
-      else installFigureViewer()
       if (publicMode && import.meta.env.VITE_READER_ANALYTICS === '1' && window.location.hostname === 'books.aimake.cc') {
         inject({ mode: 'production', disableAutoTrack: true, beforeSend: sanitizeAnalyticsEvent })
         pageview({ path: window.location.pathname })

@@ -6,6 +6,8 @@
 
 ## 四条研究线
 
+研究服务于读者的学习与应用：先能解释一个任务、选择资料和核对成果，再按兴趣理解实现。学生、老师与工具使用者的实际入口在[学习与应用](learning-and-practice.md)；下面的系统问题是可选深入，不是开始阅读的资格要求。
+
 | 问题线 | 先问什么 | 可提供差异的系统 |
 | --- | --- | --- |
 | 运行循环与工具 | 谁控制下一轮？工具何时开始、停止或失败？ | [Pi](systems/pi/README.md)、[OpenCode](systems/opencode/README.md)、[mini-SWE-agent](systems/mini-swe-agent/README.md)、[Qwen Code](systems/qwen-code/README.md) |

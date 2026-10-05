@@ -27,6 +27,7 @@ class MarkdownArchiveTests(unittest.TestCase):
                 prefix = f"{ARCHIVE_ROOT}/"
                 self.assertIn(prefix + "README.md", names)
                 self.assertIn(prefix + "book/frontmatter/preface.md", names)
+                self.assertIn(prefix + "docs/learning-and-practice.md", names)
                 self.assertIn(prefix + "docs/systems/pi/README.md", names)
                 self.assertIn(prefix + "figures/pi-architecture/diagram.svg", names)
                 self.assertIn(prefix + "figures/pi-architecture/preview.png", names)
@@ -48,6 +49,7 @@ class MarkdownArchiveTests(unittest.TestCase):
                 self.assertIn(next(value for kind, value in manifest_entries() if kind == "part"), index)
                 self.assertIn("引用 `main`", index)
                 self.assertIn("不能独自证明本包的精确版本", index)
+                self.assertIn("[学习与应用](docs/learning-and-practice.md)", index)
 
     def test_authoring_links_can_be_pinned_to_a_release(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

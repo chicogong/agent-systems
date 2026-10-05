@@ -1,23 +1,29 @@
-# Codex：一条命令为何会执行、询问或停下？
+# Codex：先检查权限，再运行命令
 
 [返回系统目录](../README.md) · [关键代码路径](code-walkthrough.md) · [图的文字版](../../../figures/codex-exec-approval/README.md)
 
-> 固定研究版本：官方仓库 [`openai/codex@c44deff7b1083e9660ac55d02122481f1cdf139b`](https://github.com/openai/codex/tree/c44deff7b1083e9660ac55d02122481f1cdf139b)，核对日期 2026-09-23。本篇只讨论 Rust core 中 `exec_command` 的局部路径；证据是**源码静态阅读**，不是运行实测，也不代表所有 Codex 宿主、工具或配置都走同一路径。
-
 ## 30 秒读懂
 
-模型提出 `exec_command` 并不等于命令立即在宿主机运行。Handler 先解析参数、解析当前执行环境和权限请求；Unified Exec 随后让 exec policy 对命令给出 `Skip`、`NeedsApproval` 或 `Forbidden`。只有未被禁止且必要审批通过的请求，才进入沙箱选择与第一次执行。第一次被沙箱拒绝也**不等于自动无沙箱重试**：策略、拒绝类型、文件系统 deny-read 限制和审批状态会继续决定能否重试。[Handler](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/handlers/unified_exec/exec_command.rs#L186-L245) · [策略映射](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/exec_policy.rs#L337-L458) · [执行编排](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L116-L220)
+假设你让 Codex 运行项目测试。模型提出命令后，接入 Codex 的程序会先检查命令参数、执行环境和权限，再决定这次可以直接继续、需要批准，还是应当拒绝。通过这些检查后，命令才会在选定的执行环境里运行。
+
+源码用三个名字表示审批决定：`Skip` 是跳过普通询问，`NeedsApproval` 是需要批准，`Forbidden` 是禁止执行。负责接收调用的处理器（Handler）先整理请求，执行策略（exec policy）给出决定，执行编排器（Orchestrator）安排审批与运行。[整理请求](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/handlers/unified_exec/exec_command.rs#L186-L245) · [作出审批决定](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/exec_policy.rs#L337-L458) · [安排执行](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L116-L220)
 
 ![Codex exec_command 的审批与执行决策图](../../../figures/codex-exec-approval/diagram.svg)
 
 [可编辑图源](../../../figures/codex-exec-approval/scene.excalidraw) · [PNG 预览](../../../figures/codex-exec-approval/preview.png) · [不看图的说明](../../../figures/codex-exec-approval/README.md)
 
-## 这篇刻意缩窄了什么
+## 批准执行与限制访问，是两件事
 
-本图不是“Codex 整体架构图”，也没有把“审批”和“沙箱”画成同一个开关。审批决定是否允许某次行动；沙箱决定一次执行可触及的资源边界。`Skip` 表示该次执行无须普通审批，**并不必然表示无沙箱**；只在源码规定的例外条件下才可能绕过第一次沙箱。[第一次沙箱覆盖条件](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/sandboxing.rs#L239-L279)
+审批回答“这次允不允许做”；沙箱回答“执行时允许访问哪些文件、网络等资源”。因此，跳过普通询问的 `Skip` 请求仍可能在沙箱中执行。部分请求可以按规则跳过首次沙箱，但禁止读取某些文件的限制（deny-read）会阻止这种绕过。[首次沙箱的选择条件](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/sandboxing.rs#L239-L279)
 
-它还不是“危险命令检测器”的完整说明：未匹配规则时的回退判定受审批策略、沙箱配置、命令分类和平台条件影响；本篇只展示决策结果如何影响这条工具路径。[未匹配命令回退](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/exec_policy.rs#L770-L858)
+第一次运行被沙箱拒绝时，程序会继续检查拒绝原因和当前策略。有的请求停在这里，有的需要再次批准，有的可以按规定重试。普通命令报错与沙箱拒绝分别处理。
+
+具体使用哪条规则还与配置和平台有关。命令没有匹配已有规则时，代码会结合审批策略、沙箱配置和命令分类作后续判断。[未匹配命令的处理](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/exec_policy.rs#L770-L858)
 
 ## 下一步
 
-跟读[关键代码路径](code-walkthrough.md)，再对照 Pi 的“小核心”理解两种系统的权限边界。后续章节应单独研究 Codex 的 turn 状态、上下文压缩、Skill 发现与加载，而不是在本图里塞进全部概念。
+想读代码，就跟着[一次命令的处理过程](code-walkthrough.md)往下走；想作比较，可以看看 Pi 如何把工具交给循环核心。本文先讲清这条命令路径，Codex 的回合状态、上下文压缩和 Skill 加载需要分别阅读。
+
+## 来源与阅读范围
+
+本文依据官方仓库 [`openai/codex@c44deff7b1083e9660ac55d02122481f1cdf139b`](https://github.com/openai/codex/tree/c44deff7b1083e9660ac55d02122481f1cdf139b)，核对日期 2026-09-23，只介绍 Rust core 中 `exec_command` 的相关代码。不同宿主、工具和配置需要分别检查，本篇尚未运行该提交。

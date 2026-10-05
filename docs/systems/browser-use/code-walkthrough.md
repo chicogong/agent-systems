@@ -1,8 +1,8 @@
 # 跟着 browser-use 的 `Agent.step()` 走一轮
 
-[返回剖面](README.md) · 固定源码 [`d8110c5`](https://github.com/browser-use/browser-use/tree/d8110c5ff87ccba887aaa726cdb780f2f84bef8d)
+[返回首页](README.md) · 固定源码 [`d8110c5`](https://github.com/browser-use/browser-use/tree/d8110c5ff87ccba887aaa726cdb780f2f84bef8d)
 
-以下是教学用执行顺序，不是项目源码逐字复刻，也不代表异常、并发事件只有这一种时序。
+继续看网页助手的一轮工作。它先获取当前页面，模型据此提出动作，程序逐项执行，再把本轮输入和执行结果放在一起保存。下面的摘要帮助定位函数，具体行为依据固定源码。
 
 ```text
 step():
@@ -15,10 +15,26 @@ finally:
   _finalize(summary)                      # 有 last_result 且 summary 时记录 AgentHistory
 ```
 
-1. `_prepare_context()` 调用 `BrowserSession.get_browser_state_summary(include_screenshot=True)`，检查下载、更新页面相关动作，再让消息管理器准备上一轮结果并构造当前状态消息；是否把截图置入模型消息由 `use_vision` 控制。[上下文准备](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1087-L1160) · [截图条件](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/message_manager/service.py#L449-L502)
-2. 状态摘要不是简单读取一个缓存字段；`BrowserSession` 派发 `BrowserStateRequestEvent` 并等待结果。超时会清空选择器映射，回退到含错误的非可操作摘要。这说明观测失败时不能安全地沿用旧 DOM 索引。[状态请求与超时](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/browser/session.py#L1595-L1679)
-3. `_get_next_action()` 从消息管理器取得输入，带超时调用模型输出重试包装，将 `AgentOutput` 放进 `last_model_output`；`_execute_actions()` 把其中动作列表交给 `multi_act()`，并保存 `last_result`。[模型阶段](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1175-L1217)
-4. `multi_act()` 逐一调用 `Tools.act()`。它在余下动作存在时检查注册动作的 `terminates_sequence` 与动作前后 URL/焦点目标变化；结果完成或报错也会提前停止。`Tools.act()` 再通过动作注册表执行实际动作，使用每动作超时，并把常见异常转成 `ActionResult(error=...)`。[多动作守卫](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L2730-L2828) · [工具分发](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/tools/service.py#L2178-L2253)
-5. `_finalize()` 先要求 `last_result` 存在；只有当前浏览器摘要也可用时，才调用 `_make_history_item()`。后者从摘要保存 URL、标题、标签页、交互元素和可用截图路径，并与模型输出、动作结果、step 元数据组成 `AgentHistory`。有摘要和模型输出时，`_finalize()` 还派发 `CreateAgentStepEvent`。[最终处理](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1356-L1415) · [历史项构造](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1738-L1780)
+## 先把当前网页和上一步结果交给模型
 
-这里的历史项保存的是该 step 采集的状态摘要和执行结果，不等同于动作后重新抓取的完整网页快照；下一步会再调用 `_prepare_context()` 获取浏览器状态。这个区分来自 `step()` 的调用顺序和 `_make_history_item()` 的入参，尚未用运行日志验证。[调用顺序](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1063-L1085) · [入参](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1378-L1385)
+`_prepare_context()` 请求 `BrowserSession.get_browser_state_summary(include_screenshot=True)`，也就是带截图的当前网页摘要。它还检查下载、更新页面相关动作，再让消息管理器把前一步结果和当前状态整理成消息。[准备模型输入](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1087-L1160)
+
+有可用截图时，`use_vision=True` 会把它加入模型消息，`False` 会省略它，`"auto"` 只在动作结果明确要求截图时加入。[选择截图输入](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/message_manager/service.py#L449-L502)
+
+`BrowserSession` 通过状态请求事件 `BrowserStateRequestEvent` 获取摘要。请求超时时，会清空元素查找映射，并返回带错误的状态。旧页面的元素索引暂时不可用，需要重新取得可用状态后再按索引操作。[获取状态和处理超时](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/browser/session.py#L1595-L1679)
+
+## 模型提出动作，程序逐项执行
+
+`_get_next_action()` 从消息管理器取出输入，通过带超时和重试处理的接口请求模型。模型输出 `AgentOutput` 存入 `last_model_output`；`_execute_actions()` 把其中的动作列表交给 `multi_act()`，执行结果存入 `last_result`。[请求模型并取出动作](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1175-L1217)
+
+`multi_act()` 逐个调用 `Tools.act()`。`Tools.act()` 在动作注册表中找到对应实现，设置这次动作的超时，再执行；常见异常会整理成带错误信息的 `ActionResult`。[执行实际动作](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/tools/service.py#L2178-L2253)
+
+余下动作是否继续，还要看执行后的情况。`terminates_sequence` 表示该动作要求结束这一串动作；网页地址或焦点目标变化时，也会停止剩余项。报错或任务结束标记 `is_done` 同样会让序列停下；单个动作正常完成后，可以继续下一项。[检查继续条件](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L2730-L2828)
+
+## 保存的是本轮看到的页面，加上执行结果
+
+`_finalize()` 先检查是否有 `last_result`。还要有浏览器摘要，才会调用 `_make_history_item()`，保存页面地址、标题、标签页、交互元素和可用截图路径，再与模型输出、动作结果和本轮信息组成 `AgentHistory`。有摘要和模型输出时，还会发出 `CreateAgentStepEvent`，通知其他组件这一轮的内容。[收尾处理](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1356-L1415) · [组成历史记录](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1738-L1780)
+
+这里传入的是本轮执行前取得的摘要。要看动作之后的新页面，下一轮会重新调用 `_prepare_context()`。回看历史时，可以依次看“本轮采集了哪些页面信息、模型提出了哪些动作、执行结果是什么”。是否把其中的截图交给模型，还要看上面的 `use_vision` 条件。[观察与执行的顺序](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1063-L1085) · [传入哪份摘要](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1378-L1385)
+
+本篇尚未用真实浏览器日志核对上述流程。实际超时、暂停和并发事件会影响具体时间顺序，截图是否取得也需要查看当次结果。

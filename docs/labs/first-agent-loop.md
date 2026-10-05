@@ -2,22 +2,31 @@
 
 [返回学习路线](../learning-path.md) · [Agent loop 的机制解释](../concepts/agent-loop.md) · [完成判断的证据](../comparisons/completion-and-evidence.md)
 
-这是一条**不需要 API Key、仅用 Python 标准库**的练习。目标不是做一个有用的编码助手，而是亲手观察一个容易被“Agent 已完成”掩盖的区别：**提案不等于执行许可；工具调用成功不等于任务验收。** 真实 Agent 的提案通常来自模型；这里的 `propose()` 用固定脚本代替模型，由宿主决定能否执行，再按原任务验证候选成果。因此实验只验证控制流，不证明真实模型的推理质量。
+这个小实验会完成一次配置修改：读取原文件，把超时从 30 秒改成 5 秒，保留重试次数，再读回检查。你会看到“提出下一步 → 获得许可 → 工具执行 → 返回结果”的顺序。运行后留下三样学习成果：一条正常路径、写后配置，以及你对各步分工的说明。
 
-任务是：把配置文件中的 `timeout` 从 30 改为 5，保持 `retries=3`。要求先读配置、获准后再写、检查两个条件。三条指定模式最后报告“可提交验收”（`candidate_ready`）或“受阻”（`blocked`）；**没有用户接受环节**。程序另设一个 5 步预算上限，耗尽时会返回 `budget_exhausted`，但这三条固定脚本路径都不会走到它。程序在系统临时目录创建 `config.json`，运行结束即清理，不改真实项目文件，也不调用网络。
+任务要求是：`timeout=5`、`retries=3`，先读配置、获准后再写。正常路径返回 `candidate_ready`，意思是“候选成果已经准备好，可以交给用户检查”。另外两条路径让你观察许可被拒和重试规则被改坏的情况。
 
-## 运行与观察
+这是可选的**机制小实验**，用固定 `propose()` 脚本代替真实模型，适合观察控制流程。运行前请确认：Python 3.10+，无需 API Key 或第三方包；程序只在系统临时目录创建 `config.json`，结束即清理，不改项目文件、不联网。
+
+## 先完成一次正常修改
 
 从仓库根目录运行，Python 3.10 或更新版本即可：
 
 ```bash
 python3 examples/first-agent-loop/demo.py --mode normal
-python3 examples/first-agent-loop/demo.py --mode denied
-python3 examples/first-agent-loop/demo.py --mode regression
 python3 -m unittest discover -s examples/first-agent-loop -p 'test_*.py'
 ```
 
-无需安装第三方包。三次运行都输出 JSON；`events` 按顺序记录提案、写入审批与工具结果。关键字段应为：
+程序输出 JSON；`events` 是按顺序排好的过程记录。先找到 `status=candidate_ready` 和 `config` 中的 `timeout=5, retries=3`，再沿 `events` 找到读取、许可、写入和检查。这样就把最终成果与过程对应起来了。
+
+接着比较两个变化：
+
+```bash
+python3 examples/first-agent-loop/demo.py --mode denied
+python3 examples/first-agent-loop/demo.py --mode regression
+```
+
+三种情况的关键字段如下：
 
 | 模式 | 最终 `status` | 最终配置 | 应看到的关键事件 |
 | --- | --- | --- | --- |
@@ -35,13 +44,13 @@ python3 -m unittest discover -s examples/first-agent-loop -p 'test_*.py'
 ]
 ```
 
-这是从完整 `events` 数组中摘出的三个相邻对象，不是程序会单独打印的小数组。**提出 `write`、收到拒绝结果，与真的执行 `write` 是三件事。** 如果只看到工具名而忽略 `event` 和 `ok`，就会把一次被拒提案误读为写入已发生。
+这是完整 `events` 中三个相邻对象的摘录。第一条提出写入，第二条记录许可被拒，第三条把拒绝结果送回循环；文件仍保持原值。读日志时，把 `event`、工具名和 `ok` 一起看，就能认出每条记录所处的阶段。
 
-在正常模式中，第二次提案的 `seen_results` 是 1，说明提案函数拿到了 `read` 的结果；第三次提案收到写入结果后才要求 `check`。这只模拟**下一步依赖上次观察**：固定脚本仅检查结果中的工具类型和 `ok`，不会根据读到的配置值规划写入参数。写入是练习宿主的本地工具，审批发生在调用前；`finish` 只是提案函数希望停止，外层 `run()` 仍独立检查配置，再将它标为 `candidate_ready`。这个状态不是“用户已接受”。
+回看正常路径：第二次提案的 `seen_results=1` 表示它已经收到读取结果；收到写入结果后才提出 `check`。宿主是组织这些步骤的外层程序，它在写入前处理许可，在 `finish` 时独立检查当前配置，再返回 `candidate_ready`。
 
-## 沿代码看四个控制点
+## 沿代码看四个位置（可选）
 
-完整可运行代码在 [`demo.py`](../../examples/first-agent-loop/demo.py)，断言在 [`test_demo.py`](../../examples/first-agent-loop/test_demo.py)。打开它们，按下面四个位置读，不必先理解所有 Python 语法。`observations` 是提案函数收到的工具结果列表；`events` 则是给读者核对过程的事件记录。两者不是模型的隐藏思考过程。它们把[概念页的三个问题](../concepts/agent-loop.md)拆得更细：输入装配在这里仅是 `observations` 传给提案函数；授权和执行是两个位置；停止后还有独立的终态检查。
+想继续读代码，再打开 [`demo.py`](../../examples/first-agent-loop/demo.py) 和 [`test_demo.py`](../../examples/first-agent-loop/test_demo.py)。`observations` 是提案函数收到的工具结果，`events` 是给读者看的过程记录。按下面四处阅读即可，暂时跳过不熟悉的 Python 语法。
 
 1. `propose(observations, mode)` 只返回下一步提案，不能自行写文件。它把上次工具结果当输入；错误或拒绝会让它提出 `stop`。
 2. `run()` 收到 `write` 提案时先记录 `approval`。拒绝时生成一次 `ok=false` 的观察并继续循环，**不调用** `execute()`。
@@ -56,15 +65,21 @@ python3 -m unittest discover -s examples/first-agent-loop -p 'test_*.py'
 
 恢复原检查后，在 `normal` 输出里核对三份证据：
 
-| 要证明什么 | 对应输出 | 为什么不能替代下一项 |
+| 要检查什么 | 对应输出 | 接下来查看什么 |
 | --- | --- | --- |
-| 写入获准 | `event=approval, granted=true` | 获准后，执行仍可能失败。 |
-| 本例写入已经完成 | `event=tool_result, tool=write, ok=true`，`detail` 中是写后配置 | 写入完成仍可能改错了规则，见 `regression`。 |
-| 两个任务条件通过工具检查 | `event=tool_result, tool=check, ok=true` | 这只是工具检查；宿主仍在 `finish` 时独立读回。 |
+| 写入获准 | `event=approval, granted=true` | 实际写入结果。 |
+| 本例写入完成 | `event=tool_result, tool=write, ok=true`，`detail` 中是写后配置 | 写后配置是否满足两个条件。 |
+| 工具检查通过 | `event=tool_result, tool=check, ok=true` | `finish` 时宿主的独立读回。 |
 
-最后一项宿主终态检查**没有单独的事件**，它的判定落在最外层 `status=candidate_ready` 和 `config` 中。这个例子没有模拟文件系统谎报成功，故可结合源码与写后配置确认本地写入；不能把同样的日志字段无条件当成真实远端服务的完成凭证。`denied` 和 `regression` 最终都是 `blocked`，但前者未执行写入，后者已经写错；排障不能只看最终状态。
+宿主的最终检查体现在最外层 `status` 和 `config` 中，没有单独事件。比较两个 `blocked`：`denied` 没有执行写入，`regression` 已经改错了配置。状态相同，修复位置却不同；过程记录能帮你找到区别。
 
-本练习省略了真实模型、任意提案的参数校验、MCP、沙箱和持久会话；不能直接用于执行不可信模型输出。下一步做[回执丢失后的对账练习](remote-effect.md)：它加入模拟服务和稳定操作 ID，解释“服务已接收但宿主没拿到答复”的未知状态。与这里可立即读回的临时文件不同，远端操作还需要目标服务提供可查询、可去重的契约。两个练习代码互相独立，完成这一步不需要保留临时文件。
+## 本实验的范围与下一步
+
+固定脚本只检查工具类型和 `ok`，不会根据读取值规划任意写入参数；这里的日志也不是模型的隐藏思考。程序还有 5 步上限，耗尽会返回 `budget_exhausted`，但上述三条路径都不会走到它。候选成果之后的用户接受环节尚未实现。
+
+这个程序用于讲控制流程，没有真实模型、任意提案参数校验、MCP、沙箱或持久会话，也未模拟文件系统谎报成功。接入不可信模型输出前，需要另做安全设计与测试。
+
+想了解远端操作，再选[回执丢失后的对账练习](remote-effect.md)：它用模拟服务和稳定操作 ID 观察“已接收但没拿到答复”的情况。两个程序独立，临时文件无需保留。
 
 ## 参考答案：先完成预测再看
 

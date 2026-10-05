@@ -224,34 +224,36 @@ await mkdir(path.join(output, 'public', 'assets', 'share'), { recursive: true })
 await cp(path.join(site, 'assets', 'book-share.png'), path.join(output, 'public', 'assets', 'share', 'book.png'))
 await cp(path.join(repo, 'book', 'assets', 'cover-preview.png'), path.join(output, 'public', 'assets', 'share', 'cover.png'))
 const home = `---
-title: "图解 Agent 系统：运行循环、工具、上下文与开源实现"
-description: "免费中文图解技术书。用清晰架构图读懂 Agent 运行循环、Skill/MCP/CLI、上下文与记忆，再对照 Pi、Codex 等实现；网页、PDF 与 Markdown 可选。"
+title: "图解 Agent 系统：入门学习、应用实践与开源实现"
+description: "免费中文图解书，面向学生、老师、AI 工具使用者与感兴趣的读者。用讲解、案例和图理解 Agent，把方法带到学习与工作，再按兴趣深入开源实现。"
 ---
 
 <div class="reader-hero">
   <div>
-    <p class="reader-eyebrow">免费中文技术书 · 持续更新预览</p>
+    <p class="reader-eyebrow">免费中文图解书 · 持续更新预览</p>
     <h1>图解 Agent 系统</h1>
-    <p class="reader-lead">看懂一次任务，理解一套系统。</p>
-    <p>Agent 为什么不只是聊天？工具结果怎样进入下一轮？上下文与记忆有什么不同？先用图讲清机制，再到 Pi、Codex 等实现里找答案。</p>
-    <div class="reader-entry-links"><a class="reader-start" href="/concepts/agent-loop">从一张图开始读 →</a><a href="#全书目录">浏览全书目录</a><a href="/downloads">下载与离线阅读</a></div>
+    <p class="reader-lead">学懂 Agent，把方法用起来。</p>
+    <p>为学习、教学和工作找到一个起点。先跟着图与例子理解，再用资料做一份自己的成果；想探索 AI 相关方向，继续选择应用、代码或真实系统。</p>
+    <div class="reader-entry-links"><a class="reader-start" href="/concepts/agent-loop">从一张图开始读 →</a><a href="/learning-and-practice">找到我的学习入口</a><a href="/downloads">下载与离线阅读</a></div>
   </div>
   <img src="/assets/share/cover.png" width="160" height="240" alt="图解 Agent 系统封面" fetchpriority="high">
 </div>
 
-不需要先安装框架或购买 API。可以只读图与解释，也可以继续看关键代码和可选小实验。本书有 ${chapterCount} 篇书稿单元与 ${figures.size} 张架构图；机制、案例和横向对照按问题相互连接。
+学生、老师、AI 工具使用者和感兴趣的读者都可以开始，不需要先安装框架或购买 API。本书有 ${chapterCount} 篇书稿单元与 ${figures.size} 张机制与实现图；讲解、案例和横向对照按问题相互连接。源码与编程实验按需深入，不是入门前提。
 
-## 先选一个你关心的问题
+## 从你想做的事情开始
 
 <div class="topic-grid">
-  <a class="topic-card" href="/concepts/agent-loop"><img src="/assets/figures/agent-loop/diagram.svg" width="200" height="125" alt="Agent 行动闭环概览" loading="lazy"><strong>Agent 和聊天有什么不同？</strong><span>沿一次资料查询，看模型、工具和宿主怎样接力。</span></a>
-  <a class="topic-card" href="/concepts/model-harness-cli-mcp-skill"><img src="/assets/figures/agent-stack/diagram.svg" width="200" height="125" alt="模型、Harness、CLI、MCP 与 Skill 的职责" loading="lazy"><strong>Skill、MCP、CLI 怎么分工？</strong><span>分清工作方法、能力接口和真正的执行者。</span></a>
-  <a class="topic-card" href="/systems/pi"><img src="/assets/figures/pi-architecture/diagram.svg" width="200" height="125" alt="Pi 的共享运行时" loading="lazy"><strong>从 Pi 看 Agent 如何运转</strong><span>拆开运行循环、会话和扩展，再与其他系统对照。</span></a>
+  <a class="topic-card" href="/learning-and-practice"><img src="/assets/figures/agent-loop/diagram.svg" width="200" height="125" alt="从资料到带出处回答的运行循环" loading="lazy"><strong>学习、备课或整理工作资料</strong><span>用同一组材料，尝试学习卡片、讨论活动或短简报。</span></a>
+  <a class="topic-card" href="/front/reading-guide#和-ai-一起读"><img src="/assets/figures/context-vs-memory/diagram.svg" width="200" height="125" alt="保存的资料与本轮实际输入的关系" loading="lazy"><strong>请 AI 帮我理解，自己检查</strong><span>解释一个关系，换个例子，留下自己的理解与疑问。</span></a>
+  <a class="topic-card" href="/learning-path"><img src="/assets/figures/pi-architecture/diagram.svg" width="200" height="125" alt="可选深入：Pi 的运行核心与会话外壳" loading="lazy"><strong>探索方向，继续深入技术</strong><span>先积累一份成果，再选应用、源码或工程路线。</span></a>
 </div>
 
 ## 按你的目标继续读
 
-- **初次接触 Agent**：从[阅读指南](/front/reading-guide)和[行动闭环](/concepts/agent-loop)开始。先弄清 Agent、工具、上下文和停止条件分别承担什么责任。
+- **学生、老师与好奇的读者**：从[学习与应用](/learning-and-practice)开始；跟着资料任务形成回答，再沿[行动闭环](/concepts/agent-loop)解释过程。
+- **已经在用 AI，希望提升能力**：尝试[轻量任务卡](/learning-and-practice#留下一张轻量任务卡)，练习说清目标、选择资料和核对结果。也可选用[AI 陪读](/front/reading-guide#和-ai-一起读)。
+- **想探索 AI 相关方向**：用[阅读路线](/learning-path)选择一个小问题，留下作品与修改过程，再决定下一项要学的能力；本书不承诺职位或收入。
 - **正在实现 Agent**：沿[学习路径](/learning-path)看机制，再进入 [Pi 源码导读](/systems/pi)、[Codex 源码导读](/systems/codex)等固定版本案例，核对关键代码路径。
 - **正在选型或做架构评审**：先看[运行循环与停止条件对照](/comparisons/loop-and-stop)，再按项目与问题跳转；比较的是可验证的设计取舍，不是产品排行榜。
 

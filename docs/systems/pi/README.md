@@ -2,21 +2,25 @@
 
 [返回系统目录](../README.md) · [关键代码导读](code-walkthrough.md)
 
-Pi 的第一篇从“哪些状态属于核心、哪些由 coding-agent 负责”讲起。核心的 `Agent` 接受输入、管理内存消息和运行队列；`runLoop` 组织模型回合、工具调用及继续/结束；coding-agent 的 `AgentSession` 另行编排资源和会话持久化。把三者混作一个“Agent 大盒子”，就很难解释 Extension、Skill 和 session tree 各在哪里起作用。
+假设你让 Pi 读一个文件，再修改代码。背后有三部分合作：模型接口负责联系模型；运行核心把模型提出的工具调用交给程序执行，再把结果送回模型；终端应用管理当前会话、扩展资源和文件记录。
 
-> 固定研究版本：官方仓库 [`earendil-works/pi@898ab804050730e9dcefb4443875d5a932aa6a32`](https://github.com/earendil-works/pi/tree/898ab804050730e9dcefb4443875d5a932aa6a32)，核对日期 2026-09-23。旧 `badlogic/pi-mono` 已迁移，参见[官方公告](https://pi.dev/news/2026/5/7/pi-has-a-new-home)。下文目前是源码静态阅读，不是运行评测。
+Pi 把这三部分拆成独立的包。本篇先看它们如何合作，再到下一篇看循环里的具体函数。即使暂时不读源码，也可以先弄清楚：模型在提建议，工具在做事，应用在保存这次工作的过程。
 
-## 先看三个边界
+## 三部分各做什么
 
 | 层 | 负责什么 | 本篇证据 |
 | --- | --- | --- |
-| `pi-ai` | 模型与 provider 的统一调用接口 | [仓库包说明](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/README.md)、[agent-core 请求边界](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L380-L406) |
-| `pi-agent-core` | `Agent` 的内存状态和队列、`runLoop` 的模型/工具回合与事件 | [`Agent.prompt()`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L367-L442)、[`runLoop`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L162-L320) |
-| `pi-coding-agent` | 终端应用、资源编排与 coding 会话持久化 | [`AgentSession` 事件处理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L921-L943)、[`SessionManager`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L1189-L1211) |
+| `pi-ai` | 用统一接口联系不同模型服务商（provider） | [仓库包说明](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/README.md)、[准备模型请求](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L380-L406) |
+| `pi-agent-core` | `Agent` 保管当前消息和待处理输入；`runLoop` 安排模型与工具的一轮轮工作 | [`Agent.prompt()`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L367-L442)、[`runLoop`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L162-L320) |
+| `pi-coding-agent` | 提供终端应用，加载资源，并用 `AgentSession`、`SessionManager` 管理和保存会话 | [`AgentSession` 处理消息](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L921-L943)、[`SessionManager`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L1189-L1211) |
 
-## 最值得跟读的一条路径
+## 一次任务怎样往下走
 
-调用 `Agent.prompt()` 后，模型输入先由 `transformContext` 与 `convertToLlm` 准备，再交给流式模型接口；若模型返回工具调用，运行时完成校验、前置拦截、执行和后置处理，再把 tool result 送回下一轮。steering 在轮间被检查；follow-up 则在本来即将结束时被检查。coding-agent 订阅 `message_end` 后才把消息交给自己的会话管理器。[按函数与分支读代码](code-walkthrough.md)
+`Agent.prompt()` 收到你的任务后，先整理要交给模型的消息。源码里，这一步叫 `transformContext` 和 `convertToLlm`。模型可以直接回答，也可以要求调用工具，例如读取文件。
+
+有工具调用时，程序先核对工具和参数，并运行已配置的前置检查；通过后才执行工具。读取到的内容会成为工具结果（tool result），放进下一轮模型输入。模型因此能根据真实文件内容继续工作。
+
+你在工作途中补充的话也有安排：steering 用于轮间调整方向，follow-up 留到本次工作原本准备结束时处理。终端应用收到消息结束事件 `message_end` 后，把消息交给会话管理器保存。[按函数跟读这条路径](code-walkthrough.md)
 
 ![Pi 的分层与扩展入口](../../../figures/pi-architecture/diagram.svg)
 
@@ -24,11 +28,15 @@ Pi 的第一篇从“哪些状态属于核心、哪些由 coding-agent 负责”
 
 ## 接下来读什么
 
-- [关键代码导读](code-walkthrough.md)：从 `prompt()` 进入 loop，读模型请求、工具结果、队列和持久化边界。
-- [Extensions、Skills 与 Packages](extensions-and-skills.md)：可执行扩展与按需指令的职责不同，不能都叫“插件”。
+- [关键代码导读](code-walkthrough.md)：跟着 `prompt()` 看模型请求、工具结果、新输入和会话保存。
+- [Extensions、Skills 与 Packages](extensions-and-skills.md)：分别看工作指导、代码扩展和安装包。
 
 ## 值得学的取舍
 
-Pi 的吸引力不是“功能比别人少”本身，而是把循环留在可读的核心，把交互、会话、扩展资源放到外壳，让读者能沿一条具体路径追踪状态和副作用；这是基于上述源码边界的**工程判断**，不是性能评测。代价也清楚：[官方仓库说明](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/README.md)写明 Pi 默认沿启动它的用户/进程权限运行，不内置限制文件、进程、网络和凭据访问的权限系统。第三方 Extension 和 Skill 不能因为安装方便就跳过审查。
+从这些代码看，Pi 的一个吸引人之处是分工清楚：想换界面、增加工具或调整会话策略时，可以找到对应的部分；想理解循环本身，也有相对集中的代码可读。这是本书的工程解读，口碑和性能还需要另外的使用反馈与评测。
 
-本篇不把 Pi 的 JSONL coding 会话树说成所有嵌入场景的唯一后端，也不把静态源码阅读包装成可靠性或性能证明。
+使用时尤其要注意进程权限：[官方仓库说明](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/README.md)写明，Pi 默认使用启动它的用户所拥有的文件、进程、网络和凭据权限，没有内置的权限限制系统。安装第三方 Extension 或 Skill 前，应检查来源和它会执行的操作。本文介绍的 JSONL 会话树属于终端 coding-agent；把核心嵌入其他应用时，可以另选存储方式。
+
+## 来源与阅读范围
+
+本文依据官方仓库 [`earendil-works/pi@898ab804050730e9dcefb4443875d5a932aa6a32`](https://github.com/earendil-works/pi/tree/898ab804050730e9dcefb4443875d5a932aa6a32)，核对日期 2026-09-23。旧仓库 `badlogic/pi-mono` 已迁移，见[官方公告](https://pi.dev/news/2026/5/7/pi-has-a-new-home)。这里介绍的是固定版本源码中的分工和调用流程，尚未运行评测。

@@ -1,19 +1,46 @@
-# Jev：把一个判断交给模型，动作仍由代码决定
+# Jev：让模型做判断，让程序安排后续动作
 
-[返回机制目录](README.md) · [模型、Harness、CLI、Skill、MCP 的职责](model-harness-cli-mcp-skill.md) · [来源记录](../../sources/jev.md)
+[返回机制目录](README.md) · [模型、Harness、CLI、Skill、MCP 的分工](model-harness-cli-mcp-skill.md) · [来源记录](../../sources/jev.md)
 
-在一个已有 Agent 的工作流里，如何判断本轮该提示哪项 Skill？规则很容易因用户说法变化而漏判；让生成式模型自行加载，也会把判断和动作混在一起。TypeSafe 将 Jev 称为 *System One* 模型：输入 `state` 和预先定义类型的问题，返回限定形状的判断及概率，供程序继续处理。[发布文](https://typesafe.ai/blog/introducing-system-one-models-and-jev)和[架构文档](https://docs.typesafe.ai/concepts/how-to-build-with-system-one)均是厂商说明；本文没有调用 API 或独立复现其性能。
+用户说“把昨天那份幻灯片的结尾改短一点”，程序需要判断该推荐“修改已有幻灯片”，还是“制作新幻灯片”。这类任务的答案范围比较小，但用户的表达方式很多。
 
-核心路径是：**状态 + 有类型的问题 → 概率／结构化判断 → 代码阈值或人工复核 → 动作**。状态可以是本轮请求和可用 Skill 的简短描述；问题可以是“本轮是否需要 Skill？”（`Noul`，返回“是”的概率）和“若需要，哪一项最合适？”（`Choice`，在给定选项中选择并返回概率分布）。[快速入门](https://docs.typesafe.ai/introduction/quickstart)展示了同一请求中的 `state`、`questions` 和 `answers`；[Noul](https://docs.typesafe.ai/primitives/noul)与[Choice](https://docs.typesafe.ai/primitives/choice)文档解释了两类输出。
+TypeSafe 将 Jev 称为 *System One* 模型。程序给它当前材料和限定类型的问题，它返回判断及概率，再由程序决定下一步。可以把它看作工作流中的一个判断环节。[发布介绍](https://typesafe.ai/blog/introducing-system-one-models-and-jev) · [架构说明](https://docs.typesafe.ai/concepts/how-to-build-with-system-one)
 
-| 部件 | 在这个例子里负责什么 |
+## 输入材料，得到有限选项里的判断
+
+在这个例子里，输入分成两部分：
+
+- `state`，当前材料：用户请求，以及两个 Skill 的简短介绍。
+- `questions`，需要回答的问题：这次是否需要 Skill，以及哪个候选更合适。
+
+**Noul** 用于是非判断，返回“是”的概率。比如判断这条请求是否需要候选 Skill。**Choice** 用于从给定选项中选择，返回选项、各选项的概率和 confidence。
+
+[快速入门](https://docs.typesafe.ai/introduction/quickstart) · [Noul](https://docs.typesafe.ai/primitives/noul) · [Choice](https://docs.typesafe.ai/primitives/choice)
+
+流程可以写成：材料与问题 → 模型判断 → 程序检查 → 推荐方法或请人处理。
+
+| 部件 | 在这个任务里做什么 |
 | --- | --- |
-| Jev 模型 | 对给定状态与问题作有界语义判断；不生成任意 Skill 名称或自己调用工具。 |
-| Agent | 处理用户目标，可能在后续步骤参考建议；其后续行为不能由 Jev 的答案保证。 |
-| Harness／运行器 | 收集状态、发起调用、实施阈值和权限策略，并决定是否把建议交给 Agent 或人。 |
-| Skill | 被选择的工作方法与资源；即便被推荐，也不会自行执行或增加权限。 |
+| Jev | 判断请求更接近哪种已有选项 |
+| 运行程序，也叫 Harness | 调用模型，处理概率、错误和权限 |
+| Skill | 提供制作或修改幻灯片的方法与资源 |
+| Agent | 结合用户任务和推荐方法，继续工作 |
 
-TypeSafe 的[官方 Skill 推荐案例](https://docs.typesafe.ai/cookbooks/skill_suggestion)用两次请求筛选候选，最后只给 Agent 一条**可忽略的建议**。它报告的错误率改进来自厂商自己的样本、模型和评测流程；不是本书的独立验证。下面只借用“是否需要 + 候选选择”的机制，改成更短的**示意代码**，不是该案例的复制、可直接部署的策略或实测结果：
+TypeSafe 的 [Skill 推荐案例](https://docs.typesafe.ai/cookbooks/skill_suggestion)分两次请求筛选候选，最后把推荐交给 Agent。推荐是一条可忽略的建议，真正使用时仍由运行程序和 Agent 处理。
+
+推荐提供工作方法，实际写入和外部动作仍走原有的授权流程。
+
+## 概率怎样影响下一步
+
+程序可以把结果分成三个区域：明确无需推荐时继续原流程，足够确定时给出建议，中间区域交给人检查。
+
+这里的数值需要结合自己的样例测试。Choice 的 confidence 描述概率分布的集中程度；它没有直接表示“这个选项正确的概率”。Noul 的数值则描述模型对“是”的判断。两类输出要按各自含义使用。[置信度说明](https://docs.typesafe.ai/confidence)
+
+例如“修改现有 PPT”可能被误选为制作新 PPT。选项格式是合法的，推荐内容却仍需要核对。因此调试时，既检查返回格式，也收集误选的具体请求。
+
+## 可选深入：一段推荐 Skill 的代码
+
+下面是本书的示意代码，没有调用过 API。`human_review` 和 `propose_to_agent` 需要应用自己实现；示例阈值只用于展示分支。接入真实服务会发送外部请求，先查看费用和数据处理规则，不要直接传入私人材料或密钥。
 
 ```python
 from typesafe_sdk import Choice, Noul, TypeSafeClient
@@ -26,15 +53,16 @@ def suggest_for_turn(user_request: str):
             "slides-edit": "修改已有演示文稿",
         },
     }
-    with TypeSafeClient(model="jev-1.13.0") as client:
+    with TypeSafeClient() as client:
         answers = client.system_one(
+            model="jev-1.13.0",
             state=state,
             questions={
                 "needs_skill": Noul(
-                    instructions="这轮请求是否需要使用给定的任一 Skill？"
+                    instructions="这轮请求是否需要给定的任一 Skill？"
                 ),
                 "which": Choice(
-                    instructions="若需要 Skill，哪项最贴合这轮请求？",
+                    instructions="若需要，哪项最贴合这轮请求？",
                     criteria=state["skills"],
                 ),
             },
@@ -43,20 +71,20 @@ def suggest_for_turn(user_request: str):
     need = answers["needs_skill"].noul
     choice = answers["which"]
     if need <= 0.20:
-        return None                         # 不提示 Skill
+        return None                         # 继续原流程
     if need < 0.90 or choice.confidence < 0.80:
-        return human_review(user_request)   # 由宿主实现的复核入口
-    return propose_to_agent(choice.choice) # 建议；宿主仍核对权限与适用性
+        return human_review(user_request)   # 请人检查
+    return propose_to_agent(choice.choice) # 给 Agent 建议
 ```
 
-`human_review` 和 `propose_to_agent` 是示意中的宿主函数。`0.20／0.90／0.80` **只是教学阈值**，不能从一次模型输出推导出来；实际需要用目标任务的标注样本、误判代价和版本固定的模型调校。`Choice.confidence`描述选项概率分布的集中程度，不等于“这次选择正确的概率”；`Noul.noul`是对所问“是”的概率，也不是动作许可。[置信度说明](https://docs.typesafe.ai/confidence)要求按应用数据设门槛。模型超时、返回异常、候选已失效时，宿主也要有明确的停下或人工处理路径。
+模型超时、返回异常或候选失效时，应用也要安排停下或人工处理的分支。上线前，用目标任务的标注样例选择阈值，记录模型版本和误判情况。
 
-**边界在哪里？** 输出符合预设类型，只约束“能返回什么形状”，不保证选中的 Skill 在语义上正确，更不保证之后的 Agent 正确执行。比如“修改现有 PPT”被误分到 `slides-author`，结构仍完全合法。TypeSafe 的[已知问题](https://docs.typesafe.ai/model-jaggedness/jev-1.13)还列出 `jev-1.13` 对计数、日期比较、多层间接推理、冗长无关状态及对抗内容的局限；确定性的计数与日期运算应由代码完成。它也指出，对同一意思换一种问题类型或取反提问，概率不必满足直觉中的算术关系。因此阈值不能跨问题类型直接搬用。
+## 适合放在哪里
 
-适合把**选项有限、问题可拆小、错误可复核**的判断嵌入已有软件，例如路由、筛选、Skill 提示或结果打标。不适合要求模型自行规划长任务、生成正文或代码、做精确算术，也不适合把一次高分当作高风险动作的唯一依据。官方[模型页](https://docs.typesafe.ai/models)说明 Jev 目前以英文表现最好，非英文内容需单独测试；示意中的中文输入因此尤其不能视为已验证效果。版本别名会移动，调过阈值的部署应固定模型版本并记录返回的版本号。
+Jev 适合选项有限、问题较小、结果便于复核的环节，例如请求路由、候选筛选和 Skill 提示。正文生成、长任务规划、精确计数和日期运算，应安排给适合这些工作的模型或代码。
 
-**自测**
+厂商的 [jev-1.13 已知问题](https://docs.typesafe.ai/model-jaggedness/jev-1.13)列出了计数、日期比较、多层推理、无关材料过长和对抗内容等限制，也提示不同问题类型的概率不能直接套用同一门槛。[模型文档](https://docs.typesafe.ai/models)说明其英文表现最好，中文任务需要单独测试。
 
-1. `Choice` 返回了 `slides-edit` 且类型正确，是否证明本轮一定该加载它？为什么？
-2. `needs_skill=0.63` 时，谁决定去人工复核，而不是直接加载？
-3. 需求要比较两个日期的先后，应该把哪一步留给代码？
+部署时固定模型版本，尤其在已经调过阈值的情况下。使用会变化的版本别名时，新版本上线后需要重新检查样例。
+
+本章介绍的是厂商文档中的机制，没有独立测量性能，也没有验证上述中文示例的效果。可以先拿一组非敏感请求做人工标注，再决定是否适合放入自己的工作流。

@@ -1,54 +1,83 @@
-# 会话变长以后：压缩、记忆和检查点各保留什么
+# 会话变长以后：保存记录、压缩内容、取回记忆
 
-[返回机制目录](README.md) · [先读：上下文、会话与记忆](context-vs-memory.md) · [状态对照](../comparisons/four-kinds-of-state.md)
+[返回机制目录](README.md) · [先读：上下文与记忆](context-vs-memory.md) · [四类状态对照](../comparisons/four-kinds-of-state.md)
 
-“上次明明说过，Agent 怎么又不知道了？”问题通常不在于系统**有没有保存**，而在于下一次请求**选了什么、装进了多少、取回的是否正确**。会话记录、压缩摘要、长期记忆和运行检查点可以同时存在，但彼此不能替代。本篇沿信息的生命周期读四个固定版本的实现；它们是**不同项目的对照案例**，不是一个已集成的产品架构。
+你和助手连续准备了几次读书会：先确定场地，再整理材料，最后讨论分享顺序。聊天越来越长，程序需要安排下一轮带上哪些内容。重要约定可以单独保存；较早的讨论可以概括；执行到一半的任务也可以保存进度。
 
-## 先看四个动作，而不是四个名字
+这几种办法解决的事情不同。下面用 Pi、Letta Code、Mem0 和 LangGraph 的例子说明，它们是不同项目，不是一套已经接好的系统。
 
-| 动作 | 保存或产出什么 | 下一次模型请求会自动得到吗？ | 本篇对应案例 |
-| --- | --- | --- | --- |
-| 记录 | 消息、工具结果或事件，供会话回看、分支与续接 | 不一定；还要选当前分支并组装上下文 | Pi coding-agent 的 JSONL 会话树 |
-| 压缩 | 对部分旧消息生成较短的摘要，并保留最近片段 | 只有宿主把摘要及保留片段投影进去才会看到；细节可能丢失 | Pi coding-agent 的 compaction |
-| 写入与检索记忆 | 跨轮次维护的核心块、外部文件，或按作用域检索的事实记录 | 核心块可编入提示；外部内容仍需读取或由调用方注入 | Letta Code local MemFS v1、Mem0 Python OSS |
-| 检查点 | 某一步的图状态及其可定位版本 | 不等于自动把历史知识放入提示；取决于图的状态与节点逻辑 | LangGraph Python checkpointer |
+## 四种保存方法怎样使用
 
-这里的“自动”只问**所选数据是否进入一次具体模型请求**，不等于模型一定正确理解它。图解版的“存放处 → 本轮可见输入”关系见[上下文与记忆](context-vs-memory.md)；本篇进一步解释内容何时被替换、再次读取或恢复。
+| 方法 | 留下的内容 | 后续怎样使用 |
+| --- | --- | --- |
+| 会话记录 | 原始消息、工具结果和相关事件 | 选择当前对话分支，整理成下一轮消息 |
+| 压缩摘要 | 较早讨论的概括，以及保留的近期内容 | 用摘要和近期片段组成较短输入 |
+| 长期记忆 | 跨任务有用的事实、约定或资料 | 放入固定提示，或按需要搜索和读取 |
+| 检查点 | 程序执行到某一步的状态 | 找到保存位置，继续或调整任务 |
 
-## 一条会话怎样变成下一轮输入：以 Pi 为例
+比如“地点在图书馆二楼”可以出现在原聊天里，也可以写入单独的活动资料。下一轮需要它时，程序必须把相关内容交给模型。可以用[上下文与记忆](context-vs-memory.md)中的“打开几份文件”来理解这一步。
 
-Pi 的 `SessionManager` 把 entry 组织为有 `id`、`parentId` 的会话树，当前 leaf 指向活动分支。组装时，`buildContextEntries()` 沿当前 leaf 路径取 entry；若路径上有压缩 entry，则从其 `firstKeptEntryId` 保留后续片段，并把压缩摘要放在前面。`buildSessionProjection()` 再把这些 entry 变成消息，`buildSessionContext()` 返回本次要用的消息列表。[会话树及用途](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L976-L985) · [当前分支与压缩投影](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L468-L582)
+## Pi：从当前聊天分支选出消息
 
-压缩不是简单地“删除旧消息”。这条固定源码的**自动压缩判断**中，`shouldCompact()` 按上下文 token 与窗口预留量判断是否触发；`prepareCompaction()` 根据会话投影选取待概括部分和近期保留部分，带上先前摘要；生成结果有 `summary`、`firstKeptEntryId` 等字段，并由 `appendCompaction()` 追加为新的会话 entry。下次投影用摘要替代较早的模型可见内容。**旧 entry 仍在这条会话树中的什么位置**，和**旧细节是否还在本轮模型输入**，是两个问题。[自动触发条件](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/compaction/compaction.ts#L286-L292) · [选取与摘要输入](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/compaction/compaction.ts#L894-L955) · [压缩 entry](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L1258-L1285)
+Pi 的 coding-agent 用一棵会话树保存记录。每条记录有自己的 `id` 和指向上一条的 `parentId`；当前叶子，也就是 leaf，表示这次正在继续的分支。
 
-同样叫“摘要”，也要分清触发原因：Pi 的 compaction 可在超出上下文阈值或手动 `/compact` 时发生；另有 `/tree` 导航时的 branch summarization，用于切换分支时保留上下文。两者不是一个触发器。[固定版本的官方说明](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/docs/compaction.md#L14-L23)
+准备模型输入时，`buildContextEntries()` 沿当前分支取记录。如果其中有压缩记录，就把摘要放到前面，再从 `firstKeptEntryId` 指定的记录开始，保留后续片段。`buildSessionProjection()` 将这些记录整理成消息，`buildSessionContext()` 返回消息列表。
 
-还要再跨一层：agent-core 在模型调用前可运行 `transformContext`，再执行 `convertToLlm`，所以 coding-agent 的会话投影也不是对所有 Pi 宿主都成立的“最终提示”。上述会话树和压缩属于 **pi-coding-agent 的所选实现**，不是 `pi-agent-core` 自带的通用持久化保证。[模型请求边界](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L376-L406)
+[会话树](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L976-L985) · [当前分支与消息整理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L468-L582)
 
-## 要跨任务找回事实，得有另一个读写合同
+这里的 projection，可以理解为“从已保存的记录中，整理出这次要用的一份内容”。
 
-Letta Code 的 **local MemFS v1** 把 `system/` 下的 Markdown 识别为核心记忆块；内置提示将核心块、外部文件/Skills、历史 recall 分开：核心块进入提示，外部内容按需读，较早对话可经 recall 查找。这里“进入提示”来自内置提示的设计声明及对应路径，**不代表本文已抓取每轮实际请求**。同一内置提示还明确说，编辑记忆不会立即改变当前已编译的提示，而要等待后续重编译。[v1 路径判定](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/memory-format.ts#L6-L29) · [三类存放处与可见时机](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/prompts/letta_local_memfs.md#L8-L46)
+## Pi：把早期讨论缩成摘要
 
-Mem0 在本篇限定的 Python OSS 同步路径中是**供应用调用的存取层**：`Memory.add(infer=True)` 处理输入消息、提取候选事实并写入；`Memory.search(query, filters=...)` 按作用域检索结果。搜索返回什么，不等于使用 Mem0 的 Agent 已把它装进下一次提示；**调用方还需选择、核验并注入**。此外 `infer=False`、procedural memory、异步和托管服务是其他路径，不能用这段解释概括。[写入入口与分支](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L760-L932) · [事实提取与写入](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L940-L1067) · [检索入口与作用域](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1379-L1456)
+会话接近模型输入上限时，`shouldCompact()` 检查长度和预留量。`prepareCompaction()` 选择较早的内容用于概括，保留近期片段，并带上已有摘要。生成后，`appendCompaction()` 将新的压缩记录追加到会话里。
 
-LangGraph 又是另一件事：`StateSnapshot` 有 `values`、下一步 `next`、可取回版本的 `config`、`parent_config` 等字段。它描述**图执行到某一步的状态版本**，可用于回看和从旧状态继续；如果图状态内有消息，那是应用的状态设计，不等于内置了语义记忆检索。尤其不要把“恢复 checkpoint”理解成“已经回滚外部写入或工具副作用”。[快照字段](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/types.py#L711-L729) · [固定版本的分支路径](../systems/langgraph/README.md)
+下一次输入可以用摘要代替早期长消息，原记录仍可用于回看。摘要占的空间较少，但它可能遗漏细节。例如摘要只写“已确定场地”，之后又要回答具体楼层时，就需要找回原材料。
 
-## 用一次修复任务检验理解
+[触发条件](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/compaction/compaction.ts#L286-L292) · [选取内容](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/compaction/compaction.ts#L894-L955) · [追加压缩记录](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L1258-L1285)
 
-以下是**教学假设，不是四个项目共同运行的一条实测轨迹**。假设用户让 Agent 修复“订单导出超时”，工具输出了较长的错误日志：
+Pi 也支持手动 `/compact`。另外，`/tree` 切换分支时可以生成分支摘要；这是另一个触发场景。[固定版本说明](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/docs/compaction.md#L14-L23)
 
-1. 当轮日志成为消息或工具结果；宿主若记录了它，记录与模型当轮看见它仍是两个可分别核对的事件。
-2. 会话变长时，Pi 式压缩可能把早期日志概括为“导出查询缺少索引”，而保留最近消息。下一轮看见的是**摘要中的说法**，未必看见原日志；若摘要误写，不能把它当成已验证诊断。
-3. 若“团队约定：改索引前先测慢查询”值得跨任务保留，Letta 式核心块或外部文件需要明确写入，并在适当时机重编译或读取；Mem0 式事实记录需要 `add`，以后还要 `search` 并由应用决定是否引用。**只是出现在旧聊天里，不会自动完成这些步骤。**
-4. 若任务由 LangGraph 图执行，checkpoint 可以定位到某一步的图状态；恢复后仍要核对已发出的数据库写入、邮件或部署动作，不能靠状态快照推定它们撤销了。
+以上会话树和压缩功能来自 pi-coding-agent。进入模型调用前，agent-core 还可以通过 `transformContext` 调整消息，再用 `convertToLlm` 转成模型接口接受的格式。使用其他 Pi 宿主时，需要查看它自己的消息安排。[模型调用前的处理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L376-L406)
 
-## 证据边界与自查问题
+## Letta Code：固定记忆与按需资料分开
 
-- **源码事实**：上文 Pi 的当前分支投影与压缩 entry、Letta 的 v1 路径判定、Mem0 的同步 API 路径、LangGraph 的快照字段，均锚定所列 commit。
-- **文档声明**：Letta 内置提示对核心块、recall 与重编译时机的描述是该项目给 Agent 的指引；模型是否遵循、部署是否完全按此运行，要看实际轨迹。
-- **工程推断**：为了避免重复错误，重要结论应保留来源和验证状态；摘要、检索命中和状态恢复都不应代替重新核验。这是本书的操作建议，不是四个项目共有的硬编码策略。
-- **未证**：本文没有运行模型或存储后端；未测摘要忠实度、记忆召回率、跨设备同步、checkpoint 对外部副作用的恢复结果，也未证明任何项目的所有运行模式。
+Letta Code 的 local MemFS v1 把 `system/` 下的 Markdown 文件识别为核心记忆块，供程序编入提示。其他资料和 Skills 可以按需要读取；较早的对话可以通过 recall 查找，recall 就是找回历史记录。
 
-读下一套系统时只问四句：原始内容**存在哪里**？本次请求**实际选进了什么**？压缩或检索**可能丢了什么**？发生中断后，恢复的究竟是**消息、知识还是执行状态**？把这四句答清楚，比笼统说“它有记忆”更有用。
+适合经常使用的约定，可以放在核心块里。内容较长、只在某类任务里需要的资料，可以留在外部文件。
 
-继续沿源码读：[Pi 会话与运行分层](../systems/pi/README.md) · [Letta Code local MemFS v1](../systems/letta/README.md) · [Mem0 写入与检索](../systems/mem0/README.md) · [LangGraph checkpoint](../systems/langgraph/README.md)。
+文件修改后，当前已编译的提示要等后续重新编译才会更新。这个过程可以理解为：先改资料，再重新整理模型将读取的那份输入。
+
+[记忆文件类型](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/memory-format.ts#L6-L29) · [内置提示对读取时机的说明](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/prompts/letta_local_memfs.md#L8-L46)
+
+## Mem0：存入事实，再搜索需要的内容
+
+本书核对的 Mem0 Python OSS 同步路径，提供给应用调用的存取接口。`Memory.add(infer=True)` 从消息里提取候选事实并处理写入；`Memory.search(query, filters=...)` 按查询和范围寻找相关记录。
+
+得到搜索结果后，应用选择合适内容，核对来源，再放进模型输入。比如下一次安排活动时，检索“场地约定”，把命中的内容交给助手参考。
+
+[写入入口](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L760-L932) · [提取事实与写入](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L940-L1067) · [检索与范围](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1379-L1456)
+
+`infer=False`、procedural memory、异步接口和托管服务有其他处理路径。想了解它们，可以继续查看项目对应实现。
+
+## LangGraph：保存执行进度
+
+LangGraph 的 `StateSnapshot` 保存当前 `values`、下一步 `next`、版本配置 `config` 和上一个版本的 `parent_config` 等内容。应用可以找到某一步的图状态，回看或继续执行。
+
+这很像保存一个处理流程的进度：已经整理了哪些材料，下一步准备做什么。消息是否放在状态里，由应用决定。需要按含义搜索长期知识时，应用仍要安排相应的存取逻辑。
+
+[快照字段](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/types.py#L711-L729) · [LangGraph 导读](../systems/langgraph/README.md)
+
+如果任务已经发过邮件或修改过外部数据，恢复进度后先核对这些动作的实际结果，再继续。[中断与恢复](interruption-recovery.md)用创建工单的例子说明这一步。
+
+## 回到自己的任务
+
+面对一段较长的讨论，可以这样安排：
+
+- 原聊天保留，方便回到出处。
+- 近期任务带上相关材料和简短摘要。
+- 经常使用的约定单独整理，更新时保留来源。
+- 执行到一半的流程保存进度，恢复时检查已做的动作。
+
+本章基于固定版本源码和项目内置提示，没有测量摘要准确度、记忆召回率或跨进程恢复效果。重要细节需要回到原材料确认，保存和检索的方法则按所用应用配置。
+
+继续读：[Pi](../systems/pi/README.md) · [Letta Code](../systems/letta/README.md) · [Mem0](../systems/mem0/README.md) · [LangGraph](../systems/langgraph/README.md)。

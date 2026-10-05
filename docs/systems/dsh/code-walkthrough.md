@@ -1,48 +1,54 @@
-# DSH 代码导读：并发完成、顺序提交与拒绝执行
+# DSH 代码导读：几个工具同时做事，结果按顺序交回
 
-[返回 DSH 剖面](README.md)
+[返回 DSH 首页](README.md)
 
-固定版本为 `477b4f420553e8a52c2fbccc464d7561b239c443`，核对日期 2026-09-27。本篇只读工具批次与授权/执行器接缝，没有启动模型、CLI 或操作系统隔离环境。以下顺序是导读顺序，表里的原文件链接才是实现依据。
+接着首页的 A、B、C 例子往下读：这三个工具可以怎样同时开始，B 先完成时结果放在哪里，需要批准的调用又在哪里停下。先跟着正常流程，再看取消与执行环境。
 
-## 1. 先找工具批次，不从包目录背起
+固定版本为 `477b4f420553e8a52c2fbccc464d7561b239c443`，核对日期 2026-09-27。本篇依据静态源码介绍工具批次、批准检查和执行器，尚未启动 DSH。
 
-[`executeToolCalls()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L60-L101)先定位发起 Agent 和会话，并按当前工具执行模式组织批次。模式会被重新检查，因此不要把模型给出的多个 tool call 直接画成几个已经运行的进程。
+## 1. 先决定哪些工具可以一起做
 
-## 2. 准备与执行分开观察
+[`executeToolCalls()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L60-L101)先找到发起调用的 Agent 和会话，再查看工具当前的执行模式。允许并行的调用可以组成一组；要求独占的调用单独处理。程序处理后续调用时还会重新看执行模式。
 
-[`runGroup()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L122-L213)维护有界池。`startCall()`先记录调用、再准备；准备可能直接得到最终结果，或得到可 dispatch 的执行对象。准备阶段串行推进，实际 dispatch 可以重叠。读轨迹时，应分别找“调用记录”“批准/拒绝”“dispatch”“结果记录”，不能用其中一个替代其余三个。
+## 2. 先检查每次调用，再安排执行
 
-## 3. 哪个变量维护结果次序
+[`runGroup()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L122-L213)限制同时执行的数量。`startCall()` 先记录调用，再完成准备。准备时可能得到拒绝等最终结果，也可能得到一个可以开始执行的对象。
 
-同文件的 [`commitReady()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L147-L159)从当前提交位置连续取 ready 结果。下面是教学推演，不是实测：
+准备按次序进行，实际执行可以重叠。源码把“开始执行”叫 dispatch，把“结果已可交回”叫 ready。按这两个词往下读，就能分别找到工具何时开始、何时做完。
+
+## 3. B 先做完，提交器先等 A
+
+同文件的 [`commitReady()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L147-L159)从当前序号开始，依次提交已经就绪的结果。用假设的完成顺序说明：
 
 ```text
 调用次序       A → B → C
 完成次序       B → A → C   （假设）
-事件提交       A → B → C
-观察边界       B 完成时，A 尚未 ready，提交位置仍等 A
+结果提交       A → B → C
+B 完成时       A 还没做完，先保留 B 的结果，等 A 就绪
 ```
 
-这是批次内的结果提交顺序，不是远端副作用的发生顺序。若 B 发出真实网络写入，它完全可能先改变远端；有序日志不会把外部世界自动串行化。
+这里排好的是交回的结果。如果 B 实际修改了远端数据，修改可能已经比 A 更早发生。要知道外部操作的先后，还要看工具本身的执行记录。
 
-## 4. 取消与调度异常不是“没有发生”
+## 4. 等待批准的调用，在哪里停下
 
-[`runGroup()` 的异常/取消分支](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L219-L242)处理已启动工作与尚未 dispatch 的调用。异常时等待在途工作结算并传播失败；取消时，未启动的调用可记录跳过结果。代码不能证明已经 dispatch 的外部操作被撤销，也不允许把缺结果自动补成成功。需要判断外部动作是否完成时，读[回执与副作用练习](../../labs/remote-effect.md)。
+[`prepareExecution()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/tools/src/index.ts#L1489-L1539)处理执行前的决定。预执行处理（pre-execute）默认给出 `allow`；给出 `ask` 时，就先询问审批。保护检查（guard）还可以拒绝调用，后续的 allow 处理无法覆盖这项拒绝。最后还会检查是否已经取消。
 
-## 5. 从 pre-execute 跟到审批
+需要询问时，[`serviceAsk()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/tools/src/index.ts#L1727-L1767)负责取得决定。批准一次会映射为允许；拒绝、取消、服务不可用或缺少 Agent 信息时，会映射为拒绝。因此，需要用户批准的调用，必须先拿到允许才能执行。
 
-[`prepareExecution()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/tools/src/index.ts#L1489-L1539)处理预执行决定、询问审批和 guard，再检查取消状态。pre-execute 的默认终端值为 `allow`；只有决定为 `ask` 时才进入询问。不同入口有不同责任：pre-execute 可以要求询问，guard 则提供不能被后续 allow 逆转的拒绝接缝。不要把一个 allow hook 写成能覆盖所有拒绝的万能插件，也不要把“缺询问通道时拒绝”误读成所有调用默认都要求询问。
+## 5. 用哪种环境执行命令
 
-[`serviceAsk()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/tools/src/index.ts#L1727-L1767)在无审批服务或无 Agent 上下文等情况下返回拒绝；批准一次与拒绝/取消/不可用分别映射为允许与拒绝。**默认预执行决定**和**要求询问但无法询问**是两种分支，不能混称“默认放行”。
+[`SandboxBashExecutor.execute()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/shell/bash-sandbox/src/index.ts#L85-L133)读取本次执行策略。`danger-full-access` 使用基础执行器，其他策略通过 [`ctx.sandbox.confine()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/shell/bash-sandbox/src/index.ts#L187-L189)构造带限制的命令。沙箱执行器不可用时会返回相应错误，程序不会在这个分支自动改为普通执行。
 
-## 6. 有审批还要核对执行器
+各操作系统怎样实现这些限制，需要继续检查对应后端；本篇尚未做隔离测试。
 
-[`SandboxBashExecutor.execute()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/shell/bash-sandbox/src/index.ts#L85-L133)解析本次策略。`danger-full-access` 路径调用基础执行器；其他策略经 [`ctx.sandbox.confine()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/shell/bash-sandbox/src/index.ts#L187-L189)构造受约束命令。runner failure 会成为 sandbox 不可用错误；不要把这种错误消除为“那就普通执行”。本篇未检查各操作系统 confine backend，也没有隔离逃逸测试。
+## 6. 取消、报错和结束提示怎样处理
 
-## 三个自测问题
+[`runGroup()` 的异常与取消处理](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L219-L242)区分已经开始和还没开始的工作：调度出错时，先等已开始的工具返回，再向上报告错误；取消时，未开始的调用可以记为跳过。已经发出的网络操作是否完成，仍要向目标系统核对。想进一步理解这种情况，可以读[回执与副作用练习](../../labs/remote-effect.md)。
 
-1. B 比 A 先完成，模型是否因此先得到 B 的事件结果？**本批次提交器仍按调用顺序等待连续 ready 结果；这不限制外部副作用次序。**
-2. 插件要求审批，但当前没有审批服务，应画允许还是拒绝？**拒绝；缺询问通道不是用户批准。**
-3. 图中出现 sandbox 执行器，能否宣布整个程序安全？**不能；须检查实际策略、backend、凭据、出网和上游安全声明。**
+某个结果还可以带 `concludesTurn: true`，表示希望结束当前回合。批次把这个提示汇总为 `concluded`，交给上层程序；余下工具仍按批次流程处理。上层怎样收尾，要继续看调用方。[汇总结束提示](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L147-L159) · [继续批次并返回](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L83-L101)
 
-下一步运行实验应在专用无真实凭据的环境中，只放 A/B 两个确定性假工具，记录准备、启动、完成和提交四类事件，再分别注入拒绝与取消。本文只提出验收方案，未将它标作可复跑的成品实验。
+## 读完可以怎样讲给别人
+
+工具先通过执行前检查，允许并行的一起做，结果按请求顺序交回。需要批准却没有批准服务的调用会停下；要知道命令实际能访问哪里，还要看执行策略。
+
+若以后补运行实验，可以先在专用、没有真实凭据的环境里放两个假工具，分别记录准备、开始、完成和交回结果。这个实验尚未实现，本篇只提供读代码的方法。

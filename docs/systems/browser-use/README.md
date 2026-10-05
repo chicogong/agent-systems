@@ -1,24 +1,31 @@
-# browser-use：一轮 step 怎样把网页变成行动与历史？
+# browser-use：看网页、选动作、保存这一轮结果
 
-> 固定官方源码 [`browser-use/browser-use@d8110c5ff87ccba887aaa726cdb780f2f84bef8d`](https://github.com/browser-use/browser-use/tree/d8110c5ff87ccba887aaa726cdb780f2f84bef8d)。本篇只追踪 `Agent.step()` 的观察、模型决策、动作执行和留痕路径；是**静态源码剖面**，不是浏览器运行录像。
+假设你让浏览器助手在网页里找一段资料。它需要先知道当前页面上有什么，再决定点击、输入或滚动，然后看执行结果。browser-use 的 `Agent.step()` 就把这样一轮工作串起来：获取网页状态，询问模型，执行动作，保存这一轮的记录。
 
 ![browser-use 一轮 step 的四条泳道时序](../../../figures/browser-use-step/diagram.svg)
 
 [文字版](../../../figures/browser-use-step/README.md) · [可编辑图源](../../../figures/browser-use-step/scene.excalidraw) · [关键代码导读](code-walkthrough.md)
 
-## 为什么这条路径值得看
+## 网页怎么交给模型
 
-浏览器 Agent 的“上下文”并非只有聊天记录。`Agent.step()` 先从 `BrowserSession` 请求当前网页摘要，再由消息管理器编成模型输入；模型给出动作列表，`multi_act()` 逐个交给工具与浏览器，最后 `_finalize()` 将这一步的模型输出、执行结果与浏览器状态保存为历史项。[step](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1033-L1085) · [历史项](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1356-L1415)
+`BrowserSession` 负责取得当前网页摘要。消息管理器把摘要和前一步结果整理成模型输入。模型返回动作列表后，`multi_act()` 按顺序把动作交给工具与浏览器。最后，`_finalize()` 整理这一轮的模型输出、执行结果和网页状态，满足保存条件时加入历史。[一轮工作](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1033-L1085) · [保存这一轮](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1356-L1415)
 
-这里最容易误读的是截图：`_prepare_context()` 在每步请求状态时传入 `include_screenshot=True`，但 `create_state_messages()` 仍按 `use_vision` 决定是否把截图放进模型消息；`_make_history_item()` 则会在摘要里确有截图时单独存储截图。因此“捕获了截图”“模型收到了截图”“历史存了截图”是三个不同断言。[捕获](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1091-L1099) · [模型消息条件](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/message_manager/service.py#L449-L502) · [历史截图](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1748-L1779)
+截图有三步：浏览器先获取截图，再决定是否把它交给模型，保存历史时也可以存下它。`_prepare_context()` 请求网页状态时会要求截图；能否取得截图，还要看这次返回的摘要。
 
-## 两个保护条件
+摘要里有截图时，`use_vision=True` 会把它放进模型消息，`False` 会省略它，`"auto"` 则只在动作结果明确要求截图时放入。`_make_history_item()` 保存可用截图的方式单独处理。因此，看见历史里有截图时，还需要检查 `use_vision`，才能知道模型当时是否也看到了它。[请求截图](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1091-L1099) · [选择模型图片输入](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/message_manager/service.py#L449-L502) · [保存截图](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1748-L1779)
 
-- 浏览器状态请求超时时，`BrowserSession` 清空选择器查找路径，返回空 DOM 选择器映射和带错误信息的非可操作状态，而不是让模型继续用上一页的元素索引。[超时分支](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/browser/session.py#L1616-L1679)
-- 一次模型输出可含多动作，但 `multi_act()` 不盲目执行整列。动作完成、出错、注册动作声明终止序列，或动作前后 URL/焦点目标变化，都可能停止余下动作。[序列守卫](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L2730-L2828)
+## 出现跳转或错误时，怎样停止后续动作
 
-## 边界与下一步
+网页元素会变化，旧页面上的按钮编号到了新页面可能就失效了。请求网页状态超时时，`BrowserSession` 会清空网页元素的查找映射，返回带错误信息的状态，避免继续使用旧的元素索引。这里的 DOM 是浏览器里的网页结构。[状态超时处理](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/browser/session.py#L1616-L1679)
 
-时序图把源码中的异步调用整理成一条正常阅读路径；它**没有**断言每步一定进入历史：`_finalize()` 在没有 `last_result` 时直接返回，有结果但没有浏览器状态摘要时也不会创建 `AgentHistory`。步骤异常、暂停、重连和超时分支会改变结果。[条件](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1356-L1385) · [异常处理](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1258-L1314)
+模型一次可以提出多个动作。`multi_act()` 逐个执行：遇到错误、任务结束标记 `is_done`、动作要求停止序列，或页面地址/焦点目标变化时，会停下余下动作。一次点击正常结束后，仍可以继续执行下一项；`is_done` 说的是整个任务已被标记结束。[执行与停止条件](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L2730-L2828)
 
-尚未启动浏览器、实测模型是否看到截图，也未验证截图存储、事件总线消费或页面变化检测的时延。Skills 在 `run()` 初始化阶段可注册为动作，但并非本图覆盖的执行链；后续应单独研究注册与权限边界。[Skills 注册入口](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L2562-L2574)
+## 历史保存了什么
+
+图里的历史保存有条件：要有动作结果 `last_result`，还要有本轮网页摘要，才能创建 `AgentHistory`。保存的是本轮开始取得的网页状态，加上随后执行的结果；下一轮才会重新观察页面。出错、暂停和超时可能影响这个流程。[保存条件](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1356-L1385) · [异常处理](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L1258-L1314)
+
+下一篇[代码导读](code-walkthrough.md)会把这些步骤对应到函数。本文尚未实测截图传递、历史存储和页面变化检测；Skills 在 `run()` 初始化时注册为动作的方式，留到扩展主题再讲。[Skills 注册入口](https://github.com/browser-use/browser-use/blob/d8110c5ff87ccba887aaa726cdb780f2f84bef8d/browser_use/agent/service.py#L2562-L2574)
+
+## 来源与阅读范围
+
+本文依据官方源码 [`browser-use/browser-use@d8110c5ff87ccba887aaa726cdb780f2f84bef8d`](https://github.com/browser-use/browser-use/tree/d8110c5ff87ccba887aaa726cdb780f2f84bef8d)，介绍 `Agent.step()` 的网页观察、模型决策、动作执行和历史保存，尚未运行浏览器验证。

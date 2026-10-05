@@ -1,61 +1,78 @@
-# 从零开始读懂 Agent 系统
+# 从入门理解到应用实践：选择你的阅读路线
 
 [返回首页](../README.md) · [术语表](glossary.md) · [当前书稿范围](roadmap.md)
 
-Agent 可以先理解为一个反复执行的过程：接收目标，依据已有信息决定下一步，调用工具，观察结果，再决定继续、停止或请人处理。本书按**机制问题**组织阅读；项目是回答问题的实例，不是性能或流行度排行榜。下面四层可以顺读，也可以从自己正遇到的问题进入。
+先选一个想理解或想完成的小任务，再决定读多深。图文是默认入口，源码和编程实验可以按兴趣选择。
 
-不用先会搭框架。前两层可只读图、画纸笔流程；要运行练习才需要 Python 3.10 或更新版本。文中的**宿主**指组织模型与工具的程序，**提案**是尚未执行的下一步建议，**副作用**是文件或外部服务实际发生的变化。先把这三个角色分开，再学习接口名称。
+## 先体验，再解释，再带回自己的场景
 
-初次阅读不用按书序把全部专题一次读完。**默认先读图与例子，所有动手练习都可跳过。** 从[Agent 循环](concepts/agent-loop.md)看一次正常任务，再读[职责分工](concepts/model-harness-cli-mcp-skill.md)和[上下文与记忆](concepts/context-vs-memory.md)；之后只选一个感兴趣的项目。Jev、多执行者、插件服务组合与任务后知识维护都可后读。书序是完整收录顺序，本页帮助选择深度，不是必须完成的作业路线。
+1. **先做一份成果。** 读[学习与实践](learning-and-practice.md)，用三份虚构资料回答一个问题。纸笔就能完成。
+2. **顺着图讲过程。** 读[Agent loop](concepts/agent-loop.md)，指出任务、读取资料、工具返回和回答的位置。
+3. **换个用途。** 做学习卡片、课堂讨论材料或工作简报。按[应用入口](learning-and-practice.md#把方法带到你的场景)选择一个。
+4. **再选下一篇。** 想理解资料怎样选择，读上下文；想研究实现，选一个项目；想动手，再做小实验。
 
-想边读边问，可以选用[AI 陪读方法](../book/frontmatter/reading-guide.md#和-ai-一起读)：先把当前段落和图的文字版交给助手，再用自己的话解释，最后换个例子判断。无需安装 Agent，也不用先让 AI 总结全书；不会使用 AI 不影响本页的阅读路线。
+愿意让 AI 陪读，可以用[阅读指南](../book/frontmatter/reading-guide.md#和-ai-一起读)里的开场：给它当前材料，先说自己的理解，再请它解释卡住的地方。
 
-## 1. 零基础：认出循环和控制权
+## 1. 先看模型与工具怎样接力
 
-**要回答：** 模型的一次回答，何时变成了能影响外部世界的动作？先读本书的 [Agent loop](concepts/agent-loop.md)和[职责分工](concepts/model-harness-cli-mcp-skill.md)，沿图讲清提案、执行和结果返回；想亲自观察时再选[本地 Agent loop 练习](labs/first-agent-loop.md)。想看更多例子，可选读 [Hugging Face Agents Course 第一单元](https://huggingface.co/learn/agents-course/unit1/introduction) 的 Think → Act → Observe 示例，以及 [Anthropic 的 Agent 构建模式](https://www.anthropic.com/engineering/building-effective-agents) 对固定工作流与动态 Agent 的区分。外部课是延伸阅读，不是完成本书第一层的前置条件。
+从 [Agent loop](concepts/agent-loop.md)、[职责分工](concepts/model-harness-cli-mcp-skill.md)和[上下文与记忆](concepts/context-vs-memory.md)开始。先记住模型、工具和宿主的分工：模型建议下一步，工具执行具体操作，宿主组织运行并交回结果。
 
-**动手（可选）：** 拿“查询天气并写一句出门建议”画四格：用户目标、模型提出的工具调用、工具返回的天气、最终建议。在每条箭头旁写谁决定它。再把天气工具改成“发送消息”，标出需要增加的授权检查。纸笔即可，不必运行模型。想观察执行时，可运行[本地 Agent loop 练习](labs/first-agent-loop.md)，比较获准写入、写入被拒与写错配置三条轨迹；它只用 Python 标准库和固定脚本模拟提案，不需要模型账号。
+可以画一个熟悉的例子：收到天气问题 → 读取天气 → 得到结果 → 写出建议。在图上标出谁执行读取，谁组织回答。再把工具换成发送消息，补上发送前的确认步骤。
 
-**验收：** 你能指出工具返回错误时下一轮由谁发起，也能解释为什么把“请小心”写进模型输入仍不能代替宿主在执行前拒绝一次写入。对照答案：练习中的 `run()` 把错误结果交给 `propose()`；提案函数据此提出停止。提示词影响提案，真正阻止文件写入的是宿主没有调用执行函数。
+想看程序执行时，选择[本地循环小实验](labs/first-agent-loop.md)。它用固定脚本模拟模型提案，展示读取、批准、写入和检查，使用 Python 标准库，不需要模型账号。
 
-## 2. 能用工具：区分接口、指令和执行边界
+延伸阅读：[Hugging Face Agents Course 第一单元](https://huggingface.co/learn/agents-course/unit1/introduction) · [Anthropic 的工作流与 Agent 模式](https://www.anthropic.com/engineering/building-effective-agents)。
 
-**要回答：** 工具是怎样被发现、授权和执行的？先读本书的 [Skill、MCP 与工具权限接力](concepts/mcp-skill-tool-lifecycle.md)和 [Codex 执行与审批](systems/codex/README.md)，再对照 [MCP 的 Host／Client／Server 架构规范](https://modelcontextprotocol.io/specification/2025-11-25/architecture)与 [Agent Skills 格式规范](https://github.com/agentskills/agentskills/blob/main/docs/specification.mdx)。MCP 解释外部能力怎样接入；Skill 是按需加载的操作说明；Codex 案例帮助把模型提议、审批和沙箱执行画在不同位置。这三者解决的问题不同。
+## 2. 再看能力怎样接入
 
-**动手：** 为一个只读文件搜索工具写一张卡片：输入、输出、错误、调用者、允许目录。再设计一个 `SKILL.md`，说明何时使用它和如何核对搜索结果。最后把工具改成写文件，补上审批点、可写范围和失败后的核对动作。不要在真实仓库执行写入。
+读 [Skill、MCP 与工具权限](concepts/mcp-skill-tool-lifecycle.md)和 [Codex 的命令执行](systems/codex/README.md)。Skill 提供工作说明和资料，MCP 连接外部能力，运行程序安排工具使用和权限。
 
-**验收：** 你能把“模型看得见某工具”“用户允许这次调用”“操作系统允许访问该文件”说成三件事。对照检查：宿主把工具描述提供给模型；用户或既定策略决定许可，宿主执行这道门禁；操作系统及执行环境约束实际文件访问。可见不等于获准，获准也不等于操作一定成功。
+可以为一个只读搜索工具写一张说明卡：输入是什么，返回什么，允许搜索哪个目录，出错后怎样处理。再设计一份 `SKILL.md`，说明适用任务和检查方法。想支持写文件时，补上需要谁确认、允许修改哪些文件。
 
-执行不只发生在终端。选读[沙箱与执行环境](concepts/sandbox-execution.md)和[Computer / Browser Use](concepts/computer-and-browser-use.md)，用“只填表、不提交”区分观察、获准动作和结果读回。工具或页面中的额外要求仍是观察，不会自动获得用户授权；第四层的证据练习会故意让提案器受它影响，再检查宿主是否拒绝。
+涉及执行环境时，选读[沙箱](concepts/sandbox-execution.md)。涉及页面操作时，选读[Computer／Browser Use](concepts/computer-and-browser-use.md)的“只填表、不提交”例子。先在纸上安排流程，真正执行前再核对产品设置。
 
-## 3. 读源码：沿一条窄路径追到停止条件
+延伸阅读：[MCP 架构规范](https://modelcontextprotocol.io/specification/2025-11-25/architecture) · [Agent Skills 格式](https://github.com/agentskills/agentskills/blob/main/docs/specification.mdx)。
 
-进入项目之前，可先做[上下文预算练习](labs/context-budget.md)：同样保存的五条记录、同样的输入预算，选择新近记录与优先检索旧约束会产生不同输入。用 `stored_records`、`visible_ids`、`context` 和 `audit` 分别核对，回答“记录还在，为什么这轮看不见”。它不使用真实模型，也不测量 token；读完后再看项目的会话投影与记忆检索，更容易找到各自的边界。
+## 3. 想读源码时，先选一个项目
 
-**要回答：** 一次请求具体怎样穿过运行循环、工具和会话？最短路线只选**一个项目**：建议本书的 [Pi 局部剖面](systems/pi/README.md)及[官方源码](https://github.com/earendil-works/pi)，它把模型接口、Agent 核心与交互外壳分开；也可以直接选下面一个更贴近你问题的案例。读完一个窄路径就能进入第四层，不要求先读 Pi 再读第二个项目。
+建议从 [Pi](systems/pi/README.md)及其[代码导读](systems/pi/code-walkthrough.md)开始。它把模型接口、运行核心和交互应用分开，比较容易看清各自做什么。也可以直接选择更贴近问题的项目：
 
-**可选进阶：** 想比较取舍时，再挑一个不同案例：[mini-SWE-agent](systems/mini-swe-agent/README.md) 用简短消息账本说明停止契约；[OpenCode](systems/opencode/README.md) 区分工具调用状态与会话状态；[Kimi Code](systems/kimi-code/README.md) 展示忙时 steer 缓冲与 step 边界续跑；[MiMo Code](systems/mimo-code/README.md) 展示长任务 checkpoint 与重建。它们的官方源码入口依次是 [SWE-agent](https://github.com/SWE-agent/mini-swe-agent)、[Anomaly](https://github.com/anomalyco/opencode)、[MoonshotAI](https://github.com/MoonshotAI/kimi-code) 和 [XiaomiMiMo](https://github.com/XiaomiMiMo/MiMo-Code)。不必把全部仓库从头读完。
+- [mini-SWE-agent](systems/mini-swe-agent/README.md)：用较短代码读完一轮。
+- [OpenCode](systems/opencode/README.md)：查看工具调用与会话的不同进度。
+- [Kimi Code](systems/kimi-code/README.md)：查看运行中收到新消息后怎样处理。
+- [MiMo Code](systems/mimo-code/README.md)：查看长任务怎样整理续接材料。
 
-**动手：** 任选一个项目，从本书给出的固定 commit 打开三个源码位置：请求入口、工具结果写回、结束或继续的分支。用不超过八步写出正常路径，再提出一个可证伪的问题，例如“工具超时后会不会重复写入？”找不到代码或运行证据时写“未知”。
+从章内给出的固定版本打开三个位置：请求入口、工具结果写回、结束或继续。用自己的话写出一条正常路径，再带着一个问题继续查，例如工具出错后怎样处理。尚未查到的部分留作待查。
 
-**验收：** 每个实现断言都能指回固定版本的文件；你不会把静态阅读写成实测，也不会把后来版本的功能补进旧图。项目的源码链接和已读范围以各剖面及[来源台账](../sources/README.md)为准。
+需要理解输入选择时，可以先看[上下文预算小实验](labs/context-budget.md)。它用字符预算和固定规则展示两种选法，不测量真实模型的 token。
 
-## 4. 做工程：让状态、证据和恢复可检查
+官方源码：[Pi](https://github.com/earendil-works/pi) · [mini-SWE-agent](https://github.com/SWE-agent/mini-swe-agent) · [OpenCode](https://github.com/anomalyco/opencode) · [Kimi Code](https://github.com/MoonshotAI/kimi-code) · [MiMo Code](https://github.com/XiaomiMiMo/MiMo-Code)。
 
-**要回答：** 任务暂停、跨轮记忆、并行研究和外部副作用怎样对账？按问题选读：[LangGraph checkpoint](systems/langgraph/README.md) 看暂停与恢复；[Letta Code 记忆](systems/letta/README.md) 看已存信息与本轮可见上下文的差别；[GPT Researcher](systems/gpt-researcher/README.md) 看检索材料怎样进入报告；[Microsoft Agent Framework](https://github.com/microsoft/agent-framework) 看显式 workflow 和多执行者编排。前三项的官方源码分别在 [LangGraph](https://github.com/langchain-ai/langgraph)、[Letta Code](https://github.com/letta-ai/letta-code) 和 [GPT Researcher](https://github.com/assafelovic/gpt-researcher)。框架并不会替应用自动证明“写入只发生一次”或“结论有来源支持”。
+## 4. 需要做系统时，再看保存、协作与恢复
 
-**动手：** 设计一个“搜三份资料并写摘要”的小任务合同，写出允许的来源、每一步产物、引用位置、最长运行时间和停止条件。在“抓取完成后、摘要保存前”假设进程崩溃，分别记录已完成、未完成、结果未知的动作。对结果未知的外部写入安排读回或人工对账，再考虑重试。
+按手头的问题选择：
 
-**验收：** 你能分别展示任务结果、工具轨迹、来源证据和恢复记录；其中任何一项缺失，都不把任务标为已验证。进一步的缺口和发布门槛看[路线页](roadmap.md)。
+- [LangGraph](systems/langgraph/README.md)：保存某一步的状态，再继续执行。
+- [Letta Code](systems/letta/README.md)：管理核心记忆和按需资料。
+- [GPT Researcher](systems/gpt-researcher/README.md)：将检索材料整理进报告。
+- [横向对照](comparisons/README.md)：围绕同一个问题比较不同做法。
 
-**补一条证据链：** 完成[不可信观察与假完成练习](labs/evidence-contract.md)，对比两份合格引文、引用抓取失败材料、被观察诱导越权三种情况。它让你分别验收宿主拒绝与业务完成，不用一个“success”抹平全部证据；依然是无模型、无网络的确定性模拟，不是完整防注入系统。
+可以设计一个“整理三份资料并写摘要”的任务，写出来源、各步产物、运行时限和检查方法。假设在读取后、保存摘要前中断，列出已完成和待完成的步骤。涉及外部写入时，再安排状态查询和重试规则。
 
-**再做一次最小实验：** 先完成第一层的本地练习，再运行[回执丢失后的对账练习](labs/remote-effect.md)。不必先读完本层列出的几个项目：实验沿用“宿主根据证据决定下一步”，只新增远端服务账本和稳定操作 ID。它用四条可重复轨迹说明：操作已发出、收到回执、远端实际接受是三件事；查询不可用时应停在“未知”，而不是盲重试。两个程序彼此独立，不共享配置或运行记录。
+愿意动手时，按需选这些独立小实验：
 
-**可选的真实传输实验：** 接着做[本地 HTTP 回执练习](labs/http-receipt.md)。它真正启动 loopback 服务、发生读超时，并比较同 ID 重放、两种 404 和内容冲突；业务仍是人造登记账本，不是真实发布服务。网络故障与同步代码比前一条稍复杂，可以先只运行并解释轨迹，之后再读实现。
+- [不可信资料与结果检查](labs/evidence-contract.md)：看引用和工具权限怎样核对。
+- [回执丢失](labs/remote-effect.md)：看请求超时后怎样查询原结果。
+- [本地 HTTP](labs/http-receipt.md)：在本机测试读超时、同 ID 重放和冲突。它会启动本机 loopback 服务，业务仍是虚构登记任务。
+
+前两项使用无网络的确定性模拟，HTTP 项目只连接本机服务。运行环境、临时目录和命令在各篇说明。
+
+官方源码：[LangGraph](https://github.com/langchain-ai/langgraph) · [Letta Code](https://github.com/letta-ai/letta-code) · [GPT Researcher](https://github.com/assafelovic/gpt-researcher) · [Microsoft Agent Framework](https://github.com/microsoft/agent-framework)。
 
 ## 怎样继续选材料
 
-读完四层后，用“它能解释哪一个尚未讲清的取舍”选下一项。截至 **2026-09-23**，[AutoGen 官方 README](https://github.com/microsoft/autogen/blob/main/README.md)将项目标为维护模式，适合作编排演进史；[CrewAI](https://github.com/crewAIInc/crewAI)可辅助比较 Crew 与 Flow。两者不需要替代已完成的源码练习。[Claude Code](https://code.claude.com/docs/en/how-claude-code-works)可作官方公开行为对照，其公开仓库不等于完整 CLI 源码；[Jev 官方文档](https://docs.typesafe.ai/introduction)讲有类型的判断层，不是完整 Agent。速度、成本和判断质量需用自己的任务独立验证。
+先选能解答当前问题的材料。想比较编排方式，可以查看 [CrewAI](https://github.com/crewAIInc/crewAI)；想了解项目演进，可以查看 [AutoGen README](https://github.com/microsoft/autogen/blob/main/README.md) 的当前维护说明。两者是延伸阅读，不要求逐个安装。
 
-以上链接用于阅读，不授予复制代码、图片或教程的权利。**上游素材许可、具体版本与维护状况在复用或公开前逐项核对；未核实的记为待核。** 本书系统篇是固定版本的局部源码阅读，尚未运行验证的结论会单独标明。
+[Claude Code 的官方说明](https://code.claude.com/docs/en/how-claude-code-works)适合对照公开行为；[Jev 文档](https://docs.typesafe.ai/introduction)介绍有限问题的判断。闭源产品的说明与开源项目的代码导读，按各自材料理解。
+
+想深入某个项目时，核对它的版本和维护情况；复用代码、图片或教程时，检查对应许可。本书各项目篇保留固定版本与已读范围，方便回到当时的实现。

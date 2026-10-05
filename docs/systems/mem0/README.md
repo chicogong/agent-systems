@@ -1,34 +1,45 @@
 # Mem0：记忆怎样写入，又怎样被找回
 
+## 从一句偏好开始
+
+用户告诉资料助手：“请先给简短结论，再列出处。”应用可以调用 Mem0，从这段消息中提取值得保存的事实。以后回答相关问题时，再检索这条偏好，把它加入模型输入。这里的场景用于解释流程，具体能提取和找回哪些事实取决于模型与配置。
+
+Mem0 负责**保存和找回记忆，应用负责把结果交给模型**。[Letta Code](../letta/README.md)更多讲助手怎样安排核心块、文件和历史；Mem0 这篇跟着两个调用走：写入用 `add`，找回用 `search`。
+
+
 ![Mem0 同步检索路径的候选与加分漏斗](../../../figures/mem0-retrieval/diagram.svg)
 
 [可编辑图源](../../../figures/mem0-retrieval/scene.excalidraw) · [PNG 预览](../../../figures/mem0-retrieval/preview.png) · [图的文字版](../../../figures/mem0-retrieval/README.md)
 
 [按阅读顺序跟代码](code-walkthrough.md)
 
-> 范围：官方开源仓库 [`mem0ai/mem0@f8082a7345dadd9e042ebbc40b57b1498c8f6d63`](https://github.com/mem0ai/mem0/tree/f8082a7345dadd9e042ebbc40b57b1498c8f6d63) 的 Python OSS 同步 `Memory.add(infer=True)` 与 `Memory.search`。这是**源码静态核对**，未运行模型、向量库或基准测试；不覆盖托管平台、异步 API 或所有向量库的具体行为。
 
-## 与 Letta Code 的问题不同
+## 写入：先整理事实，再保存
 
-[Letta Code 一篇](../letta/README.md)讲“Agent 自己的核心块、外部文件、历史消息如何进入上下文”。Mem0 在这里是供应用调用的**记忆存取层**：输入消息经提取后成为可检索的记录；检索返回的内容还需由调用方决定怎样放回 Agent 的提示。不要把 Mem0 的 vector-store 记录叫作 Letta 的 in-context memory block。
+`Memory.add()` 先确定这份记忆属于谁：需要 `user_id`、`agent_id`、`run_id` 至少一个标识。随后整理输入消息，在本文的 `infer=True` 路径中，让大模型结合近期消息和部分已有记忆提取新事实。
 
-## 写入：不是把整段对话原样塞进向量库
+提取出的文本经过 **embedding（转换为便于按含义检索的数值表示）**，再与本次读到的已有记录及同批新记录排重，最后写入向量库并记录 ADD 历史。批量写入失败时，会改为逐条尝试；本轮消息也会保存，包括没有提取出新事实的情况。[作用域构造](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L314-L409) · [`add` 分派](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L760-L877) · [提取与落库](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L879-L1067)
 
-`Memory.add()` 要求 `user_id`、`agent_id`、`run_id` 至少有一个用于作用域；它把消息正规化后交给 `_add_to_vector_store`。在本篇限定的 `infer=True` 路径中，代码先取同一作用域最近消息和部分已有记忆，调用一次 LLM 提取新事实，再批量 embedding、对检索到的已有记录及本批次按文本 hash 排重，最后尝试批量 `insert`（失败后逐条重试）并记录 ADD 历史。逐条写入仍可能失败，返回的 ADD 项不能单独证明每条已持久化；即使未提取到事实，也会保存本轮消息。[作用域构造](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L314-L409) · [`add` 分派](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L760-L877) · [提取与落库](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L879-L1067)
+本篇选择自动提取事实这一路：它是 **ADD-only（只新增记忆记录）**。显式更新、删除、`infer=False` 的逐消息写入，以及 procedural memory（流程记忆）分别有自己的入口。读代码时以实际分支为准；`add()` 的旧注释仍写着添加、更新或删除，与这里的新实现有差别。[`infer=False` 与 V3 路径分叉](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L879-L944) · [项目 README 对新算法的限定](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/README.md#L49-L76)
 
-注意两个边界：`infer=False` 会走逐消息直接写入路径；procedural memory 也有独立分支。本篇图与正文不能替代它们。当前源码这条推断路径是 **ADD-only**，不是自动 UPDATE/DELETE；`add()` docstring 仍有“决定添加、更新或删除”的旧表述，应以具体执行分支为准。[`infer=False` 与 V3 路径分叉](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L879-L944) · [项目 README 对新算法的限定](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/README.md#L49-L76)
+## 找回：先按含义找候选，再排序
 
-## 检索：多信号，但候选先由语义搜索决定
+应用调用 `Memory.search(query, filters={"user_id": ...})`，在选定用户的记忆中查询。`top_k` 指希望返回的最多条数。宿主检查参数后，把问题转换为 embedding，先按含义相近程度找到候选。
 
-调用 `Memory.search(query, filters={"user_id": ...})` 时，源码验证作用域、阈值与 top-k，再进入 `_search_vector_store`。该方法对 query 做向量 embedding 和语义搜索，也尝试关键词搜索、实体关联加分。**候选列表只由语义搜索结果构造**；`score_and_rank` 对候选先应用语义阈值，再将可用的 BM25 与实体分数叠加排序。关键词搜索命中而未进入语义候选的记忆，不会单独进入结果集。[`search` 入口](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1379-L1528) · [检索候选与加分](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1628-L1726) · [排序函数](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/utils/scoring.py#L60-L143)
+接着，`score_and_rank` 筛掉语义分数过低的候选，再叠加可用的 BM25（关键词匹配分数）和实体关联加分，排序后取前 `top_k` 条。可以把它理解为“先入围，再加分”：入围名单来自语义搜索，关键词和实体帮助排顺序。[`search` 入口](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1379-L1528) · [检索候选与加分](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1628-L1726) · [排序函数](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/utils/scoring.py#L60-L143)
 
-关键词路径也不是每个向量库都有：基类 `keyword_search()` 默认返回 `None`，仅部分适配器覆写。因此“Mem0 OSS 一定同时跑 BM25”也不成立。[向量库基类](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/vector_stores/base.py#L68-L81)
+关键词加分是否可用，要看选定的向量库适配器。基类 `keyword_search()` 默认返回 `None`，部分适配器才提供实现。[向量库基类](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/vector_stores/base.py#L68-L81)
 
-## 易误解与未验证
+## 实际使用前要检查的几件事
 
-- **“多信号检索 = 三路召回取并集”**：不符这条源码路径；关键词、实体用于候选加分。
-- **“ADD-only = 永远不会删改任何记录”**：只能说明这里的 `infer=True` 自动提取分支；显式 `update`、`delete` 等 API 另有路径。
-- **“README 基准分数就是 OSS 实测”**：README 明确区分托管平台优化与 OSS，不能把托管结果移植到本图。[官方限定](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/README.md#L49-L76)
+- 给正确用户选择过滤条件，并检查检索出来的内容是否适合当前任务；最后由应用加入模型输入。
+- 故障时读回存储。逐条写入异常只记入日志，构造的 ADD 返回项仍可能保留；因此应核对对应 ID 的记录是否存在。
+- 这条自动提取路径只新增记忆，显式 `update`、`delete` API 另看各自实现。
+- 官方 README 区分托管平台与开源版（OSS）的基准结果，读成绩时先核对测的是哪一版。[官方说明](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/README.md#L49-L76)
 - **未知**：不同向量库是否提供真实 keyword search、LLM 提取质量、实体链接命中与最终检索效果，都未在本篇运行核验。
 
 下一步应在隔离环境用一个固定模型和固定向量库跑输入消息、向量记录、候选 ID、BM25/实体分数及最终结果的逐步 trace，再比较另一种向量库；当前章节只提供静态路径地图。
+
+## 版本与检查范围
+
+> 范围：官方开源仓库 [`mem0ai/mem0@f8082a7345dadd9e042ebbc40b57b1498c8f6d63`](https://github.com/mem0ai/mem0/tree/f8082a7345dadd9e042ebbc40b57b1498c8f6d63) 的 Python OSS 同步 `Memory.add(infer=True)` 与 `Memory.search`。这是**源码静态核对**，未运行模型、向量库或基准测试；不覆盖托管平台、异步 API 或所有向量库的具体行为。

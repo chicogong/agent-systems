@@ -22,7 +22,7 @@ def main() -> None:
     for name, x, y, w, h, stroke, fill in [
         ("skill", 38, 134, 212, 112, PURPLE, "#f0eaff"),
         ("scope", 325, 134, 212, 112, BLUE, "#eaf3ff"),
-        ("discover", 612, 134, 212, 112, GREEN, "#e7f7ee"),
+        ("discover", 612, 134, 252, 112, GREEN, "#e7f7ee"),
         ("proposal", 38, 325, 212, 137, PURPLE, "#f0eaff"),
         ("gate", 325, 325, 212, 137, AMBER, "#fff4df"),
         ("execution", 612, 325, 212, 137, GREEN, "#e7f7ee"),
@@ -49,7 +49,7 @@ def main() -> None:
         ("skill-detail", "教你先核对原文\n不是执行记录", 54, 189, 185, 19, MUTED),
         ("scope-title", "用户任务 · 范围", 341, 151, 185, 23, INK),
         ("scope-detail", "可读什么？可改哪里？\n要怎样验收？", 341, 189, 185, 19, MUTED),
-        ("discover-title", "MCP · tools/list", 628, 151, 185, 23, INK),
+        ("discover-title", "MCP · tools/list", 628, 151, 225, 23, INK),
         ("discover-detail", "发现 kb.fetch\n不等于已获准读取", 628, 189, 185, 19, MUTED),
         ("proposal-title", "模型提出下一步", 54, 344, 185, 23, INK),
         ("proposal-detail", "“查文档 / 改文件”\n此时还没有副作用", 54, 386, 185, 19, MUTED),

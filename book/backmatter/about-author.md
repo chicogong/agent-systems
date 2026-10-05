@@ -1,7 +1,7 @@
 # 作者简介
 
-**chicogong** 专注于 AI Agent 的运行机制与开源实现，尤其关心工具调用、上下文与记忆、权限边界，以及复杂任务如何被拆解、执行和检验。开源实践包括维护 [excalidraw-agent](https://github.com/chicogong/excalidraw-agent) 绘图与导出工具；围绕本书，持续阅读项目源码、制作可编辑图解，并把设计取舍转化为更易理解的文字。
+**chicogong** 持续研究和实践 AI Agent，主要关注工具调用、上下文与记忆，以及复杂任务的执行与协作。维护 [excalidraw-agent](https://github.com/chicogong/excalidraw-agent) 绘图与导出工具，阅读开源项目源码，并用可编辑图解和具体例子整理其中的方法。
 
-《图解 Agent 系统》是这一实践的持续书稿：以机制为主线，以真实项目为案例，邀请读者一起核对、讨论和修订。可从[在线阅读入口](https://books.aimake.cc/)试读，也可在[GitHub 源仓](https://github.com/chicogong/agent-systems)检查源稿、图源和修改记录。共同贡献者将见仓库提交与 Pull Request 记录。
+《图解 Agent 系统》是这项实践的持续书稿，希望帮助学生、老师、AI 工具使用者和感兴趣的读者，从图文理解走向自己的尝试。欢迎通过[在线阅读](https://books.aimake.cc/)试读，在 [GitHub](https://github.com/chicogong/agent-systems)查看源稿、图源和修改记录，也欢迎提出纠错与阅读建议。
 
 联系邮箱：[ghr7719@gmail.com](mailto:ghr7719@gmail.com)。

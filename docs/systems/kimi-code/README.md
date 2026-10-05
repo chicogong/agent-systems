@@ -1,8 +1,8 @@
-# Kimi Code：进行中的回合怎样接住新指令？
+# Kimi Code：忙的时候，怎样接住你的新指令
 
-> **固定版本的静态源码切面。** 本篇核对 [`MoonshotAI/kimi-code@75a894e9ad5e8d49509664b3daaa1bbc9bb39432`](https://github.com/MoonshotAI/kimi-code/tree/75a894e9ad5e8d49509664b3daaa1bbc9bb39432)，核对日期 2026-09-23。对象是新版 Kimi Code CLI 的 `packages/agent-core`，不是旧 [`kimi-cli`](https://github.com/MoonshotAI/kimi-cli)，也不是 Kimi 模型。上游此提交的 [LICENSE](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/LICENSE) 为 MIT。本篇没有运行 CLI，也没有证明该提交对应当前安装包。
+你让 Agent 修复一个问题。它正在跑测试，你又补充一句：“先别改文件，把失败原因解释给我。”Kimi Code 会先收下这句话，等当前一步结束，再交给下一次模型请求，继续调整任务方向。
 
-读完这一篇，应能判断：用户在 Agent 正忙时发来一句“先检查测试，再改文件”，这句话是立刻打断当前工具、排成下一个独立 turn，还是在当前 turn 的**下一次模型请求前**进入上下文？Kimi Code 的这个实现选择第三种，但存在停止、取消和上限的具体边界。
+这里把一条输入展开的工作叫作回合（turn），一个回合可以有多个步骤（step）。`steer` 表示在工作途中补充或纠正指令。这篇跟着一条补充消息，看看宿主如何把它交给模型。
 
 ![Kimi Code 进行中回合接收 steer 的时序与出口](../../../figures/kimi-code/diagram.svg)
 
@@ -10,19 +10,19 @@
 
 ## 正在运行时：先缓冲，后注入
 
-`TurnFlow.steer()` 总会记录 `turn.steer`。若已有 `activeTurn`，它将输入和 origin 放入 `steerBuffer` 并返回 `null`，没有在此处创建新 turn，也没有在此处中止正在执行的工具；若没有活动 turn，则走 `launch()` 启动一个 turn。[源码：`steer()`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L120-L143)
+**先收下消息。** `TurnFlow.steer()` 记录输入，然后查看是否正在工作。正在忙时，将消息及来源放进 `steerBuffer`，也就是等待区；空闲时，通过 `launch()` 启动一个新回合。忙时返回 `null`，表示这次没有新回合 ID。[源码：`steer()`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L120-L143)
 
-`runStepLoop()` 将 `flushSteerBuffer()` 安在 `beforeStep`：缓冲的输入按顺序作为 user message 追加到上下文，随后才执行压缩与注入，再由 loop 构造下一步的模型消息。因此“接住新指令”在这里是**step 边界的上下文更新**，不是对正在流式生成的模型响应或已发起工具调用的即时重写。[源码：缓冲与追加](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L265-L273) · [源码：`beforeStep`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L578-L604)
+**下一步开始前，再交给模型。** `runStepLoop()` 在 `beforeStep` 中调用 `flushSteerBuffer()`，按收到的顺序把等待消息追加为用户输入，随后检查上下文压缩、补充材料，再构造下一次模型请求。回到修复例子：正在跑的测试先结束，模型在下一步看到“先解释原因”这条新要求。[源码：缓冲与追加](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L265-L273) · [源码：`beforeStep`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L578-L604)
 
-一个容易漏掉的出口是模型本来准备结束且没有 `tool_use`。通用 `runTurn()` 此时调用 `shouldContinueAfterStop`；Kimi Code 的回调先刷新 steer 缓冲，有新输入就返回 `{ continue: true }`，从而再运行一个 step。没有 steer 时才继续检查 goal outcome、`Stop` hook，最终停止。[源码：loop 的停止检查](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L99-L128) · [源码：继续优先序](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L611-L657)
+**准备收尾时，也再看一眼等待区。** 当模型没有要求调用工具、准备结束时，`runTurn()` 会调用 `shouldContinueAfterStop`。Kimi Code 先取出新消息；有消息就继续一步。没有消息，再检查目标状态以及 `Stop` hook（结束前回调），最后决定结束。[源码：loop 的停止检查](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L99-L128) · [源码：继续优先序](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L611-L657)
 
 ## 设计取舍：互动性放在 step 边界
 
-这个位置给进行中的 turn 一个接收新意图的机会，又保留了当前 step 的执行完整性。它也意味着 steer 到达后何时被模型看到，取决于当前模型请求或工具何时结束、能否进入下一 step；这里没有“立即生效”的时延保证。这是从上述源码得出的**工程推断**，不是交互延迟实测。
+把调整方向的位置放在步骤之间，有一个清楚的取舍：当前步骤保留执行过程，新指令等下一步处理。所以，测试很快结束时，调整也能很快接上；工具迟迟没有返回时，新消息也要继续等待。这个解释来自代码位置，实际等待多久还需要运行测量。
 
-边界也不等于无条件续跑。`runTurn()` 在每个 step 前检查 abort 与 `maxSteps`；取消会 abort 活动 turn，非当前 ID 的定向取消则被忽略。`runOneTurn()` 把正常、取消、异常分别映射为 `completed`、`cancelled`、`failed` 的 `turn.ended`。[源码：步数与中断](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L74-L128) · [源码：取消](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L205-L216) · [源码：结束映射](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L441-L510)
+**调整方向与停止任务分别处理。** `steer` 用来补充输入，`cancel()` 用来发送取消信号。`runTurn()` 每一步前都检查取消和步数上限 `maxSteps`；定向取消只有匹配当前回合 ID 才起作用。回合结束后，`runOneTurn()` 记录 `completed`（正常结束）、`cancelled`（已取消）或 `failed`（失败）。[源码：步数与中断](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L74-L128) · [源码：取消](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L205-L216) · [源码：结束映射](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L441-L510)
 
-工具执行有另一道控制边界：`runStepLoop()` 把 `authorizeToolExecution` 接到 `agent.permission.beforeToolCall(ctx)`。这能说明权限决策位于工具执行之前，但本篇没有展开不同工具的审批策略、终端 UI 提示或拒绝后的完整消息路径。[源码：授权回调](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L658-L692)
+**执行工具前，宿主还要检查权限。** `runStepLoop()` 把 `authorizeToolExecution` 接到 `agent.permission.beforeToolCall(ctx)`。因此，模型收到“改文件”这条新要求后，接下来仍须按宿主规则取得执行许可。具体审批界面与各工具策略留给后续专题。[源码：授权回调](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L658-L692)
 
 ## 与 Pi、Codex 对同一问题的取舍
 
@@ -35,6 +35,8 @@ Pi 的对照依据是本书[固定版的 `Agent.prompt()`、队列及 `runLoop` 
 
 ## 学习路径与未覆盖项
 
-先沿[代码导读](code-walkthrough.md)逐步重建 `steer → flush → runTurn → continue/stop`，再自己画出“新输入在模型停止之前和之后到达”两种时间线。接着读 Pi 的[队列与会话](../pi/README.md)，最后读 Codex 的[命令审批](../codex/README.md)，区分**交互调度**与**执行授权**。自测：若 `steer()` 返回 `null`，能否推断输入已被模型看到？若当前 step 一直不结束，图中哪条箭头仍未发生？
+先用图解释新消息在哪里等待、什么时候交给模型。想深入时，再选读[代码导读](code-walkthrough.md)，对照 Pi 的[输入队列](../pi/README.md)和 Codex 的[执行审批](../codex/README.md)，看清“接收新指令”和“获准执行动作”各由哪部分处理。
+
+> **固定版本的静态源码切面。** 本篇核对 [`MoonshotAI/kimi-code@75a894e9ad5e8d49509664b3daaa1bbc9bb39432`](https://github.com/MoonshotAI/kimi-code/tree/75a894e9ad5e8d49509664b3daaa1bbc9bb39432)，核对日期 2026-09-23。对象是新版 Kimi Code CLI 的 `packages/agent-core`，不是旧 [`kimi-cli`](https://github.com/MoonshotAI/kimi-cli)，也不是 Kimi 模型。上游此提交的 [LICENSE](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/LICENSE) 为 MIT。本篇没有运行 CLI，也没有证明该提交对应当前安装包。
 
 本篇主要是固定提交的 `TurnFlow` 与通用 loop 静态阅读。2026-09-24 又复跑该提交 `agent-core` 的 3 组 mock 测试，共 68 例通过；其中一个用例确实模拟了**等待 Bash 审批时收到 steer，批准后同一 turn 的下一步看到它**。[测试与环境记录](../../../sources/kimi-code.md)说明了具体命令和局限。我们仍未追踪 CLI/TUI 到 `steer()` 的全部入口、SDK/RPC 所有调用者、`wire.jsonl` 持久化与恢复、子 Agent 上下文隔离，也未测真实模型、并发抵达、取消竞争或最大步数附近的实际事件顺序。官方[会话文档](https://moonshotai.github.io/kimi-code/en/guides/sessions)和[子 Agent 文档](https://moonshotai.github.io/kimi-code/en/customization/agents)可作后续入口，不能替代这些尚未完成的源码与运行核验。

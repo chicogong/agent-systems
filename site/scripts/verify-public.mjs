@@ -109,6 +109,14 @@ const indexPages = new Set(['feedback.html', 'pdf.html', 'downloads.html', 'conc
 for (const file of expected) {
   const html = pages.get(file)
   if (!html.includes(version.sourceCommit.slice(0, 12))) throw new Error(`${file}: missing reader-visible source revision`)
+  for (const [image] of html.matchAll(/<img\b[^>]*>/g)) {
+    if (!/src="\/assets\/figures\/[^/]+\/diagram\.svg"/.test(image)) continue
+    for (const attribute of ['width', 'height']) {
+      const value = Number(image.match(new RegExp(`\\b${attribute}="([^"]+)"`))?.[1])
+      if (!(value > 0 && Number.isFinite(value))) throw new Error(`${file}: figure has no valid ${attribute}`)
+    }
+    if (!/\balt="[^"]+"/.test(image)) throw new Error(`${file}: figure has no text alternative`)
+  }
   // Chinese punctuation next to an emphasis delimiter can make Markdown
   // render literal **. Inspect rendered prose, not code examples or scripts.
   const withoutCode = html.replace(/<pre\b[^>]*>[\s\S]*?<\/pre>/g, '').replace(/<code\b[^>]*>[\s\S]*?<\/code>/g, '')

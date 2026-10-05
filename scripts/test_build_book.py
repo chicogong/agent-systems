@@ -1,16 +1,22 @@
-"""Public PDF links must resolve without access to the private authoring repo."""
+"""Book layout and public links are checked without building the whole PDF."""
 
 from __future__ import annotations
 
 import unittest
+from io import BytesIO
 from unittest.mock import patch
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import Flowable, Image, Paragraph
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Flowable, Image, Paragraph, SimpleDocTemplate
+from pypdf import PdfReader
 
 import build_book
+from book_typography import BookParagraph, NO_LINE_END, NO_LINE_START
 from check_book_pdf import matches_clean_provenance
 
 
@@ -108,6 +114,197 @@ class BookProvenanceTests(unittest.TestCase):
         self.assertFalse(matches_clean_provenance(clean, "b" * 40))
         with self.assertRaisesRegex(ValueError, "full Git SHA-1"):
             matches_clean_provenance(clean, "short")
+
+
+class BookChineseTypographyTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        # Built-in CID metrics make these tests offline and independent of the
+        # optional downloaded book fonts (CI runs tests before fetching fonts).
+        pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
+
+    def setUp(self) -> None:
+        self.style = ParagraphStyle(
+            "typography-test", fontName="STSong-Light", fontSize=10,
+            leading=16, wordWrap="CJK", allowOrphans=True,
+        )
+
+    def lines(self, paragraph: Paragraph) -> list[str]:
+        if paragraph.blPara.kind == 0:
+            return ["".join(words) for _, words in paragraph.blPara.lines]
+        return ["".join(fragment.text for fragment in line.words) for line in paragraph.blPara.lines]
+
+    def assert_safe_lines(self, paragraph: BookParagraph) -> None:
+        for text, line in zip(self.lines(paragraph), paragraph.blPara.lines):
+            visible = text.strip()
+            if visible:
+                self.assertNotIn(visible[0], NO_LINE_START, repr(text))
+                if not line.lineBreak:
+                    self.assertNotIn(visible[-1], NO_LINE_END, repr(text))
+            self.assertGreaterEqual(line.extraSpace, -1e-7)
+            self.assertLessEqual(line.currentWidth, line.maxWidth + 1e-7)
+
+    def test_closing_parenthesis_and_full_stop_are_not_orphaned(self) -> None:
+        paragraph = BookParagraph("理解（运行循环）。", self.style)
+        paragraph.wrap(70, 1000)
+        self.assertEqual(self.lines(paragraph), ["理解（运行循", "环）。"])
+        self.assert_safe_lines(paragraph)
+
+    def test_chinese_comma_and_quotes_move_with_previous_character(self) -> None:
+        for text in ("一二三四五，六七。", "中文逗号，句号。引号”右括号）", "读懂《图解》，“再试一次”。"):
+            with self.subTest(text=text):
+                paragraph = BookParagraph(text, self.style)
+                paragraph.wrap(50, 1000)
+                self.assert_safe_lines(paragraph)
+                self.assertEqual("".join(self.lines(paragraph)), paragraph.getPlainText())
+
+    def test_many_widths_preserve_text_and_never_overflow(self) -> None:
+        markup = '先读这张图，再理解<b>循环</b>（模型、工具和结果）。<font name="Courier">run()</font> 完成后，核对“引用”；遇到问题时，再观察。'
+        for width in (40, 45, 50, 60, 73, 85, 110, 160, 476):
+            with self.subTest(width=width):
+                paragraph = BookParagraph(markup, self.style)
+                paragraph.wrap(width, 1000)
+                self.assert_safe_lines(paragraph)
+                self.assertEqual("".join(self.lines(paragraph)), paragraph.getPlainText())
+
+    def test_opening_bracket_and_latin_word_breaks(self) -> None:
+        paragraph = BookParagraph("一二三四（运行循环）和 <font name=\"Courier\">AgentSession</font> 交回结果。", self.style)
+        paragraph.wrap(90, 1000)
+        self.assert_safe_lines(paragraph)
+        self.assertTrue(any("AgentSession" in line for line in self.lines(paragraph)))
+        self.assertEqual("".join(self.lines(paragraph)), paragraph.getPlainText())
+        # A genuinely overlong source path can still wrap; no forced overflow.
+        long_word = BookParagraph('<font name="Courier">very_long_source_path_identifier</font>，结束。', self.style)
+        long_word.wrap(60, 1000)
+        self.assert_safe_lines(long_word)
+
+    def test_spaces_at_span_boundaries_do_not_hide_punctuation(self) -> None:
+        for text in ("一二三四 ，下一句。", "一二三四（ 下一句）。", '一二三四<font name="Courier"> </font>，下一句。'):
+            with self.subTest(text=text):
+                paragraph = BookParagraph(text, self.style)
+                paragraph.wrap(50, 1000)
+                self.assert_safe_lines(paragraph)
+                self.assertEqual("".join(self.lines(paragraph)), paragraph.getPlainText())
+
+    def test_combining_mark_and_nonbreaking_space_are_not_separated(self) -> None:
+        paragraph = BookParagraph('一二<font name="Helvetica">e\u0301 A\u00a0B</font>，再看结果。', self.style)
+        paragraph.wrap(40, 1000)
+        self.assert_safe_lines(paragraph)
+        lines = self.lines(paragraph)
+        self.assertTrue(any("e\u0301" in line for line in lines))
+        self.assertTrue(any("A\u00a0B" in line for line in lines))
+        self.assertEqual("".join(lines), paragraph.getPlainText())
+
+    def test_explicit_breaks_and_named_anchor_survive(self) -> None:
+        paragraph = BookParagraph('<a name="chapter-test"/>第一行。<br/>第二行，接着读。', self.style)
+        paragraph.wrap(60, 1000)
+        self.assert_safe_lines(paragraph)
+        self.assertTrue(paragraph.blPara.lines[0].lineBreak)
+        self.assertEqual("".join(self.lines(paragraph)), "第一行。第二行，接着读。")
+        callbacks = [fragment.cbDefn for line in paragraph.blPara.lines for fragment in line.words if hasattr(fragment, "cbDefn")]
+        self.assertTrue(any(getattr(callback, "name", "") == "chapter-test" for callback in callbacks))
+
+    def test_link_and_mixed_fonts_survive_punctuation_wrap_and_drawing(self) -> None:
+        paragraph = BookParagraph('先看<link href="https://example.com/source" color="#2563a6"><font name="Courier">run()</font> 的出处</link>，再核对结果。', self.style)
+        paragraph.wrap(65, 1000)
+        self.assert_safe_lines(paragraph)
+        self.assertEqual("".join(self.lines(paragraph)), paragraph.getPlainText())
+        fonts = {fragment.fontName for line in paragraph.blPara.lines for fragment in line.words}
+        self.assertEqual(fonts, {"STSong-Light", "Courier"})
+        linked = [fragment for line in paragraph.blPara.lines for fragment in line.words if fragment.link]
+        self.assertEqual("".join(fragment.text for fragment in linked), "run() 的出处")
+        output = BytesIO()
+        page = canvas.Canvas(output)
+        paragraph.drawOn(page, 50, 500)
+        page.save()
+        reader = PdfReader(output)
+        urls = [annotation.get_object()["/A"]["/URI"] for annotation in reader.pages[0]["/Annots"]]
+        self.assertTrue(urls)
+        self.assertEqual(set(urls), {"https://example.com/source"})
+
+    def test_page_split_does_not_insert_spaces_or_lose_links(self) -> None:
+        markup = ('先看<link href="https://example.com/source">模型交回结果</link>，再核对引用（位置与原文）。' * 8)
+        paragraph = BookParagraph(markup, self.style)
+        paragraph.wrap(85, 1000)
+        expected = paragraph.getPlainText()
+        first, rest = paragraph.split(85, 4 * self.style.leading)
+        first.wrap(85, 1000)
+        rest.wrap(85, 1000)
+        self.assert_safe_lines(first)
+        self.assert_safe_lines(rest)
+        actual = "".join(self.lines(first) + self.lines(rest))
+        self.assertEqual(actual, expected)
+        linked = [fragment for part in (first, rest) for line in part.blPara.lines for fragment in line.words if fragment.link]
+        self.assertEqual("".join(fragment.text for fragment in linked), "模型交回结果" * 8)
+
+    def test_two_page_pdf_preserves_external_links_and_named_anchor_destination(self) -> None:
+        markup = '<a name="chapter-test"/>' + (
+            '先看<link href="https://example.com/source">模型交回结果</link>，再核对引用（位置与原文）。' * 9
+        ) + '返回<link href="#chapter-test">章节起点</link>。'
+        output = BytesIO()
+        # Let the document engine split one paragraph naturally, instead of
+        # manually drawing two parts or only checking fragment.link metadata.
+        SimpleDocTemplate(
+            output, pagesize=(200, 200), leftMargin=20, rightMargin=20,
+            topMargin=20, bottomMargin=20,
+        ).build([BookParagraph(markup, self.style)])
+        reader = PdfReader(output)
+        self.assertEqual(len(reader.pages), 2)
+        page_annotations = [
+            [reference.get_object() for reference in page.get("/Annots", [])]
+            for page in reader.pages
+        ]
+        for page_index, annotations in enumerate(page_annotations):
+            with self.subTest(page=page_index + 1):
+                urls = [
+                    annotation["/A"]["/URI"] for annotation in annotations
+                    if annotation.get("/A", {}).get("/S") == "/URI"
+                ]
+                self.assertTrue(urls, "Each page must have a real external link annotation")
+                self.assertEqual(set(urls), {"https://example.com/source"})
+        destinations = [annotation["/Dest"] for annotation in page_annotations[1] if "/Dest" in annotation]
+        self.assertEqual(len(destinations), 1)
+        destination = destinations[0]
+        self.assertEqual(destination[0], reader.pages[0].indirect_reference)
+        self.assertEqual(destination[0].get_object()["/Type"], "/Page")
+        self.assertEqual(destination[1], "/XYZ")
+        # The named anchor still resolves to an actual position on page one.
+        self.assertTrue(0 <= destination[2] <= 200)
+        self.assertTrue(0 <= destination[3] <= 200)
+
+    def test_first_line_and_later_widths_respect_list_indentation(self) -> None:
+        style = ParagraphStyle("indented", parent=self.style, leftIndent=15, firstLineIndent=-15, rightIndent=5)
+        paragraph = BookParagraph("1. 先读清楚这张图，再理解（运行循环）。然后核对结果。", style)
+        paragraph.wrap(90, 1000)
+        self.assertEqual(paragraph.blPara.lines[0].maxWidth, 85)
+        self.assertTrue(all(line.maxWidth == 70 for line in paragraph.blPara.lines[1:]))
+        self.assert_safe_lines(paragraph)
+
+    def test_table_cells_use_prose_wrapper_but_code_blocks_keep_native_wrapper(self) -> None:
+        table = build_book.table_rows(["| 内容 |", "| --- |", "| 理解（运行循环）。 |"], {"small": self.style}, build_book.ROOT / "reading-guide.md")[0]
+        paragraph = table._cellvalues[0][0]
+        self.assertIsInstance(paragraph, BookParagraph)
+        paragraph.wrap(70, 1000)
+        self.assert_safe_lines(paragraph)
+        with TemporaryDirectory() as directory:
+            source = Path(directory) / "code.md"
+            source.write_text("```python\n  call(), [x]\n```\n", encoding="utf-8")
+            with patch.object(build_book, "CODE_NAME", "Courier"):
+                block = build_book.chapter_flowables(source, 0, {"code": self.style})[0]
+        code = block._cellvalues[0][0][0]
+        self.assertIsInstance(code, Paragraph)
+        self.assertNotIsInstance(code, BookParagraph)
+        self.assertEqual(code.getPlainText(), "\u00a0\u00a0call(), [x]")
+
+    def test_impossible_narrow_line_fails_without_overflow(self) -> None:
+        with self.assertRaisesRegex(ValueError, "cannot fit a Chinese punctuation group"):
+            BookParagraph("字）。", self.style).wrap(20, 1000)
+
+    def test_non_cjk_paragraph_keeps_reportlab_layout(self) -> None:
+        style = ParagraphStyle("western", fontName="Helvetica", fontSize=10)
+        native, local = Paragraph("A short English paragraph with spaces.", style), BookParagraph("A short English paragraph with spaces.", style)
+        self.assertEqual(native.wrap(70, 1000), local.wrap(70, 1000))
+        self.assertEqual(self.lines(native), self.lines(local))
 
 
 if __name__ == "__main__":
