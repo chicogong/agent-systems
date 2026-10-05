@@ -1,9 +1,18 @@
-# 一项任务穿过哪些边界
+# 一项任务怎样把模型和工具接起来
 
-这是一张**生成式编码 Agent 的教学抽象图**，不是某个产品的进程图，也不适用于每一种模型。虚线框标的是“一轮决策流”，**不表示框内节点属于同一进程或同一层**。任务可从 CLI 或 IDE 输入；Harness 装配本轮上下文并调用外部模型。在正文的工单例子里，首次读工单由**模型返回建议**，随后宿主按已暴露的工具和实际权限路由调用；它并不表示 Harness 必然先自行预取工单。MCP Server 只是工单工具的示例落点；本地工具无需经过 MCP。工具结果回到下一轮上下文。Skill 提供按需读取的流程知识，不自行取得执行权限。
+沿着“读工单、修代码”的例子看这张图，几种组件就容易认清了。工单就是记录问题和修复要求的任务单。
 
-图中的“宿主路由／依实际权限”表示必须查清谁拥有执行权，**不保证每个 Harness 都内建独立审批或沙箱**；有些实现只继承宿主进程及工具凭据的权限。模型和外部服务都不因为出现在图中而自动拥有执行权限。确定性程序也可以在模型调用前预取资料，这属于另一种工作流，需要在具体实现中核查。
+1. 你从 CLI（命令行界面）或 IDE（开发环境）交代任务。
+2. Harness，也就是安排模型和工具的运行器，准备这次输入并调用模型。模型建议先读工单。
+3. 宿主检查可用工具和实际权限，把读取请求交给工具。这个例子的工单工具由 MCP Server 提供，它是可以运行在本机或远端的工具服务；本地读取工具也可以直接调用。
+4. 工具带回工单原文，运行器把它放进下一次模型输入，模型据此继续修复。需要方法时，再读取 Skill 提供的工作指导。
 
-主图仅画一轮最小路径。它省略了用户审批的交互细节、MCP Host/Client/Server 的内部握手、不同产品的会话持久化和失败重试；这些应分别读[审批与沙箱](../../docs/concepts/approval-vs-sandbox.md)、[扩展层](../../docs/concepts/extensibility-layers.md)。
+图中“宿主路由／依实际权限”指的是第三步。执行权限来自宿主、工具凭据和具体设置；Skill 的指导本身只提供方法。有些运行器另有审批和沙箱，有些主要继承启动进程的权限，使用前要分别检查。
 
-图的抽象依据：[Claude Code 如何工作](https://code.claude.com/docs/en/how-claude-code-works)、[OpenAI Sandbox Agents 的 harness/compute 边界](https://developers.openai.com/api/docs/guides/agents/sandboxes)、[Codex 的扩展层说明](https://developers.openai.com/codex/concepts/customization)、[MCP 协议架构](https://modelcontextprotocol.io/specification/2025-11-25/architecture)。具体产品可能不用这些名称，也可能将不同职责放进同一进程；箭头只表示职责顺序，不宣称公开了闭源内部调用栈。
+虚线框圈出一轮处理过程。框里的角色可以分布在不同进程中。这张图用模型建议读取的路径讲分工；程序也可以提前读取资料，再调用模型，那是另一种安排。
+
+这是帮助学习的概念图。它只画最小路径，审批细节、连接握手、历史保存和失败重试可接着读[审批与沙箱](../../docs/concepts/approval-vs-sandbox.md)、[扩展层](../../docs/concepts/extensibility-layers.md)。
+
+## 对照来源
+
+[Claude Code 如何工作](https://code.claude.com/docs/en/how-claude-code-works)、[OpenAI Sandbox Agents 的 harness/compute 边界](https://developers.openai.com/api/docs/guides/agents/sandboxes)、[Codex 的扩展层说明](https://developers.openai.com/codex/concepts/customization)、[MCP 协议架构](https://modelcontextprotocol.io/specification/2025-11-25/architecture)。实际产品可能用不同名称，或把几种职责放进同一个进程；闭源产品的内部函数仍以公开资料为限。

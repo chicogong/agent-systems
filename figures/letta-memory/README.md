@@ -1,11 +1,28 @@
-# 图的文字版：Letta Code local MemFS v1
+# 图的文字版：Letta Code 怎样取用记忆
 
-本图回答“记忆存放的位置与当前上下文是什么关系”，不是 Letta 所有后端的完整架构图。源码固定于 [`letta-ai/letta-code@1f55d3dc`](https://github.com/letta-ai/letta-code/tree/1f55d3dc66e238d203757fae288bb53f3adc7cd3)。[回到章节](../../docs/systems/letta/README.md)
+[回到章节](../../docs/systems/letta/README.md)
 
-1. 左栏分列三种存放处：local MemFS v1 将 `system/` 下任意深度的 Markdown 识别为核心记忆块，包括子目录中的文件；这些块可承载身份、偏好、索引等内容。外部文件和 Skills 按需通过工具读取；对话历史与 recall 另列，不等同于这两类 Markdown。
-2. 三条箭头指向本轮上下文的不同位置：核心块默认编入 system prompt；外部文件经工具读取后，内容成为本轮 conversation 的一部分，并非默认内联在 system prompt；近期对话和较早消息摘要在当前 conversation 中，更早信息可经 recall 检索。箭头表达设计中的可见路径，不表示每次都发生读取或检索。
-3. 底部并列两条已读到的源码路径：`memory()` 工具写入后调用 `commitMemoryWrite`；memory worker 合并时先同步，再在能力允许时重编译提示。它们不是一条所有写入必经的流水线；已编译的当前回合提示也不会被文件编辑即时改写。
+维护项目时，助手经常需要知道你的偏好，偶尔需要翻一份长手册，有时还要找回以前的对话。图左边把这三类材料分开存放，右边说明它们怎样进入这次模型输入。
 
-图中箭头表示设计路径，**不是实测调用轨迹**。绿色箭头不表示外部文件默认完整加载进 system prompt。API-backed MemFS v2 把核心文件放在根目录，并以 `MEMORY.md` 组织索引；本图不描述该布局。[格式分支源码](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/memory-format.ts#L6-L29)
+## 从左到右看三条路
 
-编辑 `build.py` 后运行 `python3 figures/letta-memory/build.py`，再用仓库说明的 Excalidraw renderer 从 `scene.excalidraw` 导出 `diagram.svg` 与 `preview.png`。交互式 MCP 画布可能更换字体，仓库导出图才是发布视觉基准。
+- **常用信息随系统提示带上。** 本图采用 local MemFS v1，即本地的一种记忆目录配置。`system/` 下的 Markdown 文件，包括子目录里的文件，都属于核心记忆块，可以保存身份、偏好或索引。准备请求时，这些块默认编入 `system prompt`（系统提示），与基础指令一起交给模型。
+- **长文件需要时再读。** 外部文件和 Skills（工作方法）由工具按需读取。工具返回的正文放进 `conversation`（本次对话消息）里；系统提示中默认只放核心块，不会把所有参考文件都塞进去。图中的绿色箭头表示这条读取路径。
+- **过去的对话按远近取用。** 近期消息和较早消息的摘要可以放进当前对话消息；更早的细节通过 `recall`（历史检索）找回。这里保存的是对话记录，另有自己的查找办法。
+
+图右边的“本轮模型可见的上下文”，就是最终交给模型的系统提示和对话消息。箭头列出可能使用的路径，具体一次任务会读取哪些材料，要看实际调用。
+
+## 改了笔记之后，何时能用上
+
+图底部并排画了两种更新方式：
+
+1. 用 `memory()` 工具编辑记忆后，`commitMemoryWrite` 为修改形成 Git 提交。
+2. `memory worker`（专门整理记忆的执行者）合并改动时，先同步文件，再在支持这项能力时重新编译系统提示。
+
+阅读更新结果时，分别查看文件、Git 版本、同步和提示重建。两条路径各有自己的入口；已经准备好的当前回合提示，仍保留准备时的内容，等对应的更新步骤完成后再使用新内容。
+
+## 本图对应的配置
+
+源码固定于 [`letta-ai/letta-code@1f55d3dc`](https://github.com/letta-ai/letta-code/tree/1f55d3dc66e238d203757fae288bb53f3adc7cd3)，图依据源码和内置提示说明流程，尚未追踪实际运行。另一种 API-backed MemFS v2 配置把核心文件放在根目录，并以 `MEMORY.md` 组织索引；读那种配置时，要换用它的目录规则。[格式分支源码](https://github.com/letta-ai/letta-code/blob/1f55d3dc66e238d203757fae288bb53f3adc7cd3/src/agent/memory-format.ts#L6-L29)
+
+编辑 `build.py` 后运行 `python3 figures/letta-memory/build.py`，再用仓库说明的 Excalidraw renderer 从 `scene.excalidraw` 导出 `diagram.svg` 与 `preview.png`。交互式 MCP 画布可能更换字体，仓库导出图是发布视觉基准。

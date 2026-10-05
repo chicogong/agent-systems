@@ -2,8 +2,16 @@
 
 [返回 Codex 首篇](../../docs/systems/codex/README.md) · [图源](scene.excalidraw) · [原尺寸 SVG（手机可放大）](diagram.svg) · [PNG](preview.png)
 
-从左到右看第一行：模型提交 `exec_command(cmd)`；Handler 验证环境、参数与权限；exec policy 产出三种决策。`Forbidden` 在执行前终止，`NeedsApproval` 要求审核并可能被拒绝，`Skip` 不要求普通审批，但不等于无沙箱。允许继续的请求汇合到沙箱选择与第一次执行；这里的路径是 `ToolOrchestrator → UnifiedExecRuntime`。第一次执行成功直接返回输出或进程会话；若出现沙箱拒绝，还须检查具体重试条件。不满足条件时返回拒绝；满足条件时可能追加审批，再进行第二次尝试。图中虚线表示**有条件**而非必经路径。网络审批、平台后端和 `apply_patch` 拦截不在图内展开。
+让 Codex 运行项目测试时，模型先提出 `exec_command(cmd)`，主程序再检查并安排执行。沿第一行从左向右看：Handler 是接收请求的处理器，核对环境、参数和权限；exec policy 是执行策略，根据规则给出三种决定：
 
-本图只映射 [`openai/codex@c44deff7b1083e9660ac55d02122481f1cdf139b`](https://github.com/openai/codex/tree/c44deff7b1083e9660ac55d02122481f1cdf139b) 的 Rust core 局部源码。代码路径及停止条件详见[关键代码路径](../../docs/systems/codex/code-walkthrough.md)。它不是运行轨迹；不包含 `apply_patch` 拦截分支、平台沙箱实现和网络审批细节。
+- `Skip`：跳过普通询问，继续检查执行环境。
+- `NeedsApproval`：先请求批准，批准后才往下走；用户拒绝就停下。
+- `Forbidden`：禁止这次执行，直接返回。
 
-`NeedsApproval` 向下的出线仅表示审批获准；被拒绝时不会进入首次执行。三条决定分支各走独立折线，不表示互相转化。[审批结果处理](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L164-L221)
+图中的“决策闸门”就是这一步选择。三条折线表示三种不同决定；`NeedsApproval` 向下的“批准”箭头，只连接获准的请求。[审批结果处理](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L164-L221)
+
+允许继续的请求交给 `ToolOrchestrator`（执行编排器），选择沙箱，再由 `UnifiedExecRuntime` 尝试运行。沙箱限制执行时能访问的文件、网络等资源。图中“免普通审批 ≠ 免沙箱”提醒，跳过询问的请求仍要按配置选择访问范围。首次尝试成功，就返回命令输出或进程会话。
+
+**沙箱拒绝时，再看下方条件分支。** 程序检查原因和重试策略：条件不满足就返回拒绝；符合条件时，可能还要追加审批，之后才进行第二次尝试。虚线画的是这种有条件的重试，普通命令报错另行处理。
+
+本图依据 [`openai/codex@c44deff7b1083e9660ac55d02122481f1cdf139b`](https://github.com/openai/codex/tree/c44deff7b1083e9660ac55d02122481f1cdf139b) 的 Rust core 普通命令路径，尚未采集运行记录。`apply_patch` 专用处理、平台沙箱实现和网络审批细节留在图外；函数与停止条件可选读[关键代码路径](../../docs/systems/codex/code-walkthrough.md)。

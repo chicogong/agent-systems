@@ -1,9 +1,19 @@
 # mini-swe-agent 最小循环：文字版
 
-[返回剖面](../../docs/systems/mini-swe-agent/README.md) · [图源](scene.excalidraw) · [SVG](diagram.svg) · [PNG](preview.png)
+[返回讲解](../../docs/systems/mini-swe-agent/README.md) · [图源](scene.excalidraw) · [SVG](diagram.svg) · [PNG](preview.png)
 
-图从左侧消息账本读到中间的调用循环，再沿底部的“是 / 否”箭头判断去向。`messages` 是不断追加的账本，而非泛化的“模型—工具—观察”流水线。开头写入 system 和 user 任务。循环中，`query()` 读取当前账本，检查限制，向模型取得 assistant 消息并追加；`execute_actions()` 将动作交给环境，追加观察消息。格式错误可添加反馈并继续；提交或限额等中断异常携带消息。每轮调用 `save()`，然后检查最后消息：只有 `role="exit"` 才跳出循环并返回该消息的 `extra`。一般未捕获异常会重新抛出，不能算正常的 exit 返回。
+给助手一个代码任务，它读文件、执行命令，再根据输出继续。图左侧的 `messages[]` 是不断追加的消息清单：开头放入系统指导（system）和用户任务（user），随后加上模型回复（assistant）与命令结果（observation）。
 
-右侧列表说明不同的 `exit` 来源：本地环境命令输出首行的提交哨兵、查询前限制、达到阈值的连续格式错误。这些是可能的分支，不是必经顺序；图也不是运行轨迹。`mini` CLI 默认使用交互子类，这张图仅解释其基类循环，不覆盖确认模式。[源码与边界](../../docs/systems/mini-swe-agent/README.md)
+中间的两个函数串起一轮工作：`query()` 先检查限额，再把当前清单交给模型，并追加回复；`execute_actions()` 把回复里的动作交给执行环境，拿到结果后追加观察消息。下一轮模型就能看到上一轮做事的结果。
 
-固定官方源码版本：`SWE-agent/mini-swe-agent@04d809ceab9df28f9adaed044884180159172930`。
+每轮调用 `save()` 后，程序查看最后一条消息。角色为 `exit`（退出）时，沿“是”箭头结束，返回这条消息的 `extra` 数据；否则沿“否”箭头再工作一轮。图中“不是模型布尔值”的意思是，这里读的是消息的角色字段。要把记录写进文件，还需设置 `output_path`。
+
+右侧列出三种让清单追加 `exit` 的情况：
+
+- **`Submitted`：提交完成。** 本地命令输出首行的完成标记 `COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT` 被识别，且返回码为 0；检查时会忽略开头和行两端的空白。图里的“哨兵”就是这条约定的完成标记。
+- **`Limits / Time`：达到限制。** 请求模型前发现轮数、成本或已用时间达到限额。
+- **`RepeatedFormatError`：连续格式错误。** 程序先把格式错误反馈给模型；连续错误达到阈值时结束。
+
+这些是不同的结束原因。其他未处理异常会记录后重新抛给调用方，由外层程序处理。[源码与具体条件](../../docs/systems/mini-swe-agent/README.md)
+
+本图只讲基类 `DefaultAgent` 的循环。命令行（CLI）的 `mini` 默认用交互子类，确认模式在那一层处理。图依据固定官方源码 `SWE-agent/mini-swe-agent@04d809ceab9df28f9adaed044884180159172930`，尚未采集真实模型或命令的运行记录。

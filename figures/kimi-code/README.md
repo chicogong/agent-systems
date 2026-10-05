@@ -2,10 +2,18 @@
 
 [返回系统篇](../../docs/systems/kimi-code/README.md) · [可编辑图源](scene.excalidraw) · [SVG](diagram.svg) · [PNG](preview.png)
 
-本图只回答：**进行中的 turn 接到 steer 后，模型何时可能看到它？** 上半部从左到右：`steer(input)` 在有活动 turn 时，把新输入写入 `steerBuffer`，不在该调用里创建新 turn；下一个 `beforeStep` 把缓冲按序追加为 user message，之后 `executeLoopStep` 构建模型消息并发起该 step。蓝色与绿色实线表示这条源码可见的控制顺序，并不表示等待时间固定。[`steer` 与缓冲](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L130-L143) · [`beforeStep`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L595-L604) · [`executeLoopStep` 的次序](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/turn-step.ts#L64-L78)
+Agent 正在跑测试，你补充“先解释失败原因”。图讲的是这条新要求先在哪里等、何时交给模型。turn（回合）是一条输入展开的整段工作，step（步骤）是其中的一轮；steer 表示途中补充或纠正指令。
 
-下半部从左到右：若模型完成一步且没有 `tool_use`，`runTurn` 在结束前调用 `shouldContinueAfterStop`；该回调先刷新 steer 缓冲。有新输入则继续下一 step；没有则还要检查 goal outcome、`Stop` hook，之后才可能结束。紫、绿、红箭头均为控制分支；“无”不是必然直接结束。[`runTurn` 停止钩子](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L99-L128) · [Kimi Code 的优先序](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L611-L657)
+上半部从左向右，是忙时收下新要求的过程：
 
-图边界：取消、最大步数或异常都可能终止当前 turn；它没有描绘 CLI 输入路径、工具审批细节、会话持久化、goal 跨 turn 驱动或子 Agent。依据为固定提交的**静态源码阅读**，无运行轨迹。[上游固定版本](https://github.com/MoonshotAI/kimi-code/tree/75a894e9ad5e8d49509664b3daaa1bbc9bb39432) · [步数与中断](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L74-L128)
+1. `steer(input)` 发现回合正在运行，把新要求放进 `steerBuffer`（输入等待区），沿用当前回合。
+2. 下一步开始前，`beforeStep` 按收到的顺序取出这些输入，追加为用户消息。
+3. `executeLoopStep` 构造该步骤的模型消息，再发起请求。模型到这时才有机会依据新要求继续。
 
-图内为印刷可读性压短了两处提示：“缓冲不取消正在运行的 step”涵盖当前模型请求或工具；底部“仍可终止 turn”表示缓冲输入**不保证**一定进入一次后续模型请求。具体条件以上述正文和[代码导读](../../docs/systems/kimi-code/code-walkthrough.md)为准。
+图中“缓冲不取消正在运行的 step”说明，当前模型请求或工具仍按原步骤进行；新要求等下一步处理。工具什么时候返回，会影响这次等待多久。[收下输入](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L130-L143) · [取出等待输入](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L595-L604) · [准备模型请求](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/turn-step.ts#L64-L78)
+
+下半部是原本准备结束时的检查。模型一步结束、没有提出工具调用（非 `tool_use`）时，`runTurn` 先调用 `shouldContinueAfterStop`，再看是否收尾。这个回调先取出 steer 输入：有输入就继续下一步；没有输入，还会检查目标结果（goal outcome）和结束前回调 `Stop` hook，再决定继续或结束。图里“无”的箭头通向的就是这组后续检查。[结束前检查](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L99-L128) · [检查次序](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L611-L657)
+
+底部“仍可终止 turn”提醒：取消、最大步数或异常可能让回合先结束，等待区里的输入就可能没有机会交给下一次模型请求。收下输入和实际继续一步，要分别观察。[步数与中断](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L74-L128)
+
+本图依据[上游固定版本](https://github.com/MoonshotAI/kimi-code/tree/75a894e9ad5e8d49509664b3daaa1bbc9bb39432)的源码整理，未采集真实任务的完整运行记录。命令行输入入口、工具审批、会话保存、目标跨回合驱动和子 Agent 留在图外；想进一步定位函数，可选读[代码导读](../../docs/systems/kimi-code/code-walkthrough.md)。
