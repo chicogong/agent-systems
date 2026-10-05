@@ -24,7 +24,7 @@ Skill 文件提供的是指导。要新增工具或处理程序事件，需要 E
 
 Extension 是 TypeScript 或 JavaScript 代码模块。加载器用 `jiti` 导入模块，把 `ExtensionAPI` 交给默认导出的初始化函数；扩展通过这个接口注册工具、命令或事件处理函数。加载 Extension 时，Pi 会运行它的代码。[加载扩展](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/extensions/loader.ts#L487-L553) · [注册接口](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/extensions/loader.ts#L254-L294) · [官方文档](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/docs/extensions.md)
 
-想看一个短例子，可以打开[仓库自带的 hello.ts](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/examples/extensions/hello.ts#L1-L26)。先看初始化函数如何取得 API，再看它怎样定义工具名称、参数和执行结果。这样就能把图中的“增加工具”对应到几行实际代码。
+想看一个短例子，可以打开[仓库自带的 hello.ts](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/examples/extensions/hello.ts#L1-L26)。先看初始化函数如何取得 API，再看它怎样定义工具名称、参数和执行结果。这样就能把图中的“注册工具”对应到几行实际代码。
 
 ## Package 把它们一起交给用户
 

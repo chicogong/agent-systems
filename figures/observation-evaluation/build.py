@@ -48,8 +48,8 @@ label("run-title", "一次 Agent 运行", 81, 212, 185, 43, 27, "#244b61")
 label("run-sub", "输入 · 工具 · 结果", 81, 274, 185, 37, 22)
 for key, y, title, subtitle, stroke, fill in [
     ("log", 100, "日志", "事件与错误", "#3e7790", "#eaf5f7"),
-    ("trace", 240, "trace", "步骤与调用关联", "#4c7791", "#edf3fb"),
-    ("assert", 380, "断言结果", "仅检验写出的条件", "#9a7040", "#fff5e8"),
+    ("trace", 240, "调用链 trace", "把相关步骤连起来", "#4c7791", "#edf3fb"),
+    ("assert", 380, "断言检查", "检查预设条件", "#9a7040", "#fff5e8"),
 ]:
     box(key, 455, y, 272, 106, stroke, fill)
     label(f"{key}-title", title, 479, y + 12, 224, 39, 26, stroke)
@@ -66,7 +66,7 @@ label("multi-heading", "跨多次任务 · 看版本表现", 56, 563, 680, 38, 2
 box("sample", 58, 626, 228, 73, "#8b6b98", "#f2eaf5")
 label("sample-label", "固定任务集", 80, 639, 182, 42, 25, "#664b73")
 box("eval", 455, 615, 272, 91, "#8b6b98", "#f2eaf5")
-label("eval-title", "离线 eval", 479, 622, 224, 39, 26, "#664b73")
+label("eval-title", "批量评测 eval", 479, 622, 224, 39, 26, "#664b73")
 label("eval-sub", "逐例结果与汇总", 479, 664, 224, 30, 22)
 arrow("sample-eval", 286, 661, [(0, 0), (169, 0)], "#735a80")
 label("sample-eval-label", "汇总评分", 310, 626, 130, 27, 22, "#6d567a")
@@ -74,20 +74,20 @@ label("sample-eval-label", "汇总评分", 310, 626, 130, 27, 22, "#6d567a")
 box("human-band", 28, 758, 748, 160, "#dcebdc", "#f4faf3", 1)
 label("human-heading", "实际使用 · 找到盲点", 56, 772, 680, 38, 26, "#4a7158")
 box("experience", 58, 834, 228, 62, "#5b8767", "#e9f6e9")
-label("experience-label", "失败样例 / 体验", 76, 842, 194, 42, 23, "#3f654d")
+label("experience-label", "真实任务 / 体验", 76, 842, 194, 42, 23, "#3f654d")
 box("human", 455, 825, 272, 75, "#5b8767", "#e9f6e9")
 label("human-title", "人工反馈", 479, 830, 224, 37, 26, "#3f654d")
-label("human-sub", "语义与可接受性", 479, 864, 224, 29, 22)
+label("human-sub", "是否有用、好理解", 479, 864, 224, 29, 22)
 arrow("experience-human", 286, 866, [(0, 0), (169, 0)], "#53745d")
 label("experience-human-label", "复核", 342, 835, 75, 27, 22, "#4b6d55")
 
 box("conclusion", 904, 322, 392, 260, "#46657c", "#eaf2f5", 3)
-label("conclusion-title", "有范围的结论", 939, 350, 325, 50, 30, "#2d526a")
-label("conclusion-coverage", "版本 · 样本 · 环境 · 判据", 939, 423, 325, 37, 22)
+label("conclusion-title", "这次评测的结论", 939, 350, 325, 50, 30, "#2d526a")
+label("conclusion-coverage", "版本 · 样本 · 环境 · 标准", 939, 423, 325, 37, 22)
 label("conclusion-limit", "写明未覆盖项与失败例", 939, 478, 325, 37, 22, "#485c6c")
 box("not-proven", 904, 626, 392, 148, "#a1685c", "#fff2ed")
-label("not-proven-title", "不能据此推出", 939, 642, 325, 43, 26, "#925346")
-label("not-proven-body", "全面正确 · 产品可用 · 安全", 939, 704, 325, 36, 22, "#6c4945")
+label("not-proven-title", "还需进一步检查", 939, 642, 325, 43, 26, "#925346")
+label("not-proven-body", "更多场景 · 使用效果 · 安全", 939, 704, 325, 36, 22, "#6c4945")
 
 # Separate incoming channels avoid implying that one form of evidence causes another.
 for key, sy, ey, relation, ly in [

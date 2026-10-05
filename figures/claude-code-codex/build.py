@@ -39,21 +39,21 @@ def main() -> None:
     d.box("codex-gate", 336, 517, 330, 138, BLUE, "#cfe1ff")
     d.box("codex-result", 730, 534, 270, 104, GREEN, "#e0f5e9")
 
-    d.text("title", "同一测试命令，谁让它执行？", 28, 24, 990, 36, INK, 8)
-    d.text("subtitle", "示意任务：修订单幂等 Bug；两行均非实测轨迹。", 30, 80, 982, 23, MUTED, 8)
-    d.text("claude-label", "Claude Code · 官方文档行为", 48, 147, 925, 25, VIOLET, 8)
-    d.text("codex-label", "Codex · 固定源码普通命令路径", 48, 467, 925, 25, BLUE, 8)
+    d.text("title", "一条测试命令：检查许可，运行并核对", 28, 24, 990, 36, INK, 8)
+    d.text("subtitle", "示例：修复重复订单后，运行相关测试。", 30, 80, 982, 23, MUTED, 8)
+    d.text("claude-label", "Claude Code · 权限规则与可选 Bash 沙箱", 48, 147, 925, 25, VIOLET, 8)
+    d.text("codex-label", "Codex · 先决定许可，再选执行沙箱", 48, 467, 925, 25, BLUE, 8)
 
     d.text("claude-proposal-text", "模型提出\n运行测试", 72, 233, 185, 26, INK, 8)
-    d.text("claude-gate-text", "工具权限规则 / 模式\n可选 Bash 沙箱", 357, 221, 291, 25, INK, 8)
-    d.text("claude-result-text", "获准后执行\n返回结果并核对", 752, 233, 225, 25, INK, 8)
+    d.text("claude-gate-text", "检查权限规则／模式\n按配置使用 Bash 沙箱", 357, 221, 291, 25, INK, 8)
+    d.text("claude-result-text", "运行后返回输出\n核对测试结果", 752, 233, 225, 25, INK, 8)
 
     d.text("codex-proposal-text", "模型提出\nexec_command", 72, 553, 185, 24, INK, 8)
-    d.text("codex-gate-text", "Handler → 策略\n审批 → 首次沙箱", 357, 541, 291, 25, INK, 8)
-    d.text("codex-result-text", "允许后执行\n返回结果并核对", 752, 553, 225, 25, INK, 8)
+    d.text("codex-gate-text", "核对参数与策略\n审批决定 → 选择沙箱", 357, 541, 291, 25, INK, 8)
+    d.text("codex-result-text", "运行后返回输出\n核对测试结果", 752, 553, 225, 25, INK, 8)
 
-    d.text("claude-blocked-text", "拒绝 / 阻断 → 记录未完成", 558, 357, 420, 22, RED, 8)
-    d.text("codex-blocked-text", "拒绝 / 阻断 → 记录未完成", 558, 677, 420, 22, RED, 8)
+    d.text("claude-blocked-text", "许可拒绝／沙箱阻断 → 说明原因", 558, 357, 420, 22, RED, 8)
+    d.text("codex-blocked-text", "许可拒绝／沙箱阻断 → 说明原因", 558, 677, 420, 22, RED, 8)
 
     for element in d.elements:
         if element["type"] == "arrow" and element["strokeStyle"] != "dashed":

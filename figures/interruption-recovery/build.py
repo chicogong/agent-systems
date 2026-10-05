@@ -31,14 +31,14 @@ def main() -> None:
     boundary = d._base("effect-boundary", "line", 590, 26, 0, 170)
     boundary.update(points=[[0, 0], [0, 170]], strokeColor=PURPLE, strokeWidth=2, strokeStyle="dashed", roughness=1)
     d.elements.append(boundary)
-    label(d, "boundary-label", "副作用边界", 530, 0, 190, 21, PURPLE)
+    label(d, "boundary-label", "请求进入外部服务", 530, 0, 190, 21, PURPLE)
 
     node(d, "request", 90, 62, 285, 91, BLUE, "#a5d8ff")
-    label(d, "request-text", "用业务键 K\n发送创建请求", 113, 76, 250, 23)
+    label(d, "request-text", "携带业务标识 K\n发送创建请求", 113, 76, 250, 23)
     d.arrow("send", [(375, 108), (735, 108)], PURPLE)
     label(d, "send-label", "发送", 490, 70, 82, 21, PURPLE)
     node(d, "external-effect", 735, 62, 287, 91, PURPLE, "#d0bfff")
-    label(d, "external-text", "可能已创建\n响应未抵达", 759, 76, 245, 23)
+    label(d, "external-text", "外部可能已创建\n本地尚未收到响应", 759, 76, 245, 23)
 
     d.arrow("effect-to-unknown", [(879, 153), (879, 257), (702, 257)], ORANGE)
     ellipse = d._base("unknown", "ellipse", 420, 203, 282, 108)
@@ -49,24 +49,24 @@ def main() -> None:
 
     d.arrow("unknown-to-query", [(561, 311), (561, 352)], ORANGE)
     node(d, "reconcile", 430, 352, 262, 76, ORANGE, "#fff3bf")
-    label(d, "reconcile-text", "按 K / 请求 ID 对账", 448, 374, 236, 22)
+    label(d, "reconcile-text", "查询原操作\n按 K / 请求 ID", 448, 362, 236, 22)
 
     # A callout, not a process node: restoring state cannot undo the effect.
-    label(d, "checkpoint-note", "checkpoint 只存图状态\n外部动作仍需对账", 60, 344, 315, 21, MUTED)
+    label(d, "checkpoint-note", "检查点 checkpoint\n保存图状态；外部需查询", 60, 344, 315, 21, MUTED)
 
     d.arrow("confirmed-created", [(470, 428), (180, 526)], GREEN)
     d.arrow("confirmed-absent", [(561, 428), (561, 526)], BLUE)
     d.arrow("still-unknown", [(652, 428), (948, 526)], ORANGE)
     label(d, "created-condition", "已创建", 250, 448, 125, 21, GREEN)
-    label(d, "absent-condition", "未创建\n且可重试", 585, 450, 112, 21, BLUE)
+    label(d, "absent-condition", "已确认未创建\n且可安全重试", 585, 450, 150, 21, BLUE)
     label(d, "unknown-condition", "仍未知", 811, 456, 120, 21, ORANGE)
 
     node(d, "existing", 48, 526, 267, 96, GREEN, "#c3fae8")
     label(d, "existing-text", "复用已有工单 ID\n继续，不再创建", 72, 541, 235, 21)
     node(d, "retry", 427, 526, 267, 96, BLUE, "#a5d8ff")
-    label(d, "retry-text", "同 K 重试\n最多 N 次", 451, 541, 235, 22)
+    label(d, "retry-text", "按原 K 重发\n最多 N 次", 451, 541, 235, 22)
     node(d, "human", 831, 526, 268, 96, ORANGE, "#ffd8a8")
-    label(d, "human-text", "暂停，人工对账\n决定继续 / 补偿", 854, 541, 237, 21)
+    label(d, "human-text", "暂停，交给人核对\n决定继续 / 补偿", 854, 541, 237, 21)
 
     # A bounded loop visibly returns to the same request. Exhaustion exits.
     d.arrow("retry-loop", [(561, 622), (561, 674), (20, 674), (20, 107), (90, 107)], BLUE)

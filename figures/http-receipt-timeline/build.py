@@ -37,42 +37,42 @@ def lifeline(scene, name, x):
 
 def main():
     d = Scene()
-    label(d, "title", "回执超时后，用同一个 ID 找回记录", 35, 26, 1000, 34)
-    label(d, "reading", "时间向下 · 一次请求、一次查询，不重复执行", 35, 76, 1000, 25, MUTED)
+    label(d, "title", "响应超时后，按原编号找回记录", 35, 26, 1000, 34)
+    label(d, "reading", "时间向下 · 登记一次，随后查询原记录", 35, 76, 1000, 25, MUTED)
     card(d, "client", "客户端", "", 40, 119, 225, 54, BLUE, "#e7f1ff")
     card(d, "transport", "HTTP 传输", "", 412, 119, 225, 54, BLUE, "#e7f1ff")
     card(d, "service", "服务", "", 786, 119, 225, 54, GREEN, "#e8f6ed")
     for name, x in (("client-life", 152), ("transport-life", 524), ("service-life", 898)):
         lifeline(d, name, x)
 
-    message(d, "send", [(152, 225), (524, 225)], BLUE,
-            "① POST /operations", 168, 186, 350, font=8)
-    message(d, "forward", [(524, 225), (898, 225)], BLUE,
-            "operation_id + payload", 554, 186, 340, font=8)
+    message(d, "send", [(152, 250), (524, 250)], BLUE,
+            "① 登记 POST /operations", 168, 186, 350, font=8)
+    message(d, "forward", [(524, 250), (898, 250)], BLUE,
+            "编号与内容\noperation_id + payload", 554, 180, 340, font=8)
     card(d, "registered", "② 先登记操作", "ID → 原内容", 762, 266, 272, 96, GREEN, "#c7f0d7")
 
     # This is server-side waiting before a response, not a delivered message.
     d.box("wait-bar", 886, 368, 24, 417, ORANGE, "#ffddb4")
     d.elements[-1]["roughness"] = 1
-    label(d, "delay", "③ 原 POST\n响应前等待", 710, 396, 174, 24, ORANGE)
+    label(d, "delay", "③ 登记后\n等待发送响应", 710, 396, 174, 24, ORANGE)
     label(d, "release", "清理时才放行", 710, 754, 174, 23, ORANGE)
-    card(d, "timeout", "④ read timeout", "超时配置 0.15 秒\n关原连接 ≠ 操作没发生", 28, 380, 335, 133, ORANGE, "#fff2dc")
+    card(d, "timeout", "④ 读取响应超时", "等待响应 0.15 秒\n原连接关闭，记录仍在", 28, 380, 335, 133, ORANGE, "#fff2dc")
 
     message(d, "query", [(152, 562), (524, 562)], BLUE,
-            "⑤ GET /operations/", 168, 527, 350, font=8)
+            "⑤ 查询 GET /operations/", 168, 527, 350, font=8)
     message(d, "query-forward", [(524, 562), (898, 562)], BLUE,
             "<原 ID 经 URL 编码>", 554, 527, 340, font=8)
     message(d, "found", [(898, 635), (524, 635)], GREEN,
-            "⑥ 200 · accepted", 552, 600, 326, font=8)
+            "⑥ 200 · 已登记 accepted", 552, 600, 326, font=8)
     message(d, "found-back", [(524, 635), (152, 635)], GREEN,
-            "原 ID + payload", 194, 600, 320, font=8)
-    card(d, "reconciled", "⑦ 三项匹配后确认", "状态、原 ID、内容一致", 28, 671, 470, 126, GREEN, "#c7f0d7")
-    label(d, "host-confirmed", "confirmed_lookup", 44, 752, 241, 23, GREEN, 8)
-    label(d, "no-repost", "不再 POST", 294, 752, 183, 23, GREEN)
+            "原编号 + 内容 payload", 194, 600, 320, font=8)
+    card(d, "reconciled", "⑦ 核对状态、编号和内容", "HTTP/JSON 状态 · 原 ID · 内容", 28, 671, 470, 126, GREEN, "#c7f0d7")
+    label(d, "host-confirmed", "查询确认 confirmed_lookup", 44, 752, 330, 23, GREEN, 8)
+    label(d, "no-repost", "不重发", 388, 752, 92, 23, GREEN)
 
-    card(d, "unknown", "旁注：若查询是 404", "不能证明没发生，也不能证明旧请求不会迟到。\n无法确认 → unknown_stop；不换 ID 盲目重试。",
+    card(d, "unknown", "旁注：记录暂时查不到（404）", "查询可能有延迟，原请求也可能迟到。\n保留原编号，暂停重发：unknown_stop。",
          35, 805, 999, 128, ORANGE, "#fff2dc")
-    label(d, "boundary", "本图只画“登记后超时 → 查询找回”的恢复路径。", 35, 951, 1000, 23, MUTED)
+    label(d, "boundary", "本图按“先登记 → 响应超时 → 查询原记录”绘制。", 35, 951, 1000, 23, MUTED)
     d.save(Path(__file__).with_name("scene.excalidraw"))
 
 

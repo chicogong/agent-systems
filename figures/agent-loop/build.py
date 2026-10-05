@@ -37,24 +37,24 @@ def main() -> None:
         d.arrow(key, points, color)
         if key in {"check-failed-correctable", "feedback", "check-cannot-continue"}:
             d.elements[-1]["strokeStyle"] = "dashed"
-    d.text("title", "Agent 如何把目标变成可靠结果", 28, 28, 960, 37, INK, 6)
-    d.text("loop-label", "Agent 运行闭环", 370, 190, 315, 23, PURPLE)
+    d.text("title", "Agent 一步步完成任务", 28, 28, 960, 37, INK, 6)
+    d.text("loop-label", "选择、执行、观察", 370, 190, 315, 23, PURPLE)
     for key, x, y, w, title, detail, size in [
         ("task", 46, 274, 140, "用户任务", "目标 · 权限\n完成标准", 25),
         ("decision", 284, 289, 120, "模型决策", "选择下一步", 23),
-        ("tool", 452, 289, 120, "工具执行", "受控读写", 23),
+        ("tool", 452, 289, 120, "工具执行", "按权限读写", 23),
         ("observation", 620, 289, 120, "观察结果", "输出 · 错误", 23),
-        ("check", 838, 224, 140, "验证", "测试 · 证据", 24),
-        ("deliver", 838, 404, 140, "交付", "可复现结果", 24),
+        ("check", 838, 224, 140, "核对结果", "来源 · 测试", 24),
+        ("deliver", 838, 404, 140, "交付", "结果与依据", 24),
         ("stop", 838, 608, 140, "停止并说明", "失败 / 未完成", 22),
     ]:
         d.text(key + "-title", title, x, y, w, size)
         d.text(key + "-detail", detail, x, y + (38 if key == "stop" else 48), w, 18, MUTED)
     d.text("feedback-label", "未解决 → 继续", 440, 465, 208, 18, PURPLE)
     d.text("verified-label", "通过", 918, 341, 64, 18, BLUE)
-    d.text("failed-label", "未通过且可修正 → 再试", 500, 127, 336, 18, "#b66e0a")
+    d.text("failed-label", "未通过、还能修正 → 再试", 500, 127, 336, 18, "#b66e0a")
     d.text("cannot-continue-label", "无法继续", 830, 549, 155, 18, RED)
-    d.text("stop-example", "预算耗尽、权限不允许或错误无法修正时，\n应说明未完成的范围，而不是声称成功。", 268, 590, 488, 18, MUTED)
+    d.text("stop-example", "任一步用完预算、缺少许可或无法修正时，\n都可停止，说明原因和没做完的部分。", 268, 590, 488, 18, MUTED)
     for element in d.elements:
         if element["type"] in {"rectangle", "arrow"}:
             element["roughness"] = 1

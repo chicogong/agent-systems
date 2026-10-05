@@ -30,22 +30,22 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "text": "Mem0：多信号排序，不等于三路召回并集",
+      "text": "Mem0：先按含义找记忆，再加分排序",
       "fontSize": 34,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "Mem0：多信号排序，不等于三路召回并集",
+      "originalText": "Mem0：先按含义找记忆，再加分排序",
       "autoResize": false,
       "lineHeight": 1.25
     },
     {
       "id": "q-semantic",
       "type": "arrow",
-      "x": 245,
+      "x": 268,
       "y": 400,
-      "width": 165,
+      "width": 132,
       "height": -163,
       "angle": 0,
       "strokeColor": "#4a9eed",
@@ -73,15 +73,15 @@
           0
         ],
         [
-          80,
+          57,
           0
         ],
         [
-          80,
+          57,
           -163
         ],
         [
-          165,
+          132,
           -163
         ]
       ],
@@ -95,9 +95,9 @@
     {
       "id": "q-keyword",
       "type": "arrow",
-      "x": 263,
+      "x": 278,
       "y": 425,
-      "width": 147,
+      "width": 122,
       "height": 0,
       "angle": 0,
       "strokeColor": "#f59e0b",
@@ -125,7 +125,7 @@
           0
         ],
         [
-          147,
+          122,
           0
         ]
       ],
@@ -139,9 +139,9 @@
     {
       "id": "q-entity",
       "type": "arrow",
-      "x": 245,
+      "x": 268,
       "y": 450,
-      "width": 165,
+      "width": 132,
       "height": 167,
       "angle": 0,
       "strokeColor": "#16a34a",
@@ -169,15 +169,15 @@
           0
         ],
         [
-          100,
+          77,
           0
         ],
         [
-          100,
+          77,
           167
         ],
         [
-          165,
+          132,
           167
         ]
       ],
@@ -191,9 +191,9 @@
     {
       "id": "semantic-candidates",
       "type": "arrow",
-      "x": 659,
+      "x": 670,
       "y": 237,
-      "width": 96,
+      "width": 85,
       "height": 0,
       "angle": 0,
       "strokeColor": "#4a9eed",
@@ -221,7 +221,7 @@
           0
         ],
         [
-          96,
+          85,
           0
         ]
       ],
@@ -283,9 +283,9 @@
     {
       "id": "keyword-rank",
       "type": "arrow",
-      "x": 659,
+      "x": 670,
       "y": 425,
-      "width": 355,
+      "width": 344,
       "height": 0,
       "angle": 0,
       "strokeColor": "#f59e0b",
@@ -313,7 +313,7 @@
           0
         ],
         [
-          355,
+          344,
           0
         ]
       ],
@@ -327,9 +327,9 @@
     {
       "id": "entity-rank",
       "type": "arrow",
-      "x": 659,
+      "x": 670,
       "y": 617,
-      "width": 355,
+      "width": 344,
       "height": -147,
       "angle": 0,
       "strokeColor": "#16a34a",
@@ -357,15 +357,15 @@
           0
         ],
         [
-          296,
+          285,
           0
         ],
         [
-          296,
+          285,
           -147
         ],
         [
-          355,
+          344,
           -147
         ]
       ],
@@ -423,10 +423,10 @@
     {
       "id": "query",
       "type": "ellipse",
-      "x": 53,
-      "y": 376,
-      "width": 210,
-      "height": 100,
+      "x": 38,
+      "y": 361,
+      "width": 240,
+      "height": 130,
       "angle": 0,
       "strokeColor": "#14213d",
       "backgroundColor": "#f1f5f9",
@@ -451,9 +451,9 @@
     {
       "id": "query-label",
       "type": "text",
-      "x": 92,
+      "x": 53,
       "y": 391,
-      "width": 155,
+      "width": 210,
       "height": 70,
       "angle": 0,
       "strokeColor": "#14213d",
@@ -475,23 +475,23 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "text": "query\n+ filters",
+      "text": "查询 query\n范围 filters",
       "fontSize": 27,
       "fontFamily": 8,
-      "textAlign": "left",
+      "textAlign": "center",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "query\n+ filters",
+      "originalText": "查询 query\n范围 filters",
       "autoResize": false,
       "lineHeight": 1.25
     },
     {
       "id": "semantic",
       "type": "ellipse",
-      "x": 410,
-      "y": 189,
-      "width": 249,
-      "height": 96,
+      "x": 400,
+      "y": 172,
+      "width": 270,
+      "height": 130,
       "angle": 0,
       "strokeColor": "#4a9eed",
       "backgroundColor": "#a5d8ff",
@@ -516,10 +516,10 @@
     {
       "id": "semantic-label",
       "type": "text",
-      "x": 435,
-      "y": 212,
-      "width": 220,
-      "height": 35,
+      "x": 415,
+      "y": 202,
+      "width": 240,
+      "height": 70,
       "angle": 0,
       "strokeColor": "#2563a6",
       "backgroundColor": "transparent",
@@ -540,23 +540,23 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "text": "语义向量检索",
+      "text": "按含义查找\n语义向量检索",
       "fontSize": 27,
       "fontFamily": 8,
-      "textAlign": "left",
+      "textAlign": "center",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "语义向量检索",
+      "originalText": "按含义查找\n语义向量检索",
       "autoResize": false,
       "lineHeight": 1.25
     },
     {
       "id": "keyword",
       "type": "ellipse",
-      "x": 410,
-      "y": 377,
-      "width": 249,
-      "height": 96,
+      "x": 400,
+      "y": 360,
+      "width": 270,
+      "height": 130,
       "angle": 0,
       "strokeColor": "#f59e0b",
       "backgroundColor": "#fff3bf",
@@ -581,9 +581,9 @@
     {
       "id": "keyword-label",
       "type": "text",
-      "x": 437,
-      "y": 387,
-      "width": 220,
+      "x": 415,
+      "y": 390,
+      "width": 240,
       "height": 70,
       "angle": 0,
       "strokeColor": "#9a6700",
@@ -605,23 +605,23 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "text": "关键词 / BM25\n可用时",
+      "text": "关键词 BM25\n可用时加分",
       "fontSize": 27,
       "fontFamily": 8,
-      "textAlign": "left",
+      "textAlign": "center",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "关键词 / BM25\n可用时",
+      "originalText": "关键词 BM25\n可用时加分",
       "autoResize": false,
       "lineHeight": 1.25
     },
     {
       "id": "entity",
       "type": "ellipse",
-      "x": 410,
-      "y": 569,
-      "width": 249,
-      "height": 96,
+      "x": 400,
+      "y": 552,
+      "width": 270,
+      "height": 130,
       "angle": 0,
       "strokeColor": "#16a34a",
       "backgroundColor": "#c3fae8",
@@ -646,9 +646,9 @@
     {
       "id": "entity-label",
       "type": "text",
-      "x": 470,
-      "y": 579,
-      "width": 180,
+      "x": 415,
+      "y": 582,
+      "width": 240,
       "height": 70,
       "angle": 0,
       "strokeColor": "#166534",
@@ -670,13 +670,13 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "text": "实体关联\n命中时",
+      "text": "找到相关实体\n命中时加分",
       "fontSize": 27,
       "fontFamily": 8,
-      "textAlign": "left",
+      "textAlign": "center",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "实体关联\n命中时",
+      "originalText": "找到相关实体\n命中时加分",
       "autoResize": false,
       "lineHeight": 1.25
     },
@@ -737,13 +737,13 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "text": "候选集合",
+      "text": "入围记忆",
       "fontSize": 27,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "候选集合",
+      "originalText": "入围记忆",
       "autoResize": false,
       "lineHeight": 1.25
     },
@@ -774,13 +774,13 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "text": "仅语义结果入池",
+      "text": "只取语义结果",
       "fontSize": 27,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "仅语义结果入池",
+      "originalText": "只取语义结果",
       "autoResize": false,
       "lineHeight": 1.25
     },
@@ -878,13 +878,13 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "text": "先过语义阈值\n再叠加可用加分",
+      "text": "先过语义阈值\n再加分并排序",
       "fontSize": 27,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "先过语义阈值\n再叠加可用加分",
+      "originalText": "先过语义阈值\n再加分并排序",
       "autoResize": false,
       "lineHeight": 1.25
     },
@@ -945,13 +945,13 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "text": "排序后 top_k\n格式化结果",
+      "text": "取前 top_k 条\n整理结果格式",
       "fontSize": 27,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "排序后 top_k\n格式化结果",
+      "originalText": "取前 top_k 条\n整理结果格式",
       "autoResize": false,
       "lineHeight": 1.25
     }

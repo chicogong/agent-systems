@@ -23,33 +23,33 @@ def card(d, name, title, detail, x, y, w, h, stroke, fill):
 
 def main():
     d = Scene()
-    d.text("title", "MiMo Code：先写状态，再换窗口", 36, 25, 860, 35, INK, 8)
-    d.text("subtitle", "写入已启用：checkpoint 由阈值触发；重建由溢出触发。", 38, 78, 850, 23, MUTED, 8)
+    d.text("title", "MiMo Code：先记进度，再重建输入", 36, 25, 860, 35, INK, 8)
+    d.text("subtitle", "写入已启用：跨阈值记笔记，溢出时重建输入", 38, 78, 850, 23, MUTED, 8)
 
     d.box("write-stage", 30, 142, 890, 284, "#a7c9f4", "#f4f8ff")
-    d.text("write-heading", "① 提前写入 · 主 Agent 继续工作", 54, 158, 810, 28, BLUE, 8)
-    card(d, "threshold", "跨阈值", "已完成回复的 token", 54, 235, 246, 118, BLUE, "#ffffff")
-    card(d, "writer", "独立 writer", "后台 child session", 352, 235, 246, 118, PURPLE, "#ffffff")
-    card(d, "file", "结构化文件", "成功 → watermark", 650, 235, 246, 118, PURPLE, "#ffffff")
+    d.text("write-heading", "① 提前记笔记 · 主 Agent 继续工作", 54, 158, 810, 28, BLUE, 8)
+    card(d, "threshold", "用量跨过阈值", "已完成回复 token", 54, 235, 246, 130, BLUE, "#ffffff")
+    card(d, "writer", "后台整理助手", "writer 子会话", 352, 235, 246, 130, PURPLE, "#ffffff")
+    card(d, "file", "交接笔记", "成功后更新\n位置 watermark", 650, 235, 246, 130, PURPLE, "#ffffff")
     d.arrow("trigger", [(300, 294), (352, 294)], BLUE)
     d.arrow("persist", [(598, 294), (650, 294)], PURPLE)
-    d.text("file-foot", "checkpoint.md；必要时更新项目 MEMORY.md", 54, 374, 800, 23, MUTED, 8)
+    d.text("file-foot", "checkpoint.md；需要时更新项目 MEMORY.md", 54, 374, 800, 23, MUTED, 8)
 
     d.box("rebuild-stage", 30, 456, 890, 448, "#d5c6a5", "#fffaf2")
-    d.text("rebuild-heading", "② 溢出时 · 检查可用 checkpoint", 54, 472, 810, 28, ORANGE, 8)
+    d.text("rebuild-heading", "② 输入溢出 · 先找可用笔记", 54, 472, 810, 28, ORANGE, 8)
     d.box("overflow", 285, 546, 380, 80, BLUE, "#ffffff")
-    d.text("overflow-text", "主 Agent 上下文溢出", 308, 565, 332, 27, INK, 8)
+    d.text("overflow-text", "主 Agent 输入装不下", 308, 565, 332, 27, INK, 8)
 
     d.arrow("decision-stem", [(475, 626), (475, 669)], ORANGE)
     d.arrow("success-edge", [(475, 669), (250, 669), (250, 707)], GREEN)
     d.arrow("fallback-edge", [(475, 669), (700, 669), (700, 707)], ORANGE)
-    card(d, "success", "已有可用状态", "重建边界 → 继续", 54, 707, 390, 124, GREEN, "#eff9f2")
-    card(d, "fallback", "没有可用状态", "现场启动 / 等待 writer", 506, 707, 390, 124, ORANGE, "#fff4e6")
+    card(d, "success", "有可用交接笔记", "笔记 + 新消息 → 继续", 54, 707, 390, 124, GREEN, "#eff9f2")
+    card(d, "fallback", "暂时没有可用笔记", "启动 / 限时等待 writer", 506, 707, 390, 124, ORANGE, "#fff4e6")
     d.arrow("onsite-writer-success", [(506, 798), (444, 798)], GREEN)
     d.text("onsite-writer-success-label", "成功", 450, 761, 52, 23, GREEN, 8)
-    d.text("fallback-foot", "writer 失败 / 等待超时", 506, 844, 390, 23, ORANGE, 8)
-    d.text("fallback-foot2", "→ compaction 边界", 506, 872, 390, 23, ORANGE, 8)
-    d.text("disabled-foot", "禁用 checkpoint / memory write：不走上述重建，直接退化。", 38, 932, 878, 23, MUTED, 8)
+    d.text("fallback-foot", "整理失败 / 等待超时", 506, 844, 390, 23, ORANGE, 8)
+    d.text("fallback-foot2", "→ 备用整理 compaction", 506, 872, 390, 23, ORANGE, 8)
+    d.text("disabled-foot", "关闭 checkpoint 或 memory write：跳过笔记重建，走备用整理。", 38, 932, 878, 23, MUTED, 8)
 
     for element in d.elements:
         if element["type"] == "rectangle":

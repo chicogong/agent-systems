@@ -2,14 +2,14 @@
 
 [返回对照正文](../../docs/comparisons/loop-and-stop.md) · [图源](scene.excalidraw) · [SVG](diagram.svg) · [PNG](preview.png)
 
-按行读这张图，每行对应一个项目。工具结果回来后，程序根据新输入和停止条件，安排继续还是结束。图里的“控制闸口”就是作这个判断的地方。
+按行读这张图，每行对应一个项目。工具结果回来后，程序根据新输入和停止条件，安排继续还是结束。中间一列写结果送到哪里，右边一列写各系统接着做、等待或停止的条件。
 
 1. **Pi：看轮间输入和结束条件。** 工具结果（tool result）进入 `runLoop` 的消息。中途调整方向的 steering 在轮间处理，后续消息 follow-up 等原本准备结束时处理；`finishTurn=end` 可优先结束。
 2. **mini-SWE-agent：看最后一条消息。** 执行环境的结果进入 `messages`。`DefaultAgent.run()` 保存本轮后查看末条消息：角色为 `exit` 时，返回其中的 `extra`；其他情况继续循环。
 3. **OpenCode：先记工具状态，再看会话判断。** 调用结果写入 `ToolPart.completed/error`。随后 `SessionProcessor.process()` 返回 `continue`（继续）、`stop`（停止）或 `compact`（压缩），交给外层循环处理。压缩时先创建压缩任务，再处理后续步骤。
 4. **Kimi Code：在步骤之间处理新输入。** 一批工具的 `tool.result` 事件收齐后，`tool_use` 让 `runTurn()` 进入下一步（step）。正在工作时收到的 steer 先暂存，到步骤间再更新输入；没有继续请求、收到取消信号或达到上限时，可结束本回合（turn）。
 
-OpenCode 图中的“流内 retry”另指模型流出错后按策略等待再试。它发生在处理器内部，和上述三个返回值分开看。一个工具调用变成 `error` 后，会话是继续、停止还是压缩，要看会话自己的判断条件。
+OpenCode 图中的 `retry` 另指模型流出错后按策略等待再试。它发生在处理器内部，和上述三个返回值分开看。一个工具调用变成 `error` 后，会话是继续、停止还是压缩，要看会话自己的判断条件。
 
 ## 对照范围与源码
 

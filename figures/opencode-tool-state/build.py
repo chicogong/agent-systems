@@ -49,22 +49,26 @@ def build() -> None:
     d.box("error", 392, 509, 276, 110, red, "#ffe3e3")
 
     # Short labels stay in the image; event details and edge cases are in README.
-    d.text("title", "一次工具调用的两层状态", 26, 22, 678, 31, ink, 8)
-    d.text("panel-title", "ToolPart · 同一个 callID", 43, 97, 580, 24, "#2563a6", 8)
-    d.text("event-input", "tool-input-*", 46, 160, 180, 23, "#2563a6", 8)
-    d.text("event-call", "tool-call", 395, 277, 155, 23, "#9a6700", 8)
-    d.text("event-success", "成功结果", 92, 461, 176, 23, "#166534", 8)
-    d.text("event-failure", "失败结果", 507, 424, 140, 23, "#b42332", 8)
-    d.text("pending-cleanup-label", "清理未收束的\npending", 516, 239, 161, 23, "#b42332", 8)
+    d.text("title", "OpenCode：工具进度与会话状态", 26, 22, 678, 31, ink, 8)
+    d.text("panel-title", "一次调用的记录 · ToolPart / callID", 43, 97, 580, 24, "#2563a6", 8)
+    d.text("event-input", "接收参数\ntool-input-*", 46, 144, 180, 20, "#2563a6", 8)
+    d.text("event-call", "完整调用到达\ntool-call", 395, 261, 155, 20, "#9a6700", 8)
+    d.text("event-success", "收到成功结果", 92, 461, 176, 23, "#166534", 8)
+    d.text("event-failure", "工具报错", 509, 451, 154, 19, "#b42332", 8)
+    d.text("pending-cleanup-label", "收尾清理\npending\nrunning", 565, 267, 110, 20, "#b42332", 8, align="center")
 
-    d.text("pending-label", "pending\n输入未完整", 253, 174, 222, 27, ink, 8)
-    d.text("running-label", "running\n等待结果", 253, 335, 222, 27, ink, 8)
-    d.text("completed-label", "completed\n输出 · 元数据", 72, 526, 245, 26, ink, 8)
-    d.text("error-label", "error\n错误 · 结束时间", 412, 526, 244, 26, ink, 8)
+    d.text("pending-label", "接收工具输入\npending", 253, 174, 222, 27, ink, 8)
+    d.text("running-label", "等执行结果\nrunning", 253, 335, 222, 27, ink, 8)
+    d.text("completed-label", "记录成功输出\ncompleted", 72, 526, 245, 26, ink, 8)
+    d.text("error-label", "记录错误／中断\nerror", 412, 526, 244, 26, ink, 8)
 
-    d.text("session-title", "SessionStatus · 会话层", 44, 696, 600, 24, muted, 8)
-    d.text("session-states", "busy  /  retry  /  idle", 44, 744, 624, 27, ink, 8)
-    d.text("session-retry", "retry：可重试的模型流错误，且未超限", 44, 790, 640, 23, muted, 8)
+    d.text("session-title", "整个会话的状态 · SessionStatus", 44, 696, 600, 24, muted, 8)
+    d.text("session-states", "忙碌 busy  /  重试 retry  /  空闲 idle", 44, 744, 624, 27, ink, 8)
+    d.text("session-retry", "模型回复流出错，策略允许且未超限 → retry", 44, 790, 640, 23, muted, 8)
+
+    # Append the second cleanup branch last to preserve existing element seeds.
+    d.arrow("running-cleanup-to-error", [(500, 367), (708, 367), (708, 587), (668, 587)], red)
+    d.elements[-1]["strokeStyle"] = "dashed"
 
     for element in d.elements:
         if element["type"] in {"rectangle", "arrow", "ellipse"}:

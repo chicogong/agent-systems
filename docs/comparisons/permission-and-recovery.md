@@ -6,11 +6,11 @@
 
 > **范围（2026-09-24 核对）。** 对照 Codex 普通 `exec_command`、OpenHands SDK 的本地会话、OpenCode 的 `session` 工具状态，以及 LangGraph Python `Pregel` 的 checkpoint 路径。部署与超时是教学推演，尚无同环境实测；固定版本见末节。
 
-![超时后先对账，再决定是否重试](../../figures/permission-and-recovery/diagram.svg)
+![超时后先查询原操作，再决定是否重试](../../figures/permission-and-recovery/diagram.svg)
 
 [图的文字说明](../../figures/permission-and-recovery/README.md) · [单独打开 SVG 放大阅读](../../figures/permission-and-recovery/diagram.svg)。图中虚线表示超时后尚未区分的三种可能状态；各项目的具体实现见下表。
 
-初读时沿图走一遍“收到回执”和“改用查询”两条路径就够了。想亲手观察，可以选[不联网的对账练习](../labs/remote-effect.md)，再回来对照下面的源码位置。
+初读时先沿图走一遍“连接超时 → 查询原操作”，再看三种可能的服务状态。想亲手观察，可以选[不联网的回执查询练习](../labs/remote-effect.md)，再回来对照下面的源码位置。
 
 ## 一个请求，三类可能的状态
 

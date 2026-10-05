@@ -22,7 +22,7 @@ def card(scene: Scene, name: str, x: int, y: int, w: int, h: int,
     scene.box(name, x, y, w, h, stroke, fill)
     scene.elements[-1].update(roughness=1, strokeWidth=2)
     scene.text(f"{name}-title", title, x + 17, y + 15, w - 34, 27, INK, 8)
-    scene.text(f"{name}-detail", detail, x + 17, y + 62, w - 34, 22, MUTED, 8)
+    scene.text(f"{name}-detail", detail, x + 17, y + 54, w - 34, 20, MUTED, 8)
 
 
 def arrow(scene: Scene, name: str, points: list[tuple[int, int]], color: str,
@@ -35,24 +35,24 @@ def arrow(scene: Scene, name: str, points: list[tuple[int, int]], color: str,
 
 def build() -> None:
     d = Scene()
-    d.text("title", "mini-SWE-agent：消息尾部决定退出", 35, 25, 995, 35, INK, 8)
+    d.text("title", "mini-SWE-agent：问模型、执行命令、记录结果", 35, 25, 995, 35, INK, 8)
 
     # The ledger records appends; the center column is the control flow.
     d.box("ledger", 35, 132, 285, 548, "#b9cef0", "#f7faff")
     d.elements[-1].update(roughness=1, strokeWidth=2)
-    d.text("ledger-title", "messages[] · 追加", 55, 154, 250, 25, "#2563a6", 8)
+    d.text("ledger-title", "消息清单\nmessages[]", 55, 154, 250, 22, "#2563a6", 8)
     for index, y in enumerate((218, 286, 354, 422, 490, 558)):
         d.arrow(f"ledger-rule-{index}", [(55, y), (300, y)], "#d5dfe9")
         d.elements[-1].update(strokeWidth=1, endArrowhead=None)
     for name, value, y, color in (
-        ("system", "01  system 模板", 230, INK),
-        ("user", "02  user(task)", 298, INK),
-        ("assistant", "03  assistant(action)", 366, VIOLET),
-        ("observation", "04  observation", 434, TEAL),
-        ("repeat", "…   下一轮继续追加", 502, MUTED),
-        ("exit", "末条 exit → 停止", 570, GREEN),
+        ("system", "01 系统指导\nsystem", 230, INK),
+        ("user", "02 用户任务\nuser(task)", 298, INK),
+        ("assistant", "03 模型动作\nassistant(action)", 366, VIOLET),
+        ("observation", "04 命令结果\nobservation", 434, TEAL),
+        ("repeat", "…  追加下一轮消息", 502, MUTED),
+        ("exit", "末条为 exit → 停止", 570, GREEN),
     ):
-        d.text(name, value, 55, y, 250, 22, color, 8)
+        d.text(name, value, 55, y, 250, 20 if "\n" in value else 22, color, 8)
 
     # Draw arrows first so the nodes cover their endpoints. The two ledger
     # routes end at different rows and never cross the main loop.
@@ -64,23 +64,23 @@ def build() -> None:
     arrow(d, "stop-to-return", [(690, 610), (790, 610)], GREEN)
 
     card(d, "query", 410, 166, 280, 116, VIOLET, "#e5dbff",
-         "query()", "限额检查 → model.query")
+         "请求模型", "query()：检查限额\nmodel.query")
     card(d, "execute", 410, 336, 280, 116, TEAL, "#c9f4f4",
-         "execute_actions()", "env.execute → 观察")
+         "执行模型动作", "execute_actions()\nenv.execute → 结果")
     card(d, "stop-check", 410, 538, 280, 116, BLUE, "#d7ebff",
-         "每轮 save() 之后", "末条 role == exit ?")
+         "保存后检查退出", "save()\n末条 role 为 exit")
     d.text("continue-label", "否 · 下一轮", 734, 486, 145, 22, "#2563a6", 8)
     d.text("yes-label", "是", 744, 578, 30, 22, GREEN, 8)
 
     # These are possible sources of exit messages, not a mandatory sequence.
     d.box("exit-sources", 790, 132, 295, 320, "#f5c46a", "#fff7df")
     d.elements[-1].update(roughness=1, strokeWidth=2)
-    d.text("exit-title", "exit 消息可能来自", 808, 154, 255, 24, "#9a6700", 8)
-    d.text("exit-1", "Submitted\n本地命令完成哨兵", 808, 212, 255, 22, INK, 8)
-    d.text("exit-2", "Limits / Time\n模型请求前的限制", 808, 290, 255, 22, INK, 8)
-    d.text("exit-3", "RepeatedFormatError\n连续解析失败达阈值", 808, 368, 255, 22, INK, 8)
+    d.text("exit-title", "追加退出消息的原因", 808, 154, 255, 24, "#9a6700", 8)
+    d.text("exit-1", "输出完成标记，返回码 0\nSubmitted", 808, 212, 255, 22, INK, 8)
+    d.text("exit-2", "请求前达到限制\nLimits / Time", 808, 290, 255, 22, INK, 8)
+    d.text("exit-3", "连续格式错误达阈值\nRepeatedFormatError", 808, 368, 255, 22, INK, 8)
     card(d, "return", 790, 538, 295, 116, GREEN, "#c3fae8",
-         "返回 exit.extra", "不是模型布尔值")
+         "返回结束信息", "exit.extra\n取出退出消息的数据")
 
     d.save(Path(__file__).with_name("scene.excalidraw"))
 

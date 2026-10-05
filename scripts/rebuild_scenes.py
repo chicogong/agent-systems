@@ -11,7 +11,11 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILDERS = [
     ROOT / "scripts" / "build_pi_figures.py",
     ROOT / "scripts" / "build_context_figure.py",
-    *sorted((ROOT / "figures").glob("*/build.py")),
+    *sorted(
+        builder
+        for pattern in ("*/build.py", "*/build_scene.py")
+        for builder in (ROOT / "figures").glob(pattern)
+    ),
 ]
 
 

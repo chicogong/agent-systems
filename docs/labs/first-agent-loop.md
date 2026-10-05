@@ -57,7 +57,7 @@ python3 examples/first-agent-loop/demo.py --mode regression
 3. 提案触发的工具读写集中在 `execute()`；`run()` 另负责初始化临时文件和独立终态读取。工具结果的 `ok=true` 仅表示这次调用完成；`write` 并不知道用户是否要求保留重试规则。
 4. `check` 同时检查 `timeout=5` 与 `retries=3`；外层 `run()` 在 `finish` 时再检查当前文件状态。测试把正常、拒绝和回归三条路径固定下来。
 
-[Agent loop 图](../../figures/agent-loop/diagram.svg)可作为阅读地图；[不看图的文字说明](../../figures/agent-loop/README.md)说明图中的提案、授权、工具、观察、停止与验证各指什么。这里的程序是这张概念图的**教学实现**，不是 Pi、Codex 或任何项目的源码复制。
+[Agent loop 图](../../figures/agent-loop/diagram.svg)可作为阅读地图；[不看图的文字说明](../../figures/agent-loop/README.md)讲清任务、模型决策、工具执行、观察结果、核对结果与停止各指什么。这里的程序是这张概念图的**教学实现**，不是 Pi、Codex 或任何项目的源码复制。
 
 ## 自己改一次，再给出证据
 

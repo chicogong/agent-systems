@@ -16,8 +16,8 @@ RED = "#bf5c49"
 
 def main() -> None:
     d = Scene()
-    d.text("title", "工具可见，为什么还不等于任务完成？", 35, 22, 1090, 34, INK, 6)
-    d.text("subtitle", "同一任务里，指导、提案、许可、执行与验收各有自己的证据。", 37, 76, 1080, 19, MUTED)
+    d.text("title", "从操作方法到工具调用，再到结果检查", 35, 22, 1090, 34, INK, 6)
+    d.text("subtitle", "Skill 提供方法，MCP 列出工具；宿主检查许可，执行后按任务核对结果。", 37, 76, 1080, 19, MUTED)
 
     for name, x, y, w, h, stroke, fill in [
         ("skill", 38, 134, 212, 112, PURPLE, "#f0eaff"),
@@ -46,22 +46,22 @@ def main() -> None:
 
     for name, value, x, y, w, size, color in [
         ("skill-title", "Skill · 方法", 54, 151, 185, 23, INK),
-        ("skill-detail", "教你先核对原文\n不是执行记录", 54, 189, 185, 19, MUTED),
+        ("skill-detail", "说明该怎样做\n例如先核对原文", 54, 189, 185, 19, MUTED),
         ("scope-title", "用户任务 · 范围", 341, 151, 185, 23, INK),
-        ("scope-detail", "可读什么？可改哪里？\n要怎样验收？", 341, 189, 185, 19, MUTED),
-        ("discover-title", "MCP · tools/list", 628, 151, 225, 23, INK),
-        ("discover-detail", "发现 kb.fetch\n不等于已获准读取", 628, 189, 185, 19, MUTED),
+        ("scope-detail", "可读与可改的范围\n结果应满足的要求", 341, 189, 185, 19, MUTED),
+        ("discover-title", "MCP · 工具列表", 628, 151, 225, 23, INK),
+        ("discover-detail", "tools/list\n例如 kb.fetch", 628, 189, 225, 19, MUTED),
         ("proposal-title", "模型提出下一步", 54, 344, 185, 23, INK),
-        ("proposal-detail", "“查文档 / 改文件”\n此时还没有副作用", 54, 386, 185, 19, MUTED),
+        ("proposal-detail", "建议查文档、改文件\n等待检查后执行", 54, 386, 185, 19, MUTED),
         ("gate-title", "宿主检查并路由", 341, 344, 185, 23, INK),
         ("gate-detail", "任务范围 · 工具策略\n必要时请用户批准", 341, 386, 185, 19, MUTED),
         ("execution-title", "工具实际执行", 628, 344, 185, 23, INK),
         ("execution-detail", "MCP: tools/call\n本地: 编辑文件\n保留结果 / 错误", 628, 386, 185, 19, MUTED),
-        ("verify-title", "按原任务验收", 915, 344, 185, 23, INK),
+        ("verify-title", "核对任务结果", 915, 344, 185, 23, INK),
         ("verify-detail", "核对原文与 diff\n检查测试结果\n再写交付结论", 915, 386, 185, 19, MUTED),
         ("denied-title", "拒绝：动作未执行", 341, 548, 185, 22, RED),
-        ("denied-detail", "不能报告“已经改好”", 341, 585, 185, 19, MUTED),
-        ("edge-note", "发现能力不等于许可；调用返回不等于任务验收。", 590, 565, 535, 19, MUTED),
+        ("denied-detail", "说明该动作未完成", 341, 585, 185, 19, MUTED),
+        ("edge-note", "发现工具后仍要检查许可；\n调用返回后仍要核对任务结果。", 590, 565, 535, 19, MUTED),
     ]:
         d.text(name, value, x, y, w, size, color)
 

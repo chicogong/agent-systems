@@ -6,8 +6,10 @@ import json
 import html
 import re
 import unicodedata
+from collections import Counter
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
+import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +61,43 @@ def markdown_anchors(content: str) -> set[str]:
     return anchors
 
 
+def check_exported_labels(scene: dict, svg_path: Path) -> list[str]:
+    """Catch stale native SVG text; this does not establish visual parity.
+
+    The pinned native renderer writes one SVG text node per scene text line.
+    Compare repeated labels, font sizes and colors, allowing whitespace changes.
+    PNG fidelity, font fallback, geometry and arrow routing still need review.
+    """
+    normalize = lambda value: " ".join(value.split())
+    try:
+        expected = Counter(
+            (normalize(line), float(element["fontSize"]), element["strokeColor"].lower())
+            for element in scene.get("elements", [])
+            if element.get("type") == "text" and not element.get("isDeleted")
+            for line in element.get("text", "").splitlines()
+            if normalize(line)
+        )
+    except (AttributeError, KeyError, TypeError, ValueError) as error:
+        return [f"invalid scene labels: {error}"]
+    try:
+        svg = ET.parse(svg_path).getroot()
+        actual = Counter(
+            (normalize("".join(node.itertext())),
+             float(node.attrib["font-size"].removesuffix("px")),
+             node.attrib["fill"].lower())
+            for node in svg.iter()
+            if node.tag.rsplit("}", 1)[-1] == "text"
+            and normalize("".join(node.itertext()))
+        )
+    except (OSError, ET.ParseError, KeyError, ValueError) as error:
+        return [f"invalid native SVG labels: {error}"]
+    if expected == actual:
+        return []
+    missing = list((expected - actual).elements())[:5]
+    extra = list((actual - expected).elements())[:5]
+    return [f"SVG labels differ from scene; missing={missing!r}, extra={extra!r}"]
+
+
 def check_figures() -> list[str]:
     errors: list[str] = []
     for scene_file in sorted((ROOT / "figures").glob("*/scene.excalidraw")):
@@ -82,6 +121,11 @@ def check_figures() -> list[str]:
                 family = element.get("fontFamily")
                 if not isinstance(family, int) or family <= 0:
                     errors.append(f"{scene_file.relative_to(ROOT)} text {element.get('id')} has invalid fontFamily")
+        svg_path = folder / "diagram.svg"
+        if svg_path.is_file():
+            for error in check_exported_labels(scene, svg_path):
+                target = scene_file if error.startswith("invalid scene labels") else svg_path
+                errors.append(f"{target.relative_to(ROOT)} {error}")
     return errors
 
 

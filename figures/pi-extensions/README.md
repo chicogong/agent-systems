@@ -10,6 +10,6 @@
 
 图下的交叉点 `resources_discover` 是资源发现入口：Extension 可以返回新的 Skill 路径，交给 Pi 继续读取。同一个 Package 也能直接带上两类文件。
 
-有两处条件需要记住：设置 `disable-model-invocation: true` 的 Skill 会从模型目录中省略，但用户仍能用 `/skill:name` 调用。Skill 附带的脚本则要经已有工具执行；图中“Skill 自身没有 `registerTool` API”说明，新增工具使用的是 B 路的扩展接口。
+有两处条件需要记住：设置 `disable-model-invocation: true` 的 Skill 会从模型目录中省略，但用户仍能用 `/skill:name` 调用。Skill 附带的脚本则要经已有工具执行；图下方写明“新增工具通过 Extension 注册，Skill 提供指导”，对应 B 路的扩展接口与 A 路的工作方法。
 
 本图依据固定源码 `898ab804`，实现位置和安装前的提醒见[专题正文](../../docs/systems/pi/extensions-and-skills.md)。

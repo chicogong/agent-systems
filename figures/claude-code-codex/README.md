@@ -2,7 +2,7 @@
 
 [返回对照正文](../../docs/comparisons/claude-code-codex.md) · [可编辑图源](scene.excalidraw) · [SVG](diagram.svg) · [PNG](preview.png)
 
-给两个助手同一个虚构修复任务，模型都建议运行测试。两行从左到右看：提出命令、检查是否允许、运行命令、拿到输出并核对结果。图中的“行动关口”指中间的许可检查；两个产品的具体实现各有安排。
+给两个助手同一个虚构修复任务，模型都建议运行测试。两行从左到右看：提出命令、检查是否允许、运行命令、拿到输出并核对结果。中间方框分别说明许可与执行环境的安排，两个产品的具体实现各有条件。
 
 **上行看 Claude Code。** 权限规则、使用模式和沙箱设置共同决定怎样询问用户。启用 `autoAllowBashIfSandboxed` 时，一部分 Bash 工具调用可在沙箱中自动放行；明确禁止的 deny 规则和针对命令内容的 ask 规则仍适用。命令在 Bash 沙箱里运行时，进程与子进程的文件和网络访问受到限制。具体说明见 [Claude Code 工作方式](https://code.claude.com/docs/en/how-claude-code-works)和[权限与沙箱交互](https://code.claude.com/docs/en/permissions#how-permissions-interact-with-sandboxing)。
 

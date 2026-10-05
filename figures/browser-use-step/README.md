@@ -1,8 +1,8 @@
-# browser-use 一轮 step：文字版
+# Browser Use：看网页、执行动作、记下结果
 
 [返回讲解](../../docs/systems/browser-use/README.md) · [图源](scene.excalidraw) · [SVG](diagram.svg) · [PNG](preview.png)
 
-网页助手找资料时，要先看页面，再决定点击、输入或滚动，最后记下结果。图从上往下讲一轮 `step`（工作步骤）；四列是 Agent、浏览器与工具 `BrowserSession + Tools`、模型，以及历史记录 `AgentHistory`。
+网页助手找资料时，要先看页面，再决定点击、输入或滚动，最后记下结果。图从上往下讲一轮 `step`（工作步骤）；四列分别安排这一轮、操作浏览器、选择动作、保存记录。中文标签下方保留 `Agent.step`、`Browser + Tools` 和 `AgentHistory`，方便与代码对应。
 
 沿箭头看一次正常过程：
 
