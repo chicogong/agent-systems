@@ -265,7 +265,7 @@ description: "免费中文图解书，面向学生、老师、AI 工具使用者
 
 ## 反馈与更正
 
-发现事实错误、图中文字难读或源码链接失效？[查看反馈方式](/feedback)。阅读不需要登录；目前不收集站内评论。
+发现事实错误、图中文字难读或源码链接失效？[查看反馈方式](/feedback)。愿意帮忙检查讲解是否易懂，也可以[任选一篇做简短试读](https://github.com/chicogong/agent-systems/blob/main/docs/reader-trial.md)。阅读不需要登录；目前不收集站内评论。
 
 ## 版本与阅读方式
 
@@ -298,6 +298,8 @@ ${sourceVersionMarkdown} PDF 与 Markdown 阅读包有各自的导出版本；�
 [发送反馈邮件](${generalFeedback}) 给 **ghr7719@gmail.com**。每章末尾的“按本章填写邮件”会预填章节、页面地址和本次站点构建版本；如果设备没有配置邮件客户端，也可以复制邮箱地址手动发送。
 
 可公开的问题也可从[GitHub 阅读反馈表单](https://github.com/chicogong/agent-systems/issues/new?template=reading-feedback.yml)提交。请填写章节位置、所读版本与实际现象。也欢迎告诉作者“哪一段突然没看懂”，不必先证明作者写错了。
+
+愿意帮忙试读时，可以[任选一篇图解，换一个例子解释](https://github.com/chicogong/agent-systems/blob/main/docs/reader-trial.md)。请先写自己的判断，再说明提示或 AI 陪读在哪一步有帮助；无需运行代码。
 
 建议包含：页面链接、原句或图中位置、问题说明，以及可公开引用的上游源码或文档链接。请不要通过邮件发送密钥、私有资料或个人敏感信息。
 

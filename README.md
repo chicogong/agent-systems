@@ -70,4 +70,6 @@
 
 欢迎带着**具体章节、固定版本链接、复现步骤或图中哪条箭头有问题**提交反馈：[网站勘误入口](https://books.aimake.cc/feedback) · [贡献指南](CONTRIBUTING.md)。作者联系邮箱：[ghr7719@gmail.com](mailto:ghr7719@gmail.com)。
 
+如果愿意帮我们检验“图和例子是否真的讲明白”，可以[任选一篇做简短试读](docs/reader-trial.md)：看完换一个情况，用自己的话解释即可，不需要运行代码。
+
 本书原创文字与图使用 [CC BY 4.0](LICENSE-CONTENT.md)，构建脚本使用 [MIT](LICENSE-CODE)；上游项目、商标和第三方素材遵守各自许可。本仓公开的是持续完善的预览稿，不表示完整源码审计、外部读者验收或正式出版已经完成。[封面与书脊设计参考](book/assets/README.md)也不等同于印厂可直接使用的文件。
