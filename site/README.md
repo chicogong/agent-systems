@@ -35,7 +35,9 @@ SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 
 访问统计默认关闭。仅经作者确认，生产构建才可设 `VITE_READER_ANALYTICS=1`，启用 Vercel Web Analytics；只在 `books.aimake.cc` 发送页面访问，去掉 URL 查询参数和片段，不上传站内搜索词、邮件内容或自定义事件，反馈页同步披露。免费 Hobby 版有账户级额度，不提供自定义事件或 UTM 报表，页面访问不能当作读完率。浏览器验收拦截统计请求，避免把机器检查当作推广流量。服务条款与额度见 [Vercel 官方说明](https://vercel.com/docs/analytics/limits-and-pricing)。
 
-Search Console 的站点所有权验证、提交 sitemap、索引与点击数据监测是部署后的账号操作；**构建通过或站点能访问都不等于已经被收录**。
+2026-10-09 已在 Google Search Console 中自动验证独立的 `https://books.aimake.cc/` 网址前缀资源，并通过既有 `aimake.cc` 网域资源提交 `https://books.aimake.cc/sitemap.xml`；独立资源也显示这份 sitemap。首页实际网址测试显示“可编入索引”，并已请求编入索引。提交当日 sitemap 报表仍显示“无法读取”与 0 个已发现网页；线上 XML 返回 200 且语法有效，但 Google 尚未报告处理成功。后续在[专属站点地图报表](https://search.google.com/search-console/sitemaps?resource_id=https%3A%2F%2Fbooks.aimake.cc%2F)复查处理状态，并从该资源查看索引和点击；不要重复提交首页来催促队列。**构建通过、提交成功或实际网址测试可抓取，都不等于已经被收录。**
+
+`verify:live` 默认逐字节下载全部文件，适合正式发布验收。若当地网络对约 20–24 MB 的 PDF/ZIP 下载很慢，可用 `VERIFY_LARGE_AS_ETAG=1 npm run verify:live` 做快速巡检：小文件仍逐字节比对，大文件只比对内容长度与 Vercel ETag（本地 MD5），输出会明确标为非完整下载；快速巡检不能代替正式版的完整下载和散列验收。
 
 ## PDF 在线阅读的发布门槛
 
