@@ -95,6 +95,9 @@ for (const forbidden of ['href="/assets/figures/scene.excalidraw"', '下载可�
 
 const pages = new Map(await Promise.all(expected.map(async (file) => [file, await readFile(path.join(dist, file), 'utf8')])))
 if (!pages.get('index.html').includes('id="全书目录"')) throw new Error('Home page has no book-order contents anchor')
+if (!pages.get('index.html').includes('name="msvalidate.01" content="CB718F30B0F11E2795CD6F9FEE86DE7B"')) {
+  throw new Error('Bing site verification meta tag is missing from the home page')
+}
 for (const [index, item] of bookItems.entries()) {
   const file = item.link.slice(1) + '.html'
   const html = pages.get(file)
