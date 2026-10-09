@@ -152,6 +152,6 @@ export default defineConfig({
     socialLinks: []
   },
   head: publicMode
-    ? [['meta', { name: 'msvalidate.01', content: 'CB718F30B0F11E2795CD6F9FEE86DE7B' }]]
+    ? [['meta', { name: 'msvalidate.01', content: 'B543FF67D291AA27F8D470ADEA45F876' }]]
     : [['meta', { name: 'robots', content: 'noindex,nofollow' }]]
 })
