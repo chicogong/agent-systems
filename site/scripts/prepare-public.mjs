@@ -224,13 +224,13 @@ await mkdir(path.join(output, 'public', 'assets', 'share'), { recursive: true })
 await cp(path.join(site, 'assets', 'book-share.png'), path.join(output, 'public', 'assets', 'share', 'book.png'))
 await cp(path.join(repo, 'book', 'assets', 'cover-preview.png'), path.join(output, 'public', 'assets', 'share', 'cover.png'))
 const home = `---
-title: "图解 Agent 系统：入门学习、应用实践与开源实现"
-description: "免费中文图解书，面向学生、老师、AI 工具使用者与感兴趣的读者。用讲解、案例和图理解 Agent，把方法带到学习与工作，再按兴趣深入开源实现。"
+title: "AI Agent 入门教程｜图解 Agent 系统：从使用到开源实现"
+description: "免费中文图解书。从一个有出处的资料助手入门，学会用 AI 组织资料、安排任务、核对结果，再看工具、记忆、权限与 Pi、Codex 等开源实现。适合学生、老师和 AI 工具使用者。"
 ---
 
 <div class="reader-hero">
   <div>
-    <p class="reader-eyebrow">免费中文图解书 · 持续更新预览</p>
+    <p class="reader-eyebrow">免费 AI Agent 图解教程 · 持续更新预览</p>
     <h1>图解 Agent 系统</h1>
     <p class="reader-lead">学懂 Agent，把方法用起来。</p>
     <p>为学习、教学和工作找到一个起点。先跟着图与例子理解，再用资料做一份自己的成果；想探索 AI 相关方向，继续选择应用、代码或真实系统。</p>
