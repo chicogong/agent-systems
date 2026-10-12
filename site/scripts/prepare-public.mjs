@@ -225,6 +225,7 @@ await cp(path.join(site, 'assets', 'book-share.png'), path.join(output, 'public'
 await cp(path.join(repo, 'book', 'assets', 'cover-preview.png'), path.join(output, 'public', 'assets', 'share', 'cover.png'))
 const home = `---
 title: "AI Agent 入门教程｜图解 Agent 系统：从使用到开源实现"
+titleTemplate: false
 description: "免费中文图解书。从一个有出处的资料助手入门，学会用 AI 组织资料、安排任务、核对结果，再看工具、记忆、权限与 Pi、Codex 等开源实现。适合学生、老师和 AI 工具使用者。"
 ---
 
