@@ -60,6 +60,7 @@ export default defineConfig({
     const isArticle = !isHome && !new Set(['feedback', 'pdf', 'downloads', 'concepts', 'systems', 'comparisons', 'sources']).has(pathname)
     const title = plainLabel(pageData.title) || '图解 Agent 系统'
     pageData.title = title
+    const socialTitle = pageData.frontmatter.socialTitle || title
     const description = pageData.frontmatter.description || '用图解、讲解和案例学习 Agent，再按兴趣深入应用与开源实现。'
     pageData.frontmatter.head ??= []
     pageData.frontmatter.head.push(
@@ -67,7 +68,7 @@ export default defineConfig({
       ['meta', { property: 'og:site_name', content: '图解 Agent 系统' }],
       ['meta', { property: 'og:locale', content: 'zh_CN' }],
       ['meta', { property: 'og:type', content: isArticle ? 'article' : 'website' }],
-      ['meta', { property: 'og:title', content: title }],
+      ['meta', { property: 'og:title', content: socialTitle }],
       ['meta', { property: 'og:description', content: description }],
       ['meta', { property: 'og:url', content: canonical }],
       ['meta', { property: 'og:image', content: `${siteUrl}/assets/share/book.png` }],
@@ -75,6 +76,7 @@ export default defineConfig({
       ['meta', { property: 'og:image:height', content: '630' }],
       ['meta', { property: 'og:image:alt', content: '图解 Agent 系统：学懂 Agent，把方法用起来' }],
       ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+      ['meta', { name: 'twitter:title', content: socialTitle }],
       ['meta', { name: 'twitter:image', content: `${siteUrl}/assets/share/book.png` }]
     )
     const identity = { '@type': 'Person', name: 'chicogong', url: `${siteUrl}/back/about-author` }

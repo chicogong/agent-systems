@@ -133,6 +133,11 @@ for (const file of expected) {
   for (const marker of ['property="og:title"', 'property="og:description"', `property="og:url" content="${origin}${pathname}"`, `property="og:image" content="${origin}/assets/share/book.png"`, 'name="twitter:card" content="summary_large_image"', 'type="application/ld+json"']) {
     if (!html.includes(marker)) throw new Error(`${file}: missing social or structured metadata: ${marker}`)
   }
+  if (file === 'index.html') {
+    for (const marker of ['property="og:title" content="《图解 Agent 系统》｜从入门到应用的免费中文图解书"', 'name="twitter:title" content="《图解 Agent 系统》｜从入门到应用的免费中文图解书"']) {
+      if (!html.includes(marker)) throw new Error(`Homepage share title must lead with the book: ${marker}`)
+    }
+  }
   const structuredData = html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)?.[1]
   if (!structuredData) throw new Error(`${file}: missing JSON-LD payload`)
   const schema = JSON.parse(structuredData)

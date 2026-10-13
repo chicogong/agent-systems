@@ -31,6 +31,8 @@ SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 
 首页先给一张图的起点和学习与应用入口，再用三张卡片连接学习/教学/工作、AI 陪读与可选技术路线。完整目录与阅读路线仍由书稿清单派生；广泛受众必须有对应正文和材料，不只写进宣传与元数据。页面输出唯一 canonical、独立 description、1200×630 的 Open Graph 分享配图与适度的 JSON-LD（首页为 WebSite，正文为 Article）；sitemap 与 robots 同源。结构化数据只是帮助机器理解页面，不保证获得富媒体展示或 AI 引用。不要为了所谓 GEO 在正文堆关键词或编造未核验的结论。
 
+首页搜索标题保留“AI Agent 入门教程”等读者可能使用的词；分享预览标题单独以《图解 Agent 系统》开头，摘要介绍整本书的读者收益。两者都须与页面可见正文一致，不靠改元数据替代内容和真实分发。
+
 [反馈页](https://books.aimake.cc/feedback)与每章末尾的预填邮件链接使用作者已公开的邮箱，邮件预填站点书稿版本；已启用的 GitHub 阅读反馈表单承接公开问题，私人或敏感信息仍走邮件。章节分享按钮调用系统分享或复制干净链接，去掉查询参数和片段；不把搜索词等信息带进分享链接。接入站内表单前，要先决定垃圾邮件、隐私告知、数据留存和处理责任。
 
 访问统计默认关闭。仅经作者确认，生产构建才可设 `VITE_READER_ANALYTICS=1`，启用 Vercel Web Analytics；只在 `books.aimake.cc` 发送页面访问，去掉 URL 查询参数和片段，不上传站内搜索词、邮件内容或自定义事件，反馈页同步披露。免费 Hobby 版有账户级额度，不提供自定义事件或 UTM 报表，页面访问不能当作读完率。浏览器验收拦截统计请求，避免把机器检查当作推广流量。服务条款与额度见 [Vercel 官方说明](https://vercel.com/docs/analytics/limits-and-pricing)。
