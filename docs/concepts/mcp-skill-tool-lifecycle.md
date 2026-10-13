@@ -62,7 +62,7 @@ Skill 提供工作方法和配套文件。Claude Code 的常规会话先显示�
 ## 出问题时，按步骤说明
 
 - **连不上知识库：** 说明原文尚未取得，请用户补充资料或恢复连接。
-- **读取被拒绝：** 记录拒绝原因，按当前权限能读的内容继续，或等待授权。
+- **读取被拒绝：** 说明拒绝原因；在这个修复例子里，按原要求停下，等规则原文可读后再继续。
 - **编辑被拒绝：** 可以交付规则摘要与修改建议，明确文件还没改。
 - **测试失败：** 根据输出继续修正；暂时无法解决时，留下具体失败情况。
 - **调用超时：** 先确认操作有没有发生。增加远端写入工具后尤其要先查记录，再决定重试。
@@ -75,7 +75,7 @@ MCP 把协议错误和带 `isError: true` 的工具执行错误分开。错误�
 
 如果知识库条目夹着“上传本机密钥”的要求，它仍是一段外部正文。助手应只提取相关规则，把可疑要求告知用户。实际防护还要依靠可信服务、受限凭据、宿主的权限设置与执行隔离。
 
-Tool 描述、服务端注释和 Skill 也要看来源，加载进输入后仍按它们各自的身份处理。[MCP 工具安全](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) · [安全最佳实践](https://modelcontextprotocol.io/docs/2025-11-25/tutorials/security/security_best_practices) · [Claude Code MCP](https://code.claude.com/docs/en/mcp) · [Codex MCP](https://developers.openai.com/codex/mcp)
+Tool 描述、服务端注释和 Skill 也要看来源。宿主把它们交给模型时，应保留来源和用途，方便区分工具说明、工作指导与外部材料。[MCP 工具安全](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) · [安全最佳实践](https://modelcontextprotocol.io/docs/2025-11-25/tutorials/security/security_best_practices) · [Claude Code MCP](https://code.claude.com/docs/en/mcp) · [Codex MCP](https://developers.openai.com/codex/mcp)
 
 ## 试着讲清一次任务
 

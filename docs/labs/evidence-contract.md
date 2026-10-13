@@ -2,7 +2,7 @@
 
 [返回学习路径](../learning-path.md) · [源码与测试](../../examples/evidence-contract/README.md)
 
-这次用两份获准材料形成带出处的摘要结构，再核对每个引用。正常路径是：读取材料、提出写入、宿主保存、检查引用。你会得到一份可以回到原文的结果，也会看到哪些检查帮助它保持有据可查。
+程序读取两份获准材料，形成包含来源和引文的提案，宿主允许后将它保存。接着，引用检查会逐项核对来源是否取得、引文是否出现在原文里。先跑通这条正常路径，再试一次引用错误和一次越权请求，看它们分别在哪一步被拦下。
 
 这是可选的机制小实验。运行前请确认 Python 3.10+；不用 API Key、第三方库或网络。材料是虚构的，保存只改变内存字典，提案和引用检查都由固定规则完成。
 
@@ -53,12 +53,13 @@ python3 examples/evidence-contract/demo.py --case injection
 
 ```bash
 python3 -m unittest discover -s examples/evidence-contract -p 'test_*.py'
+python3 examples/evidence-contract/demo.py --case valid
 ```
 
-8 个测试覆盖正常、失败来源、越权、空证据、伪引文、重复与未知来源。把改动、触发的检查和实际输出记成三行，作为本课产物。
+8 个测试覆盖正常、失败来源、越权、空证据、伪引文、重复与未知来源。测试会指出哪些断言失败；第二条命令打印修改后提案的检查结果。对照你改过的引文，查看 `audit.reasons` 是否指出了预期的问题。
 
 ## 本实验的范围与下一步
 
 这个验证器只检查固定引用字段与逐字片段，摘要是否解释准确、来源是否可靠，还需语义检查和人工或任务特定评测。`[REQUEST_EXPORT]` 也不是攻击检测方法；本实验没有真实模型、真实凭据泄露、操作系统沙箱或完整提示注入防御测试。
 
-进阶可把 s1、s2 换成带日期和出处的人工材料，加入事实冲突与语义核对；接真实网页或模型前，另设来源权限、账号、费用与环境合同。执行面的细节读 [Computer / Browser Use](../concepts/computer-and-browser-use.md)，资源可达范围读[沙箱](../concepts/sandbox-execution.md)，结果核验读[完成证据对照](../comparisons/completion-and-evidence.md)。
+进阶可把 s1、s2 换成带日期和出处的人工材料，加入事实冲突与语义核对。接真实网页或模型前，先确认材料的使用权限、账号和费用，以及程序可以访问的文件与网络范围。界面操作的细节读 [Computer / Browser Use](../concepts/computer-and-browser-use.md)，文件与网络限制读[沙箱](../concepts/sandbox-execution.md)，结果核验读[完成证据对照](../comparisons/completion-and-evidence.md)。

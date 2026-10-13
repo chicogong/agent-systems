@@ -34,7 +34,7 @@
 
 为了看清键结构，本篇引用 `InMemorySaver`：它按 thread → namespace → checkpoint ID 存储，并有父版本指针。官方类注释明确它用于调试或测试，不适合生产持久化；进程结束后数据不保留。真正长期保存进度时，需要另选生产存储后端，并测试它的事务、故障恢复和跨机器行为。[存储结构与官方限定](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/checkpoint/langgraph/checkpoint/memory/__init__.py#L33-L86)
 
-下一步应以一个可控两节点图分别使用 InMemorySaver 和生产 saver，记录每次 `config`、`parent_config`、`values`、`next` 以及副作用是否重放；本文尚未做该实验。
+想继续观察恢复，可以用一个可控的两节点图，分别配置 InMemorySaver 和生产 saver，记录每次的 `config`、`parent_config`、`values`、`next`，以及外部动作是否再次执行。本文尚未做这个实验。
 
 ## 版本与检查范围
 

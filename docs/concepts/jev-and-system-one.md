@@ -26,9 +26,9 @@ TypeSafe 将 Jev 称为 *System One* 模型。程序给它当前材料和限定�
 | Skill | 提供制作或修改幻灯片的方法与资源 |
 | Agent | 结合用户任务和推荐方法，继续工作 |
 
-TypeSafe 的 [Skill 推荐案例](https://docs.typesafe.ai/cookbooks/skill_suggestion)分两次请求筛选候选，最后把推荐交给 Agent。推荐是一条可忽略的建议，真正使用时仍由运行程序和 Agent 处理。
+TypeSafe 的 [Skill 推荐案例](https://docs.typesafe.ai/cookbooks/skill_suggestion)分两次请求筛选候选，程序再把推荐交给 Agent，由 Agent 选择是否采用。
 
-推荐提供工作方法，实际写入和外部动作仍走原有的授权流程。
+被推荐的 Skill 提供工作方法；后续写文件或调用外部服务时，仍走原有的授权流程。
 
 ## 概率怎样影响下一步
 

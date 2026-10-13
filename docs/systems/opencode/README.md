@@ -2,8 +2,6 @@
 
 假设助手正在读取一个文件。界面上只显示“正在忙”，你很难知道它是在接收工具参数、等待执行，还是已经拿到了结果。OpenCode 为每次工具调用单独记进度，用四个状态描述它正在做什么。
 
-> 源码范围：官方仓库 [`anomalyco/opencode@18ef3cc7c5a25b82114c953a80ccc09f4988f74e`](https://github.com/anomalyco/opencode/tree/18ef3cc7c5a25b82114c953a80ccc09f4988f74e)，仅核对本页涉及的 `packages/opencode/src/session` 路径。本文是静态源码阅读，不是运行实测。
-
 ![OpenCode 工具调用状态机](../../../figures/opencode-tool-state/diagram.svg)
 
 [图的文字版](../../../figures/opencode-tool-state/README.md) · [可编辑图源](../../../figures/opencode-tool-state/scene.excalidraw) · [关键代码导读](code-walkthrough.md)
@@ -32,3 +30,5 @@ OpenCode 把一条工具调用记在助手消息的 `ToolPart` 中，可以理�
 `running` 表示调用已被记录为正在运行。重复调用可能触发额外许可检查，权限拒绝或中断也可能让它进入错误路径。查看进度时，要连同对应的结果一起看。
 
 这页依据固定版本的会话代码，尚未采集真实运行日志。不同模型服务和插件的细节需要另外核对。数据库、上下文压缩、子 Agent 与完整扩展体系不在这张图的范围内；下一篇先带你找到这四个状态的代码。
+
+> 源码范围：官方仓库 [`anomalyco/opencode@18ef3cc7c5a25b82114c953a80ccc09f4988f74e`](https://github.com/anomalyco/opencode/tree/18ef3cc7c5a25b82114c953a80ccc09f4988f74e)，仅核对本页涉及的 `packages/opencode/src/session` 路径。本文依据静态源码讲解，尚未运行实测。

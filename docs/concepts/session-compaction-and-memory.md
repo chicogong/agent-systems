@@ -17,11 +17,13 @@
 
 比如“地点在图书馆二楼”可以出现在原聊天里，也可以写入单独的活动资料。下一轮需要它时，程序必须把相关内容交给模型。可以用[上下文与记忆](context-vs-memory.md)中的“打开几份文件”来理解这一步。
 
+接下来的项目例子保留了函数名和字段，方便选读源码。只想安排自己的任务时，也可以先读[回到自己的任务](#回到自己的任务)。
+
 ## Pi：从当前聊天分支选出消息
 
 Pi 的 coding-agent 用一棵会话树保存记录。每条记录有自己的 `id` 和指向上一条的 `parentId`；当前叶子，也就是 leaf，表示这次正在继续的分支。
 
-准备模型输入时，`buildContextEntries()` 沿当前分支取记录。如果其中有压缩记录，就把摘要放到前面，再从 `firstKeptEntryId` 指定的记录开始，保留后续片段。`buildSessionProjection()` 将这些记录整理成消息，`buildSessionContext()` 返回消息列表。
+准备模型输入时，`buildContextEntries()` 沿当前分支取记录。如果其中有压缩记录，就把摘要放到前面，再从 `firstKeptEntryId` 指定的记录开始，保留后续片段。接着，`buildSessionProjection()` 把选出的记录整理成消息，`buildSessionContext()` 返回这份消息列表，供后续准备模型请求。
 
 [会话树](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L976-L985) · [当前分支与消息整理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L468-L582)
 

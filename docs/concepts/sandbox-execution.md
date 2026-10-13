@@ -6,7 +6,7 @@
 
 这样安排以后，私人目录、工作账号和生产密钥可以留在任务之外。具体限制要由运行环境和配置落实。
 
-![资源合同、隔离执行、结果账本与远端副作用](../../figures/sandbox-execution/diagram.svg)
+![运行设置、隔离执行、结果记录与远端操作](../../figures/sandbox-execution/diagram.svg)
 
 [可编辑图源](../../figures/sandbox-execution/scene.excalidraw) · [PNG 预览](../../figures/sandbox-execution/preview.png) · [图的文字版](../../figures/sandbox-execution/README.md)
 
@@ -27,6 +27,24 @@
 E2B 文档说明沙箱默认允许出网；Daytona 的网络限制还受组织配置影响。实际使用时，检查创建参数和账户设置。[E2B 网络配置](https://docs.e2b.dev/network/internet-access) · [Daytona 网络限制](https://www.daytona.io/docs/en/network-limits/)
 
 浏览器认证文件可能包含可用于登录的 cookies 和 headers，需要保护，避免提交到仓库。[Playwright 认证说明](https://playwright.dev/docs/auth)
+
+## 从创建到结束，把结果带出来
+
+运行 CSV 任务的程序，可以按以下顺序安排：
+
+1. 选择环境，设置资源，记下环境 ID。
+2. 放入需要的样例和代码。
+3. 运行脚本，保存退出状态、日志和输出。
+4. 在环境外按任务要求检查 CSV 内容。
+5. 保存需要的产物，再按计划停止或删除环境。
+
+这是一种应用编排示例。检查输出时，也把返回文件当作待检查材料处理，避免直接在宿主执行陌生脚本。
+
+环境结束后的保留方式要单独看。Daytona 的停止操作保留文件系统、清除内存；Linux VM 和 Windows 环境另外支持保留内存的暂停，容器不支持这种暂停。E2B 暂停可以保存文件和内存，也能选择只保存文件、恢复时重新启动；`kill` 是终止操作。
+
+[Daytona 停止与暂停](https://www.daytona.io/docs/en/sandboxes/#stop-sandboxes) · [E2B 持久化](https://docs.e2b.dev/sandbox/persistence)
+
+保存执行环境之后，模型下次需要哪些消息和资料，仍由 Agent 的运行程序安排。[会话与记忆](session-compaction-and-memory.md)讨论了这部分。
 
 ## 常见执行环境怎样区分
 
@@ -67,24 +85,6 @@ Firecracker 是 microVM 的虚拟机管理器，利用 Linux KVM 运行客体环
 NVIDIA OpenShell 的资料介绍了文件、进程、出网和推理路由等控制。文件与进程策略在创建时锁定，网络与推理配置可以运行时更新。
 
 它适合用来理解“执行环境怎样接上资源策略”，而内核隔离方式需要结合其实际运行环境查看。[官方项目](https://github.com/NVIDIA/OpenShell) · [配置建议](https://docs.nvidia.com/openshell/security/best-practices.md)
-
-## 从创建到结束，把结果带出来
-
-运行 CSV 任务的程序，可以按以下顺序安排：
-
-1. 选择环境，设置资源，记下环境 ID。
-2. 放入需要的样例和代码。
-3. 运行脚本，保存退出状态、日志和输出。
-4. 在环境外按任务要求检查 CSV 内容。
-5. 保存需要的产物，再按计划停止或删除环境。
-
-这是一种应用编排示例。检查输出时，也把返回文件当作待检查材料处理，避免直接在宿主执行陌生脚本。
-
-环境结束后的保留方式要单独看。Daytona 的停止操作保留文件系统、清除内存；Linux VM 和 Windows 环境另外支持保留内存的暂停，容器不支持这种暂停。E2B 暂停可以保存文件和内存，也能选择只保存文件、恢复时重新启动；`kill` 是终止操作。
-
-[Daytona 停止与暂停](https://www.daytona.io/docs/en/sandboxes/#stop-sandboxes) · [E2B 持久化](https://docs.e2b.dev/sandbox/persistence)
-
-保存执行环境之后，模型下次需要哪些消息和资料，仍由 Agent 的运行程序安排。[会话与记忆](session-compaction-and-memory.md)讨论了这部分。
 
 ## 远端操作需要另外检查
 

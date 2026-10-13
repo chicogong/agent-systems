@@ -40,11 +40,9 @@ OpenTelemetry 的[信号概念](https://opentelemetry.io/docs/concepts/signals/)
 
 还可以检查修改范围：只有允许的配置文件发生变化。需要判断等待体验时，再用相应的运行场景和用户反馈补充。
 
-因此每次报告测试结果，都写清楚检查了什么。一个容易读懂的表述是：
+报告测试结果时，写清楚检查了什么、还有哪些情况没检查。例如：
 
 > 在这组配置样例中，超时时间已改为 5 秒，原重试次数保持不变；暂未检查高并发下的等待体验。
-
-这比单独说“全部通过”更方便下一位维护者继续检查。
 
 ## 从一个例子扩展到一组任务
 
@@ -56,7 +54,7 @@ OpenTelemetry 的[信号概念](https://opentelemetry.io/docs/concepts/signals/)
 
 ## 从 mini-swe-agent 的记录开始读源码
 
-不必一上来搭完整监测系统。mini-swe-agent 的 `DefaultAgent` 基类提供了一个较短的例子。
+想核对这些记录在程序里怎样生成，可以选读 mini-swe-agent 的 `DefaultAgent` 基类。
 
 `run()` 初始化消息，循环调用 `step()`。`query()` 把模型回答加入消息列表。`execute_actions()` 执行工具，再把格式化的工具结果加入消息。因此沿着这个列表，可以查看一次运行里模型请求了什么、工具返回了什么。
 

@@ -30,7 +30,7 @@
 - `curate_sources` 是可选的来源筛选，启用后再处理这一步。[可选筛选](https://github.com/assafelovic/gpt-researcher/blob/6f998577d547b1e54ec662dac63583aa11e3b84b/gpt_researcher/skills/researcher.py#L210-L231)
 - Hybrid 指混合来源，MCP 指工具接入方式，DeepResearch 是另一种研究流程；本文跟的是 Hybrid 的普通报告路径。
 
-下一步应在隔离环境用两份标有互相冲突事实的文档及可控网页源，记录抓取内容、压缩后的来源字段、`researcher.context` 和最终引用；再单测“双源均空”的保护边界。这组实验可以检查收集、压缩和写作三个位置各留下了什么；本文尚未运行它们。
+想观察资料怎样影响报告，可以在隔离环境准备两份包含冲突事实的文档和可控网页源，逐步查看抓取内容、压缩后的来源字段、`researcher.context` 和最终引用；再把两路材料都设为空，观察写作器收到什么。本文尚未运行这些实验。
 
 ## 版本与检查范围
 

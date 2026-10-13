@@ -4,8 +4,6 @@
 
 “延迟工具”（deferred tool）说的就是暂时不出现在模型工具声明列表里的已注册工具。本篇看它怎样被找到、怎样交给执行程序。
 
-> 固定官方仓库 [`QwenLM/qwen-code@b9840886b86c23f196482cc1ee55d59cbc74df87`](https://github.com/QwenLM/qwen-code/tree/b9840886b86c23f196482cc1ee55d59cbc74df87)。本篇依据静态源码，介绍普通工具声明模式下 `ToolRegistry → tool_search → tool_call → CoreToolScheduler` 的流程，尚未运行验证。
-
 ![Qwen Code 延迟工具的发现与执行双路径](../../../figures/qwen-code-deferred-tools/diagram.svg)
 
 [图的文字版](../../../figures/qwen-code-deferred-tools/README.md) · [可编辑图源](../../../figures/qwen-code-deferred-tools/scene.excalidraw) · [关键代码导读](code-walkthrough.md)
@@ -41,3 +39,5 @@ MCP 连接进来的工具默认设置 `shouldDefer=true`，仍会受“始终加
 `tool_search` 让模型读说明，`tool_call` 交出调用请求，调度器检查真实目标并安排执行。目标权限要在执行前检查。模型也可能没有先搜索就尝试调用，因此程序仍需核对每次请求。[搜索与调用约定](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L129-L139) · [检查目标权限](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/core/coreToolScheduler.ts#L2706-L2729)
 
 这页讲的是寻找已注册工具的说明。Skill 文件的发现、插件加载是另外的流程。实际节省多少输入空间、模型使用得是否稳定，以及 MCP 重连和审批体验，都还需要运行评测。
+
+> 固定官方仓库 [`QwenLM/qwen-code@b9840886b86c23f196482cc1ee55d59cbc74df87`](https://github.com/QwenLM/qwen-code/tree/b9840886b86c23f196482cc1ee55d59cbc74df87)。本篇依据静态源码，介绍普通工具声明模式下 `ToolRegistry → tool_search → tool_call → CoreToolScheduler` 的流程，尚未运行验证。

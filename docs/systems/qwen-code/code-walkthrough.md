@@ -27,7 +27,7 @@ setTools(): ToolRegistry.getFunctionDeclarations() → 给模型的初始工具�
 
 搜索入口 `ToolSearchTool` 自身保持可见。关键词查询从隐藏的延迟工具里找候选，`select:` 按名称精确查询，也可以重看已显示的工具。
 
-`returnSchemas()` 返回 schema 文本，即工具名称、用途和参数结构。它负责交出说明，既没有执行目标工具，也没有调用 `revealDeferredTool` 把目标显示到原生声明列表中。[建立搜索入口](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L472-L513) · [找候选工具](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L258-L293) · [返回说明](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L295-L411)
+`returnSchemas()` 返回 schema 文本，即工具名称、用途和参数结构。模型先读到这份说明，目标工具的执行留到后续调用。此处不调用 `revealDeferredTool`，原生声明列表保持原样。[建立搜索入口](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L472-L513) · [找候选工具](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L258-L293) · [返回说明](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L295-L411)
 
 ## 调用请求先找到目标，再检查使用条件
 

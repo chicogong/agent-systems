@@ -12,18 +12,18 @@
 
 | 固定范围 | 触发：谁决定下一步 | 状态：看什么 | 工具结果写回 | 停止、拒绝与等待 |
 | --- | --- | --- | --- | --- |
-| [Pi 核心循环](../systems/pi/code-walkthrough.md) | `runLoop`；`finishTurn` 可改判。 | 消息、工具批次、steering / follow-up 队列。 | tool result；执行失败标 `isError`。 | `finishTurn=end` 优先停；steering 等轮间，follow-up 等结束点。 |
-| [mini-SWE 基类](../systems/mini-swe-agent/code-walkthrough.md) | `run()` 每轮检查消息尾部。 | `messages[-1].role`。 | 环境 observation 追加到 `messages`。 | 尾部 `exit` 返回；格式错误可反馈再试，一般异常重抛。 |
-| [OpenCode 会话](../systems/opencode/code-walkthrough.md) | processor 返回结果；`runLoop` 再判断。 | `ToolPart` 状态与会话状态分开。 | `tool-result/error` 收束 part。 | `stop` 结束；模型流故障可在 processor 内退避重试；`compact` 转压缩。 |
-| [Kimi Code 单 turn](../systems/kimi-code/code-walkthrough.md) | `runTurn`；非 `tool_use` 时问停止回调。 | steer 缓冲、步数、取消信号。 | 工具批次排空 `tool.result` 事件。 | `tool_use` 续步；steer 等步边界；取消/上限可终止。 |
+| [Pi 核心循环](../systems/pi/code-walkthrough.md) | `runLoop` 安排循环，`finishTurn` 回调可以改变继续或停止的决定。 | 消息、工具批次、steering / follow-up 队列。 | 工具结果写成 tool result；执行失败标 `isError`。 | `finishTurn=end` 优先停止；steering 在轮间处理，follow-up 在自然结束点处理。 |
+| [mini-SWE 基类](../systems/mini-swe-agent/code-walkthrough.md) | `run()` 每轮检查最后一条消息。 | `messages[-1].role`。 | 执行环境返回的结果（observation）追加到 `messages`。 | 最后一条为 `exit` 时返回；格式错误可反馈再试，一般异常重新抛出。 |
+| [OpenCode 会话](../systems/opencode/code-walkthrough.md) | processor 返回处理结果，`runLoop` 再判断下一步。 | `ToolPart` 状态与会话状态分开。 | 收到 `tool-result` 或 `tool-error` 后，更新对应的 part。 | `stop` 结束；模型流故障可在 processor 内延迟后重试；`compact` 转入压缩。 |
+| [Kimi Code 单 turn](../systems/kimi-code/code-walkthrough.md) | `runTurn` 安排步骤；非 `tool_use` 时调用停止回调。 | steer 缓冲、步数、取消信号。 | 工具批次以 `tool.result` 事件交回结果；批次处理完后才结束本步骤。 | `tool_use` 继续下一步；steer 等待步骤间的刷新点；取消或达到上限时可终止。 |
 
 ## 怎样读这些差别
 
 Pi 和 Kimi Code 都会接收忙时的新输入。Pi 明分 steering 与 follow-up 两条队列，分别在轮间和结束点处理；Kimi Code 先把活动 turn 的 steer 放进 `steerBuffer`，再在下一 step 或停止回调处刷新。它们都在安排“新指令什么时候参与下一步”，只是等待点不同。
 
-另外两套路径更适合从状态读起：mini-SWE-agent 的基类查看最后一条消息是否为 `exit`；OpenCode 同时记录一个工具调用的状态和整个会话的处理结果。这样读，函数名背后的工作就清楚了：**记录结果 → 检查新输入与停止条件 → 继续或交回控制权**。
+mini-SWE-agent 的基类则查看最后一条消息是否为 `exit`；OpenCode 分别记录一次工具调用的状态和整个会话的处理结果。读这些代码时，可以先找到结果写在哪里，再看程序如何决定继续或结束。
 
-可以做一次纸笔推演：命令返回权限错误后，用户又发来一条补充指令。分别沿四行表格标出错误记在哪里、新指令在哪里等待、下一次模型请求前经过哪个判断。你的产物是四条标过判断点的路径；未读到的 CLI 或提供商分支写“待查”即可。
+想练习读表，可以假设命令返回权限错误，用户随后补充了一条指令。选一个项目，找出错误记在哪里、新指令在哪里等待，以及下一次模型请求前经过哪个判断。表格没有覆盖的 CLI 或模型提供商分支，回到对应项目再查。
 
 ## 源码定位（可选深入）
 

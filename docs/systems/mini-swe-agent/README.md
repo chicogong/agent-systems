@@ -2,8 +2,6 @@
 
 给助手一个代码任务，它先请求模型，按模型给出的命令执行，再把输出交给模型，继续下一轮。mini-swe-agent 把这条主线写得很短：任务、模型回复和命令结果都放在同一份消息清单里；循环就围绕这份清单工作。
 
-> 固定官方仓库 [`SWE-agent/mini-swe-agent@04d809ceab9df28f9adaed044884180159172930`](https://github.com/SWE-agent/mini-swe-agent/tree/04d809ceab9df28f9adaed044884180159172930)。本篇聚焦 `DefaultAgent` 与 `LocalEnvironment` 的一条基类路径；只做静态源码核对，未启动模型或执行命令。
-
 ![mini-swe-agent 的消息清单与结束流程](../../../figures/mini-swe-loop/diagram.svg)
 
 [文字版](../../../figures/mini-swe-loop/README.md) · [可编辑图源](../../../figures/mini-swe-loop/scene.excalidraw) · [关键代码导读](code-walkthrough.md)
@@ -34,3 +32,5 @@
 本图画的是 `DefaultAgent` 核心。命令行界面（CLI）的 `mini` 在这个版本默认使用 `InteractiveAgent`：它在核心上增加人工输入、确认和自动运行等模式，以及完成确认。[命令行选择](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/run/mini.py#L94-L102) · [交互类](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/interactive.py#L24-L36) · [交互处理](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/interactive.py#L58-L94)
 
 要把工作记录写到文件，还需设置非空的 `output_path`。[保存条件](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L182-L190) 阅读记录时，也要区分“程序以什么原因结束”和“代码改得是否正确”：后者仍要看测试与实际结果。本篇尚未运行模型或命令，恢复和权限行为需要另做实验。
+
+> 固定官方仓库 [`SWE-agent/mini-swe-agent@04d809ceab9df28f9adaed044884180159172930`](https://github.com/SWE-agent/mini-swe-agent/tree/04d809ceab9df28f9adaed044884180159172930)。本篇聚焦 `DefaultAgent` 与 `LocalEnvironment` 的一条基类路径；只做静态源码核对，未启动模型或执行命令。
