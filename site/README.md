@@ -41,7 +41,10 @@ SITE_URL=https://books.aimake.cc DEPLOY_TARGET=vercel npm run build:public
 
 `verify:live` 默认逐字节下载全部文件，适合正式发布验收。若当地网络对约 20–24 MB 的 PDF/ZIP 下载很慢，可用 `VERIFY_LARGE_AS_ETAG=1 npm run verify:live` 做快速巡检：小文件仍逐字节比对，大文件只比对内容长度与 Vercel ETag（本地 MD5），输出会明确标为非完整下载；快速巡检不能代替正式版的完整下载和散列验收。
 
+统计安装函数保留一次显式首屏访问，并按页面路径去重；VitePress 的初始路由回调、仅更改查询参数或片段都不会再记一次。真正切换章节或返回上一页才产生新的页面访问。相关行为和隐私过滤由 `npm test` 检查；上线后还须观察实际请求与后台接收，不能只看开关值。
+
 ## PDF 在线阅读的发布门槛
+
 
 同域名 PDF 采用独立 `/pdf` 页面、浏览器原生预览和显眼的下载后备；小屏不嵌入 PDF 阅读器，避免浏览器不支持时出现黑框。HTML 仍是主要可搜索、可缩放和辅助技术阅读版。PDF 尚未制作语义标签，封面插画也不是 300 PPI 印刷母版。PDF 文件单独由 Vercel 回应 `X-Robots-Tag: noindex`，其阅读说明页仍可被发现；这种非 HTML 索引控制符合 [Google 的说明](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag)。
 

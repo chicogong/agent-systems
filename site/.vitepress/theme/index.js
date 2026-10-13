@@ -2,7 +2,7 @@ import DefaultTheme from 'vitepress/theme-without-fonts'
 import { h, onMounted } from 'vue'
 import ReaderActions from './ReaderActions.vue'
 import { inject, pageview } from '@vercel/analytics'
-import { sanitizeAnalyticsEvent } from '../../scripts/analytics-policy.mjs'
+import { installReaderAnalytics } from '../../scripts/reader-analytics.mjs'
 import './style.css'
 
 const publicMode = import.meta.env.VITE_PUBLIC_SITE === '1'
@@ -84,13 +84,13 @@ export default {
     DefaultTheme.enhanceApp?.(context)
     if (typeof window !== 'undefined') {
       if (publicMode && import.meta.env.VITE_READER_ANALYTICS === '1' && window.location.hostname === 'books.aimake.cc') {
-        inject({ mode: 'production', disableAutoTrack: true, beforeSend: sanitizeAnalyticsEvent })
-        pageview({ path: window.location.pathname })
-        const previous = context.router.onAfterRouteChanged
-        context.router.onAfterRouteChanged = (to) => {
-          previous?.(to)
-          pageview({ path: new URL(to, window.location.origin).pathname })
-        }
+        installReaderAnalytics({
+          router: context.router,
+          origin: window.location.origin,
+          pathname: window.location.pathname,
+          inject,
+          pageview
+        })
       }
     }
   }
