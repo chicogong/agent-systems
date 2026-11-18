@@ -45,6 +45,7 @@ function installReaderControls() {
   const closeButton = dialog.querySelector('.figure-viewer-close')
   const viewerStage = dialog.querySelector('.figure-viewer-stage')
   const viewerImg = dialog.querySelector('img')
+  let lastTrigger = null
   const setZoom = (zoomed) => {
     dialog.classList.toggle('is-zoomed', zoomed)
     zoomButton.textContent = zoomed ? '适应窗口' : '放大细读'
@@ -53,8 +54,9 @@ function installReaderControls() {
       viewerStage.scrollTo({ top: 0, left: 0, behavior: 'instant' })
     }
   }
-  const openFigure = (img) => {
+  const openFigure = (img, trigger = null) => {
     if (!img) return
+    lastTrigger = trigger
     setZoom(false)
     viewerImg.src = img.src
     viewerImg.alt = img.alt
@@ -67,7 +69,14 @@ function installReaderControls() {
   zoomButton.addEventListener('click', () => setZoom(!dialog.classList.contains('is-zoomed')))
   viewerImg.addEventListener('click', () => setZoom(!dialog.classList.contains('is-zoomed')))
   closeButton.addEventListener('click', () => dialog.close())
-  dialog.addEventListener('close', () => setZoom(false))
+  dialog.addEventListener('close', () => {
+    setZoom(false)
+    const trigger = lastTrigger
+    lastTrigger = null
+    if (trigger && typeof trigger.focus === 'function' && trigger.isConnected) {
+      requestAnimationFrame(() => trigger.focus())
+    }
+  })
   dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close() })
   document.addEventListener('click', (event) => {
     const anchor = event.target.closest?.('a[href*="#"]')
@@ -86,12 +95,13 @@ function installReaderControls() {
     const button = event.target.closest?.('.figure-open')
     if (button) {
       const img = button.parentElement?.querySelector('img[src*="/assets/figures/"][src$="/diagram.svg"]')
-      openFigure(img)
+      openFigure(img, button)
       return
     }
     const directImg = event.target.closest?.('.vp-doc img[src*="/assets/figures/"][src$="/diagram.svg"]')
     if (directImg && !directImg.closest('a')) {
-      openFigure(directImg)
+      const pairedButton = directImg.parentElement?.querySelector('.figure-open')
+      openFigure(directImg, pairedButton || directImg)
     }
   })
   window.addEventListener('hashchange', () => revealHashFigureDetails())
