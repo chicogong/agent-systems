@@ -115,6 +115,11 @@ export default defineConfig({
   ignoreDeadLinks: [/\/assets\/figures\/[^/]+\/scene\.excalidraw$/],
   appearance: false,
   lastUpdated: false,
+  vite: {
+    build: {
+      chunkSizeWarningLimit: 1000
+    }
+  },
   themeConfig: {
     siteTitle: '图解 Agent 系统',
     sidebarMenuLabel: '目录',

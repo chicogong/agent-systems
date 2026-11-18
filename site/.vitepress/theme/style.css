@@ -803,6 +803,303 @@ body {
   text-decoration: underline;
 }
 
+.figure-viewer-steps {
+  padding: .68rem 1rem .78rem;
+  background: var(--reader-paper);
+  border-bottom: 1px solid var(--reader-rule);
+}
+
+.figure-viewer-steps-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .4rem;
+}
+
+.figure-viewer-steps-count {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--reader-blueprint-deep);
+}
+
+.figure-viewer-steps-buttons {
+  display: flex;
+  gap: .45rem;
+}
+
+.figure-viewer-steps-buttons button {
+  border: 1px solid var(--reader-rule-strong);
+  border-radius: 6px;
+  background: var(--reader-paper-elevated);
+  color: var(--reader-ink);
+  padding: .25rem .6rem;
+  font-size: .8rem;
+  font-weight: 640;
+  cursor: pointer;
+}
+
+.figure-viewer-steps-buttons button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.figure-viewer-steps-buttons button:focus-visible {
+  outline: 3px solid var(--reader-blueprint);
+  outline-offset: 2px;
+}
+
+.figure-viewer-steps-text {
+  margin: 0;
+  font-size: .88rem;
+  line-height: 1.65;
+  color: var(--reader-ink);
+}
+
+/* Interactive Deterministic Trace Player */
+.trace-player {
+  margin: 2rem 0 1.4rem;
+  border: 1px solid var(--reader-rule-strong);
+  border-radius: 10px;
+  background: var(--reader-paper-elevated);
+  box-shadow: 0 6px 20px rgba(24, 38, 49, 0.05);
+  overflow: hidden;
+}
+
+.trace-player-drawer {
+  border-left: 4px solid var(--reader-blueprint);
+}
+
+.trace-player-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem 1rem;
+  padding: .88rem 1.1rem;
+  background: var(--reader-blueprint-tint);
+  color: var(--reader-ink);
+  font-weight: 700;
+  font-size: .95rem;
+  cursor: pointer;
+}
+
+.trace-player-summary-hint {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--reader-blueprint-deep);
+}
+
+.trace-player-body {
+  padding: 1.1rem 1.15rem 1.2rem;
+}
+
+.trace-player-kicker {
+  display: inline-block;
+  font-size: .78rem;
+  font-weight: 720;
+  letter-spacing: .04em;
+  color: var(--reader-cinnabar-ink);
+}
+
+.trace-player-title {
+  margin: .3rem 0 .25rem;
+  font-size: 1.15rem;
+  color: var(--reader-ink);
+}
+
+.trace-player-question {
+  margin: 0 0 .9rem;
+  font-size: .92rem;
+  color: var(--reader-ink-muted);
+}
+
+.trace-player-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .48rem;
+  margin-bottom: .85rem;
+}
+
+.trace-player-mode,
+.trace-player-controls button,
+.trace-player-pill {
+  border: 1px solid var(--reader-rule-strong);
+  border-radius: 6px;
+  background: var(--reader-surface);
+  color: var(--reader-ink);
+  padding: .42rem .72rem;
+  font-size: .84rem;
+  font-weight: 620;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.trace-player-mode[aria-pressed='true'],
+.trace-player-pill[aria-current='step'] {
+  background: var(--reader-blueprint);
+  border-color: var(--reader-blueprint);
+  color: #fff;
+}
+
+.trace-player-controls button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.trace-player-mode:focus-visible,
+.trace-player-controls button:focus-visible,
+.trace-player-pill:focus-visible {
+  outline: 3px solid var(--reader-blueprint);
+  outline-offset: 2px;
+}
+
+.trace-player-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .45rem .75rem;
+  padding: .68rem .85rem;
+  border-radius: 8px;
+  border: 1px solid var(--reader-rule);
+  margin-bottom: .85rem;
+  font-size: .88rem;
+  line-height: 1.6;
+}
+
+.trace-player-verdict[data-tone='ok'] {
+  background: #EDF5F0;
+  border-color: #B4D3C0;
+}
+
+.trace-player-verdict[data-tone='warn'] {
+  background: #FCF5E8;
+  border-color: #E2C693;
+}
+
+.trace-player-verdict[data-tone='danger'] {
+  background: #FBF0ED;
+  border-color: #E4B7AC;
+}
+
+.trace-player-nav {
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  margin-bottom: .85rem;
+}
+
+.trace-player-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+
+.trace-player-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.trace-player-pill {
+  font-size: .8rem;
+  padding: .32rem .6rem;
+}
+
+.trace-player-stage {
+  border: 1px solid var(--reader-rule);
+  border-radius: 8px;
+  background: var(--reader-paper);
+  padding: .85rem .9rem;
+}
+
+.trace-player-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .45rem;
+}
+
+.trace-player-badge {
+  display: inline-block;
+  padding: .15rem .5rem;
+  border-radius: 4px;
+  background: var(--reader-blueprint-tint);
+  color: var(--reader-blueprint-deep);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.trace-player-event {
+  font-size: .8rem;
+  padding: .12rem .45rem;
+  border-radius: 4px;
+  background: var(--vp-code-bg);
+  color: var(--vp-code-color);
+}
+
+.trace-player-explanation {
+  margin: .35rem 0 .75rem;
+  font-size: .92rem;
+  line-height: 1.72;
+  color: var(--reader-ink);
+}
+
+.trace-player-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.trace-player-pane {
+  min-width: 0;
+  border: 1px solid var(--reader-rule);
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.trace-player-pane-title {
+  padding: .38rem .65rem;
+  background: var(--reader-sidebar);
+  border-bottom: 1px solid var(--reader-rule);
+  font-size: .76rem;
+  font-weight: 700;
+  color: var(--reader-ink-muted);
+}
+
+.trace-player-pane pre {
+  margin: 0;
+  padding: .6rem .7rem;
+  overflow-x: auto;
+  font-size: .78rem;
+  line-height: 1.5;
+  background: #fff;
+}
+
+.trace-player-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem 1rem;
+  margin-top: .85rem;
+  font-size: .82rem;
+  color: var(--reader-ink-muted);
+}
+
+.trace-player-cli code {
+  word-break: break-all;
+}
+
+.trace-player-link {
+  color: var(--reader-blueprint);
+  font-weight: 660;
+  text-decoration: none;
+}
+
 /* Mobile & 390px Narrow Viewport Adaptations */
 @media (max-width: 720px) {
   .vp-doc h1 {
@@ -919,6 +1216,24 @@ body {
 
   .figure-viewer.is-zoomed .figure-viewer-stage {
     max-height: calc(100dvh - 56px);
+  }
+
+  .figure-viewer-steps {
+    padding: .55rem .75rem;
+  }
+
+  .trace-player-body {
+    padding: .85rem;
+  }
+
+  .trace-player-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trace-player-mode,
+  .trace-player-controls button,
+  .trace-player-pill {
+    min-height: 40px;
   }
 }
 
