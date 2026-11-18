@@ -52,7 +52,11 @@
 
 秘诀是死死盯住三个锚点：**任务从哪个入口进入并组装成模型输入**、**工具调用在哪里被拦截与分发执行**、**主循环依据什么条件继续下一轮或停机退出**。先顺着正常路径走完一轮，再去翻工具报错或用户中断的异常分支。
 
-推荐从分层最干净的 [Pi](systems/pi/README.md) 及其[代码导读](systems/pi/code-walkthrough.md)起步——它把模型通信层、Agent 运行核心与终端交互外壳拆得清清楚楚。你也可以按自己关心的工程切面挑选目标仓库：
+推荐从分层最干净的 [Pi](systems/pi/README.md) 及其[代码导读](systems/pi/code-walkthrough.md)起步——它把模型通信层、Agent 运行核心与终端交互外壳拆得清清楚楚。你也可以对着下面的全书开源系统地图，按自己关心的工程切面挑选目标仓库：
+
+![16 个开源系统选读地图](../figures/systems-landscape/diagram.svg)
+
+[可编辑图源](../figures/systems-landscape/scene.excalidraw) · [PNG 预览](../figures/systems-landscape/preview.png) · [图的文字版](../figures/systems-landscape/README.md)
 
 - [mini-SWE-agent](systems/mini-swe-agent/README.md)：用极精简的代码跑通完整修 Bug 循环，适合一口气读完主干。
 - [OpenCode](systems/opencode/README.md)：观察工具部分执行、等待审批与外层会话状态如何分别推进。

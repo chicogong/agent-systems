@@ -158,7 +158,7 @@ export const TRACE_LABS = {
     id: 'context-budget',
     title: '上下文预算与可见性：为什么「存了」不等于「看见了」',
     route: '/labs/context-budget',
-    companionRoutes: ['/concepts/context-vs-memory'],
+    companionRoutes: ['/concepts/context-vs-memory', '/concepts/cache-and-cost-economics', '/comparisons/persisted-vs-visible'],
     question: '当预算紧张时，按时间逆序塞满窗口会怎样丢失最早的安全约束？',
     modes: [
       {

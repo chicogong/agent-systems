@@ -13,6 +13,10 @@
 
 本篇专门做一件事：**把笼统的“记忆”拆回四种精确的工程状态**，结合 [Pi](../systems/pi/README.md)、[Letta Code](../systems/letta/README.md)、[Mem0](../systems/mem0/README.md) 与 [LangGraph](../systems/langgraph/README.md) 的源码设计，给出一份可直接落地的架构选型指南。
 
+![把笼统的记忆拆回四种工程状态：结构、代价与选型](../../figures/four-kinds-of-state/diagram.svg)
+
+[可编辑图源](../../figures/four-kinds-of-state/scene.excalidraw) · [PNG 预览](../../figures/four-kinds-of-state/preview.png) · [图的文字版](../../figures/four-kinds-of-state/README.md)
+
 ## 先看本质差异：同一件事在四套系统里长什么样？
 
 假设用户在一次发布任务里说：“以后生产环境发布一律走蓝绿切换；现在先停在待审批这一步。”在四套系统眼里，这句输入背后对应的状态切片完全不是同一种物种：

@@ -29,7 +29,8 @@
 | **压缩摘要**（Compaction） | 当对话快撑爆窗口时，把早期冗长交互浓缩成短摘要，腾出空间继续接近期消息 | **有损操作**：早期的细碎数字或顺口提过的禁令（如“切勿推送”）可能在概括时丢失，硬红线须另靠宿主规则守住 | [会话变长以后](concepts/session-compaction-and-memory.md) |
 | **长期记忆** | 跨会话保留下来、供日后直接编入提示词或按需检索召回的用户偏好、规范与历史事实 | **实现形态截然不同**：Letta 偏重常驻与分层的可编辑 Markdown 文件，Mem0 偏重抽取后的向量检索候选 | [Letta Code](systems/letta/README.md)、[Mem0](systems/mem0/README.md) |
 | **Checkpoint／检查点** | 图或工作流引擎在步骤边界保存的结构化程序执行状态快照，支持断点续跑与分叉 | **只回滚内存变量，不回滚外部世界**：切回旧检查点重跑，绝不会自动撤回之前已经发出去的邮件或部署请求 | [LangGraph](systems/langgraph/README.md) |
-| `checkpoint.md` | MiMo Code 中把阶段性任务目标、已完成进展与关键线索整理给后续模型窗口读的交接文档 | **撞名预警**：它是一份面向模型阅读的上下文压缩与交接文本，**不是** LangGraph 那种引擎级状态机快照 | [MiMo Code](systems/mimo-code/README.md) |
+| **`checkpoint.md`** | MiMo Code 中把阶段性任务目标、已完成进展与关键线索整理给后续模型窗口读的交接文档 | **撞名预警**：它是一份面向模型阅读的上下文压缩与交接文本，**不是** LangGraph 那种引擎级状态机快照 | [MiMo Code](systems/mimo-code/README.md) |
+| **前缀缓存**（Prefix Caching） | 推理引擎复用与上一轮逐词元严格一致的输入前缀 KV 状态，省去重复计算并降低单价与首字延迟 | **动开头就会全盘作废**：首行塞秒级时间戳、乱排工具表或逐条踢旧消息，都会让整条长历史缓存失配 | [前缀缓存经济学](concepts/cache-and-cost-economics.md) |
 
 ## 三、权限、隔离与外部副作用
 
@@ -47,6 +48,11 @@
 | **Skill** | 按需加载进上下文的专项任务做法说明、操作规范及配套脚本资源 | **省预算的软指导**：不用时不必挤占每轮常驻提示词；但它本身只是说明文档，不会越过宿主偷偷拿到额外系统权限 | [扩展能力](concepts/extensibility-layers.md) |
 | **Extension／扩展** | 直接由宿主进程加载运行的插件代码，能注册新工具或挂载生命周期钩子 | **代码级高权限**：不同于纯文本 Skill，扩展在宿主运行期内直接参与控制流与事件拦截 | [Pi 扩展](systems/pi/extensions-and-skills.md) |
 | **MCP** | 让宿主以统一协议连接外部服务并获取工具、资源与提示模板的标准接口 | **通道标准不等于权限免检**：连上了 MCP Server 后，具体哪个工具免询、哪个必须弹窗、用谁的身份访问仍须独立管控 | [工具怎样接力](concepts/mcp-skill-tool-lifecycle.md) |
+| **`AGENTS.md`** | 放在代码仓库根目录或子目录、专门给编码 Agent 阅读的构建测试命令与施工禁区约定文件 | **纯文本约定不是沙箱**：它随路径就近注入提示词辅助理解，不能替代宿主对不可信仓库的命令审批与隔离 | [开放协作协议栈](concepts/open-agent-protocols.md) |
+| **Tool Annotations** | MCP 工具声明自身“是否只读、是否破坏性、是否幂等”的行为特征元数据（如 `readOnlyHint`） | **提示（Hint）不是安全保证**：面对不可信第三方 Server 时，绝不能单凭它自称只读就跳过宿主审批 | [开放协作协议栈](concepts/open-agent-protocols.md) |
+| **Elicitation** | MCP Server 在工具执行中途发现缺参数或需外部敏感确认时，向客户端发起结构化表单或带外 URL 追问的机制 | **不同于连接级鉴权**：URL 模式追问用于第三方授权或敏感输入，不取代客户端访问 MCP Server 本身的 OAuth 2.1 令牌 | [开放协作协议栈](concepts/open-agent-protocols.md) |
+| **A2A**（Agent2Agent） | 让不同团队或框架构建的独立黑盒 Agent 通过 `Agent Card` 发现彼此、围绕异步 `Task` 状态机协作的开放协议 | **横向委托而非纵向调工具**：MCP 调确定性工具，A2A 委托不公开内部提示词与私有工具的对等自主 Agent | [开放协作协议栈](concepts/open-agent-protocols.md) |
+| **`pass^k`** | 同一多轮交互任务连续独立运行 $k$ 次**全部**遵守规则并达成正确环境终态的可靠性指标（源于 $\tau$-bench） | **与 `pass@k` 恰恰相反**：`pass@k` 试 $k$ 次蒙对 1 次即算过，而生产业务看重次次稳住的 `pass^k` | [观察与评测](concepts/observation-evaluation.md) |
 | **源码事实** | 在本书登记的固定仓库提交与具体文件行号中，能够逐行核对到实现代码的结论 | **仅对该提交与所读路径负责**：上游仓库后续升级或其他未展开分支（如特定平台插件）可能存在差异 | [来源规则](../sources/README.md) |
 | **工程推断** | 基于多套源码机制与分布式系统常识提炼出的架构权衡建议或排查方法 | **不是某一个项目的专有 API**：正文中会明确区分“源码里写了什么”与“你在设计系统时该补哪道防线” | [来源规则](../sources/README.md) |
 

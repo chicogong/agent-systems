@@ -10,6 +10,10 @@
 
 “持久保存（Persisted on Disk）”只保证了应用以后**有机会**把数据找回来；“本轮可见（Visible in Context）”才决定模型这一次**到底看见了什么**。两者之间隔着一整条筛选、投影与编译流水线，任何一环掉链子，表现出来都是同一种症状——“失忆”。
 
+![存下来了不等于模型本轮看见了：排查假性失忆的四道漏斗](../../figures/persisted-vs-visible/diagram.svg)
+
+[可编辑图源](../../figures/persisted-vs-visible/scene.excalidraw) · [PNG 预览](../../figures/persisted-vs-visible/preview.png) · [图的文字版](../../figures/persisted-vs-visible/README.md)
+
 ## 排查“假性失忆”的四道漏斗
 
 当你发现一条本该生效的规则或上下文在回答里消失时，不要盲目去调提示词措辞，按下面四道漏斗从底向上逐关排查，几分钟就能抓出真凶：

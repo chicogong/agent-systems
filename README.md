@@ -24,8 +24,11 @@
 | **给代码安排合适的执行环境** | **Hermes 怎样保存和使用记忆** |
 | [![沙箱的运行设置、执行记录与结果检查](figures/sandbox-execution/preview.png)](figures/sandbox-execution/diagram.svg) | [![Hermes 的知识文件、提示快照与待批准写入](figures/hermes-session-memory/preview.png)](figures/hermes-session-memory/diagram.svg) |
 | [读沙箱与生命周期](docs/concepts/sandbox-execution.md) | [读 Hermes 的知识维护路径](docs/systems/hermes/README.md) |
+| **前缀缓存：为什么改开头会让账单翻十倍** | **AGENTS.md、MCP 与 A2A 开放协议栈** |
+| [![前缀缓存命中与雪崩失效对比](figures/prefix-cache-mechanics/preview.png)](figures/prefix-cache-mechanics/diagram.svg) | [![仓库约定、纵向工具协议与横向代理委托三层标准](figures/open-agent-protocols/preview.png)](figures/open-agent-protocols/diagram.svg) |
+| [读前缀缓存与上下文经济学](docs/concepts/cache-and-cost-economics.md) | [读开放协作协议栈](docs/concepts/open-agent-protocols.md) |
 
-全部插图目录与无障碍文字说明见[图稿索引](figures/README.md)。
+全部 **40 组**插图目录与无障碍文字说明见[图稿索引](figures/README.md)。
 
 ## 你可以怎样读
 
@@ -42,10 +45,10 @@
 | 章节类型 | 解决什么问题 | 推荐试看 |
 | --- | --- | --- |
 | **学习与应用** | 把“明确约束、锚定出处、单列待查”落回学习、备课与日常工作交接 | [把所学用起来](docs/learning-and-practice.md) · [阅读路线](docs/learning-path.md) · [AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读) |
-| **机制图解** | 拆清模型、工具、宿主、上下文、Skill/MCP、沙箱与评测各自守哪道边界 | [Agent loop](docs/concepts/agent-loop.md) · [MCP、Skill 与工具](docs/concepts/mcp-skill-tool-lifecycle.md) · [观察与评测](docs/concepts/observation-evaluation.md) |
-| **开源项目讲解** | 追踪固定 commit 里的真实调用链，看一线项目如何把概念写成可维护代码 | [Pi](docs/systems/pi/README.md) · [OpenCode](docs/systems/opencode/README.md) · [LangGraph](docs/systems/langgraph/README.md) |
-| **横向对照** | 同一工程难题放在一起比，看清不同架构方案的收益与代价 | [循环与停止](docs/comparisons/loop-and-stop.md) · [四种状态](docs/comparisons/four-kinds-of-state.md) · [权限与恢复](docs/comparisons/permission-and-recovery.md) |
-| **可选小实验** | 用零依赖 Python 标准库脚本在本地复现输入裁剪、回执丢失与幂等查证 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [上下文预算](docs/labs/context-budget.md) · [远端结果查询](docs/labs/remote-effect.md) · [本地 HTTP 回执](docs/labs/http-receipt.md) |
+| **机制图解（16 篇）** | 拆清循环、上下文、前缀缓存、开放协议（AGENTS.md / MCP / A2A）、沙箱与 `pass^k` 评测各自守哪道边界 | [Agent loop](docs/concepts/agent-loop.md) · [前缀缓存经济学](docs/concepts/cache-and-cost-economics.md) · [开放协作协议栈](docs/concepts/open-agent-protocols.md) · [观察与评测](docs/concepts/observation-evaluation.md) |
+| **开源项目讲解（16 套）** | 追踪固定 commit 里的真实调用链，看一线项目如何把概念写成可维护代码 | [Pi](docs/systems/pi/README.md) · [OpenCode](docs/systems/opencode/README.md) · [LangGraph](docs/systems/langgraph/README.md) |
+| **横向对照（6 篇）** | 同一工程难题放在一起比，看清不同架构方案的收益与代价 | [循环与停止](docs/comparisons/loop-and-stop.md) · [持久与可见漏斗](docs/comparisons/persisted-vs-visible.md) · [四种状态](docs/comparisons/four-kinds-of-state.md) · [权限与恢复](docs/comparisons/permission-and-recovery.md) |
+| **交互实验（5 组）** | 网页端直接单步回放状态机，或用零依赖 Python 标准库脚本在本地复现裁剪、越权与幂等查账 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [上下文预算](docs/labs/context-budget.md) · [证据契约](docs/labs/evidence-contract.md) · [本地 HTTP 回执](docs/labs/http-receipt.md) |
 
 开源系统篇覆盖 Pi、DSH（DeepSeek Harness）、Codex、OpenCode、mini-SWE-agent、OpenHands、Browser Use、Qwen Code、Kimi Code、MiMo Code、Letta Code、Hermes Agent、Mem0、LangGraph、OpenClaw 与 GPT Researcher，横跨编码助手、编排运行时与记忆组件。每篇聚焦项目最具代表性的一条实现主干，完整清单见[系统索引](docs/systems/README.md)，整体规划见[选题地图](docs/program.md)与[扩写计划](docs/curriculum-expansion.md)。
 
@@ -55,7 +58,7 @@
 
 | 入口 | 适合什么场景 |
 | --- | --- |
-| [在线阅读站](https://books.aimake.cc/) | 手机与桌面端沉浸阅读、章节检索与快捷反馈；按人工校验批次发布更新。 |
+| [在线阅读站](https://books.aimake.cc/) | 手机与桌面端沉浸阅读、毫秒级分词检索、**零安装状态机单步回放器**、大图读图步进指南与一键复制 AI 苏格拉底陪读包。 |
 | [GitHub 书序目录](book/CONTENTS.md) | 直接浏览唯一 Markdown 源稿、源码行号链接、图源与修订记录。 |
 | [可携带 Markdown 阅读包](https://books.aimake.cc/downloads) | 打包下载固定版本 ZIP，离线导入 Obsidian 或任意阅读器，附图与实验脚本完整保留，也支持[自行构建](book/README.md#markdown-阅读包)。 |
 | [PDF 电子校样](https://books.aimake.cc/pdf) | 适合平板连续翻阅与划线批注的电子校样版。 |

@@ -4,13 +4,13 @@
 
 此页是仓库**唯一的当前进度与缺口记录**。`program.md` 记录可能研究的系统与问题，`pi-first.md` 保留首篇的历史工单；两者不是当前完成清单。一次通过的构建或新建的目录，不会自动把内容状态改成“已核验”。
 
-## 本轮升级：全书去套话重写、四幅关键新图与阅读器焕新（2026-11-18）
+## 本轮升级：全书去套话重写、九幅核心新图、前沿协议与缓存专题及交互阅读器（2026-11-18）
 
-围绕真实冷读体验，对全书 69 篇源稿完成系统性重构与重写：清除早期机器草稿在正文中间反复插入的防御性套话与机械报菜名，统一以真实痛点开场、先讲透核心架构权衡与心智模型，再定位固定 commit 源码，并将版本与未实测边界统一收束至章末「来源与边界」。扩充原仅 18 行的[持久保存与本轮可见](comparisons/persisted-vs-visible.md)（四道失忆排查漏斗）与[四种状态选型指南](comparisons/four-kinds-of-state.md)。
+围绕真实冷读体验与 2025–2026 前沿生态演进，对全书 **68 个书稿单元**与支撑文档完成系统性升级：
 
-补齐 **4 组原生 Excalidraw 图稿**（全库共 **35 组图源、SVG、4× PNG 与文字说明**，成书 34 幅图嵌入全部通过 A4 8pt 严格预检）：为[学习与应用](learning-and-practice.md)补首屏证据交付图（`from-materials-to-answer`），为[长会话压缩与记忆](concepts/session-compaction-and-memory.md)补四轨道状态图（`compaction-and-memory`），为试读核心章[完成与证据](comparisons/completion-and-evidence.md)补三件套核验图（`completion-and-evidence`），为[系统总览](systems/README.md)补 16 个开源项目问题选读地图（`systems-landscape`）。
-
-在线阅读器（`site/`）同步升级为书卷蓝图视觉主题，新增：① 双轨章节导航（识别可选源码导读与动手实验，提供「跳过源码，直达下一章图解」快捷入口）；② 底部图文字说明默认折叠并支持锚点自动展开；③ 试读页站内化（`/trial`）；④ 纯前端零隐私风险的「复制本章 AI 陪读包」按钮；⑤ 点击正文图直接放大及窄屏横向拖动细读。本地仓库检查、16 项固定来源核验、57 个脚本测试、40 个实验测试、25 个站点单测、A4 PDF 与 Markdown 阅读包构建通过；真人试读、印前母版与线上重新部署验收仍按独立门槛推进。
+1. **文稿重构与前沿周边技术补齐**：清除早期草稿在正文中间反复插入的防御性套话与机械报菜名，统一以真实痛点开场并将版本边界收束至章末。新增两篇核心机制章——[前缀缓存（KV Cache）与上下文经济学](concepts/cache-and-cost-economics.md)（剖析多步 Agent 循环 `100:1` 输入输出比下的四大缓存雪崩反模式与纯追加水位线压缩）与[开放协作协议栈：AGENTS.md、MCP 演进与 A2A 跨代理委托](concepts/open-agent-protocols.md)（串讲分层仓库施工守则、MCP `2025-11-25` 的 Streamable HTTP / OAuth 2.1 / Tool Annotations / Elicitation，以及 A2A 的 `Agent Card` 与异步 `Task` 状态机）；并在[观察、测试与评测](concepts/observation-evaluation.md)与[术语表](glossary.md)补齐 OpenTelemetry GenAI 语义约定、SWE-bench 环境终态断言及 $\tau$-bench 的 `pass^k` 多轮一致性指标。
+2. **图解矩阵全面补齐（全库 40 组原生 Excalidraw 图稿）**：累计新增 **9 组原生图稿**（`from-materials-to-answer`、`compaction-and-memory`、`prefix-cache-mechanics`、`open-agent-protocols`、`system-one-routing`、`persisted-vs-visible`、`four-kinds-of-state`、`completion-and-evidence`、`systems-landscape`）并精修 5 张既有高密度图稿，使主干概念篇、开源系统篇与横向对照篇实现核心图解全覆盖，成书全部 **40 幅图**通过 A4 `8pt` 严格几何预检（0 告警）。
+3. **交互式在线阅读器与自动化门禁升级**：`site/` 升级为书卷蓝图主题，支持：① 双轨章节导航（可选跳过源码导读与实验）；② **零依赖交互式确定性状态机回放器（Trace Player）**，覆盖全部 5 组实验主页面与概念伴随抽屉；③ 大图细读对话框内嵌 `← / →` 读图步进指南与跨路由焦点保护；④ `Intl.Segmenter` 中文全文检索瘦身（索引分片由 `3.2 MB` 压至约 `900 KB`）与四步苏格拉底「AI 陪读包」；⑤ 新增 `scripts/check_upstream_drift.py` 对 16 个开源系统共 109 条源码深链执行 40 位固定 commit 审计与远端偏移巡检。真人非作者试读、印前母版与跨环境辅助技术验收仍按独立门槛推进。
 
 ## 历史批次：表达修订与发布核验（2026-10-13）
 

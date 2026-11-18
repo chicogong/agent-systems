@@ -22,7 +22,7 @@
 | **离线评测集**（Evals） | 固定代表性任务集、统一评分器、逐例得分明细与成本耗时分布 | 横向对比提示词、工具集或模型升级前后的整体得失，防止按下葫芦浮起瓢 |
 | **人工复核**（Human Review） | 真实使用者的修改意见、坏例批注与交互摩擦记录 | 发现自动断言测不出的语义偏差、可读性缺陷与隐性业务风险 |
 
-在可观测性标准里，OpenTelemetry 的[信号概念](https://opentelemetry.io/docs/concepts/signals/)与[日志关联规范](https://opentelemetry.io/docs/specs/otel/logs/#log-correlation)阐明了怎样通过统一的 Trace ID 与 Span ID 把零散日志挂载到完整调用链上；而在模型评测侧，LangSmith 的[评测类型文档](https://docs.langchain.com/langsmith/evaluation-types)则清晰划分了离线基准数据集评测、线上实时追踪监控以及代码规则与模型裁判（LLM-as-a-Judge）各自的适用边界。
+在可观测性标准里，OpenTelemetry 的[信号概念](https://opentelemetry.io/docs/concepts/signals/)、[日志关联规范](https://opentelemetry.io/docs/specs/otel/logs/#log-correlation)以及专门面向大模型与代理链路的 [GenAI 语义约定](https://opentelemetry.io/docs/specs/semconv/gen-ai/)阐明了怎样用标准属性（如会话标识、Agent 名称、工具执行 Span 以及输入输出与缓存命中 Token 计数）把多轮推理与工具调用串成可跨栈检索的统一调用树；而在模型评测侧，LangSmith 的[评测类型文档](https://docs.langchain.com/langsmith/evaluation-types)则清晰划分了离线基准数据集评测、线上实时追踪监控以及代码规则与模型裁判（LLM-as-a-Judge）各自的适用边界。
 
 ## 把检查条件写完整
 
@@ -50,6 +50,13 @@
 - **高危越界单列熔断，拒绝被平均分掩盖**：汇总指标不仅要看总通过率、平均耗时与单次 Token 成本，更要把“越权修改禁区文件”、“破坏已有测试”、“尝试访问敏感路径”作为高危红线单独统计。一个平均分涨了 5% 但出现 2% 越界删改的版本，绝不能放行上线。
 - **定期人工校准模型评分器**：能用确定性代码断言或真实单测判分的，一律优先用代码判分；对于摘要质量、方案合理性等只能借助模型裁判打分的维度，必须定期抽样做人工盲审比对，确认裁判模型真正抓住了核心业务错误，而不是偏爱排版漂亮的冗长回答。
 - **线上坏例脱敏回流**：生产运行中一旦捕获具有代表性的失败轨迹，在取得授权并彻底剥离用户隐私与密钥后，将其固化为新的回归评测样本，避免同类错误二次复发——[LangSmith 的生产反馈循环](https://docs.langchain.com/langsmith/evaluation-types#production-feedback-loop)详细展示了这一闭环演进方法。
+
+### 认清行业基准的判分哲学：环境终态校验与 `pass^k` 一致性
+
+设计团队自己的离线评测集时，非常值得借鉴近年两个代表性公开基准的判分思路：
+
+1. **看真实环境终态，不听口头自评**（如 [SWE-bench](https://www.swebench.com/)）：评测编码 Agent 修没修好真实开源仓库 Issue，不是让裁判模型给回复文字打印象分，而是把 Agent 产出的补丁打进隔离容器，同时跑通**问题复现测试**（Fail-to-Pass，证明真修好了目标缺陷）与**原有回归测试集**（Pass-to-Pass，证明没顺手改坏老功能）。
+2. **用 `pass^k` 衡量生产稳定性，而非只看 `pass@k` 撞大运**（如 Sierra 提出的 [$\tau$-bench](https://github.com/sierra-research/tau-bench)）：传统竞赛习惯看 `pass@k`（同一题连抽 $k$ 次，只要蒙对 1 次就算成功）；但在客服退改签、工单变更等真实业务里，用户没有机会替你抽五次奖。$\tau$-bench 引入 **`pass^k`**——要求同一个多轮工具交互任务**连续独立运行 $k$ 次全部遵守业务规则并使底层数据库达到正确终态**才算过关。一道单次成功率看似有 $80\%$ 的流程，连跑 5 次全部稳住的概率其实只有 $0.8^5 \approx 32.8\%$；把核心高频场景拿去测 `pass^k`，往往最能暴露提示词歧义与工具边界漏洞。
 
 ## mini-swe-agent 源码拆解：一份运行轨迹怎样落盘
 

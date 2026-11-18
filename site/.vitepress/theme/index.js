@@ -194,6 +194,27 @@ function installReaderControls() {
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && event.target.closest?.('.VPLocalSearchBox')) {
       restoreSearchFocus()
+      return
+    }
+    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return
+    if (dialog.open || document.querySelector('.VPLocalSearchBox')) return
+    const targetTag = event.target?.tagName
+    if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT' || event.target?.isContentEditable) return
+    if (event.key === '/') {
+      const searchBtn = document.querySelector('#local-search button')
+      if (searchBtn) {
+        event.preventDefault()
+        searchBtn.click()
+      }
+      return
+    }
+    if (event.key === '[' || event.key === ']') {
+      const selector = event.key === '[' ? 'a.reading-position-previous[href]' : 'a.reading-position-next[href]'
+      const navLink = document.querySelector(selector)
+      if (navLink) {
+        event.preventDefault()
+        navLink.click()
+      }
     }
   }, true)
   document.addEventListener('click', (event) => {
