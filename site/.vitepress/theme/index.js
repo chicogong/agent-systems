@@ -46,6 +46,19 @@ function installReaderControls() {
   const viewerStage = dialog.querySelector('.figure-viewer-stage')
   const viewerImg = dialog.querySelector('img')
   let lastTrigger = null
+  let recentClosedLabel = ''
+  let recentClosedAt = 0
+  const resolveLiveTrigger = (trigger) => {
+    if (trigger && trigger.isConnected) return trigger
+    const label = trigger?.getAttribute?.('aria-label') || recentClosedLabel
+    if (label) {
+      const match = Array.from(document.querySelectorAll('.figure-open')).find(
+        (el) => el.getAttribute('aria-label') === label
+      )
+      if (match) return match
+    }
+    return document.querySelector('.figure-open')
+  }
   const setZoom = (zoomed) => {
     dialog.classList.toggle('is-zoomed', zoomed)
     zoomButton.textContent = zoomed ? '适应窗口' : '放大细读'
@@ -57,6 +70,8 @@ function installReaderControls() {
   const openFigure = (img, trigger = null) => {
     if (!img) return
     lastTrigger = trigger
+    recentClosedLabel = ''
+    recentClosedAt = 0
     setZoom(false)
     viewerImg.src = img.src
     viewerImg.alt = img.alt
@@ -67,17 +82,46 @@ function installReaderControls() {
     dialog.showModal()
   }
   zoomButton.addEventListener('click', () => setZoom(!dialog.classList.contains('is-zoomed')))
-  viewerImg.addEventListener('click', () => setZoom(!dialog.classList.contains('is-zoomed')))
-  closeButton.addEventListener('click', () => dialog.close())
-  dialog.addEventListener('close', () => {
-    setZoom(false)
-    const trigger = lastTrigger
+  const restoreTriggerFocus = () => {
+    const rawTrigger = lastTrigger
     lastTrigger = null
-    if (trigger && typeof trigger.focus === 'function' && trigger.isConnected) {
-      requestAnimationFrame(() => trigger.focus())
+    if (rawTrigger) {
+      recentClosedLabel = rawTrigger.getAttribute?.('aria-label') || '放大图稿'
+      recentClosedAt = performance.now()
+    }
+    const trigger = resolveLiveTrigger(rawTrigger)
+    if (trigger && typeof trigger.focus === 'function') {
+      trigger.focus({ preventScroll: true })
+      requestAnimationFrame(() => {
+        const live = resolveLiveTrigger(trigger)
+        if (live && document.activeElement !== live) {
+          live.focus({ preventScroll: true })
+        }
+      })
+    }
+  }
+  const closeViewer = () => {
+    setZoom(false)
+    if (dialog.open) dialog.close()
+    restoreTriggerFocus()
+  }
+  viewerImg.addEventListener('click', () => setZoom(!dialog.classList.contains('is-zoomed')))
+  closeButton.addEventListener('click', closeViewer)
+  dialog.addEventListener('cancel', (event) => {
+    event.preventDefault()
+    closeViewer()
+  })
+  dialog.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      closeViewer()
     }
   })
-  dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close() })
+  dialog.addEventListener('close', () => {
+    setZoom(false)
+    restoreTriggerFocus()
+  })
+  dialog.addEventListener('click', (event) => { if (event.target === dialog) closeViewer() })
   document.addEventListener('click', (event) => {
     const anchor = event.target.closest?.('a[href*="#"]')
     if (anchor) {
@@ -139,6 +183,12 @@ function installReaderControls() {
       text.className = 'reader-search-label'
       text.textContent = label.title || '搜索正文'
       label.append(text)
+    }
+    if (!dialog.open && recentClosedLabel && performance.now() - recentClosedAt < 1500) {
+      const live = resolveLiveTrigger(null)
+      if (live && document.activeElement !== live) {
+        live.focus({ preventScroll: true })
+      }
     }
   }
   markControls()

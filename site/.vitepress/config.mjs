@@ -11,11 +11,30 @@ if (publicMode && (!siteUrl || !/^https:\/\/[^/]+$/.test(siteUrl))) {
 }
 
 function tokens(text) {
-  const words = text.toLocaleLowerCase().match(/[\p{Script=Han}]+|[\p{L}\p{N}_-]+/gu) ?? []
+  const normalized = text.toLocaleLowerCase()
+  if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
+    const segmenter = (globalThis.__agentSystemsZhSeg ??= new Intl.Segmenter('zh-CN', { granularity: 'word' }))
+    const out = []
+    for (const part of segmenter.segment(normalized)) {
+      if (!part.isWordLike) continue
+      const word = part.segment
+      out.push(word)
+      if (/\p{Script=Han}/u.test(word)) {
+        const chars = [...word]
+        if (chars.length > 2) {
+          for (let index = 0; index < chars.length - 1; index += 1) {
+            out.push(chars[index] + chars[index + 1])
+          }
+        }
+      }
+    }
+    return out
+  }
+  const words = normalized.match(/[\p{Script=Han}]+|[\p{L}\p{N}_-]+/gu) ?? []
   return words.flatMap((word) => {
     if (!/\p{Script=Han}/u.test(word)) return [word]
     const chars = [...word]
-    return [...chars, ...chars.slice(0, -1).map((char, index) => char + chars[index + 1]), word]
+    return [...chars, ...chars.slice(0, -1).map((char, index) => char + chars[index + 1]), ...(chars.length > 2 && chars.length <= 4 ? [word] : [])]
   })
 }
 
