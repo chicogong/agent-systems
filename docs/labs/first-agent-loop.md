@@ -2,39 +2,44 @@
 
 [返回学习路线](../learning-path.md) · [Agent loop 的机制解释](../concepts/agent-loop.md) · [完成判断的证据](../comparisons/completion-and-evidence.md)
 
-这个小实验会完成一次配置修改：读取原文件，把超时从 30 秒改成 5 秒，保留重试次数，再读回检查。运行后，你可以沿日志看清程序何时提出写入、何时取得许可、何时实际改了文件，以及最后怎样检查配置。
+## 3 分钟显微镜：跑完这几行，你会亲眼看到什么？
 
-任务要求是：`timeout=5`、`retries=3`，先读配置、获准后再写。正常路径返回 `candidate_ready`，意思是“候选成果已经准备好，可以交给用户检查”。另外两条路径让你观察许可被拒和重试规则被改坏的情况。
+日常调 Agent 时，最让人抓狂的是看到一句笼统的“任务失败（`blocked`）”或“写入成功（`ok=true`）”——它们把性质完全相反的工程现场糊成了一团。
 
-这是可选的**机制小实验**，用固定 `propose()` 脚本代替真实模型，适合观察控制流程。运行前请确认：Python 3.10+，无需 API Key 或第三方包；程序只在系统临时目录创建 `config.json`，结束即清理，不改项目文件、不联网。
+在这个零依赖的 3 分钟小实验里，只要跑完下面四行命令，你会在终端 JSON 里亲眼观察到两个极具启发性的反直觉现象：
 
-## 先完成一次正常修改
+1. **同样返回 `blocked`，底下藏着两个截然相反的事故现场**：一个在刀落下之前就被权限闸口拦住（磁盘上的配置纹丝未动）；另一个不仅获批落盘、写入工具甚至欢快地返回了 `"ok": true`，却在收尾验收时被当场抓出“顺手把重试次数 `retries=3` 改成了 `0`”。
+2. **工具返回成功，根本不代表改对了业务需求**：写入工具只管“文件写没写进去”，只有把**提案 → 审批 → 执行 → 验收**拆成独立事件，你才能一眼分清问题出在哪一层。
 
-从仓库根目录运行，Python 3.10 或更新版本即可：
+实验目标很具体：把临时配置文件里的超时时间从 `30` 秒改成 `5` 秒，同时**保持重试次数 `retries=3` 不变**。环境仅需 Python 3.10+ 标准库，无需 API Key、不联网，只在系统临时目录读写完即自动清理。
+
+## 第一步：跑通正常路径与两条故障对照
+
+在仓库根目录直接执行正常模式与单元测试：
 
 ```bash
 python3 examples/first-agent-loop/demo.py --mode normal
 python3 -m unittest discover -s examples/first-agent-loop -p 'test_*.py'
 ```
 
-程序输出 JSON；`events` 是按顺序排好的过程记录。先找到 `status=candidate_ready` 和 `config` 中的 `timeout=5, retries=3`，再沿 `events` 找到读取、许可、写入和检查。这样就把最终成果与过程对应起来了。
+你会看到顶层输出 `"status": "candidate_ready"`（意思是“候选成果已就绪，可交由人类最终签收”），且 `"config"` 为 `timeout=5, retries=3`。顺着 `events` 数组从上往下扫一眼，就能把一条完整的 [Agent loop](../concepts/agent-loop.md) 闭环对上号：先提议 `read` 拿原值，再提议 `write` 过审批、落盘修改，接着提议 `check` 校验结果，最后由宿主读回终态配置确认无误。
 
-接着比较两个变化：
+现在立刻跑另外两种故障模式，对比输出的差异：
 
 ```bash
 python3 examples/first-agent-loop/demo.py --mode denied
 python3 examples/first-agent-loop/demo.py --mode regression
 ```
 
-三种情况的关键字段如下：
+把三次运行的核心字段摆在一起，差别一目了然：
 
-| 模式 | 最终 `status` | 最终配置 | 应看到的关键事件 |
+| 运行模式 | 顶层 `status` | 结束时的实际配置 | `events` 显微镜下的关键分岔 |
 | --- | --- | --- | --- |
-| `normal` | `candidate_ready` | `timeout=5, retries=3` | `proposal: read` → 读结果 → `proposal: write` → `approval.granted=true` → 写结果 → `proposal: check` → 检查通过。 |
-| `denied` | `blocked` | `timeout=30, retries=3` | 会看到 `proposal: write` 和一条 `tool_result`，但 `approval.granted=false`；文件**未改**，结果说明拒绝发生在执行前。 |
-| `regression` | `blocked` | `timeout=5, retries=0` | 写入获准且执行了，但 `check` 的结果是 `ok=false`、`retry rule changed`。 |
+| `normal` | `candidate_ready` | `timeout=5, retries=3` | `proposal: read` → 读回原值 → `proposal: write` → `approval.granted=true` → 写入完成 → `proposal: check`（`ok=true`） |
+| `denied` | `blocked` | `timeout=30, retries=3` | 出现了 `proposal: write` 和一条 `tool_result`，但中间夹着 `approval.granted=false`——**文件根本没改**，错误是在执行前合成并喂回循环的 |
+| `regression` | `blocked` | `timeout=5, retries=0` | 写入获批且 `write` 工具返回 `ok=true`，但紧随其后的 `check` 返回 `ok=false` 并指出 `retry rule changed` |
 
-例如 `denied` 模式中，关键事件按顺序是：
+重点细看 `denied` 模式里紧挨着的三条事件：
 
 ```json
 [
@@ -44,43 +49,35 @@ python3 examples/first-agent-loop/demo.py --mode regression
 ]
 ```
 
-这是完整 `events` 中三个相邻对象的摘录。第一条提出写入，第二条记录许可被拒，第三条把拒绝结果送回循环；文件仍保持原值。读日志时，把 `event`、工具名和 `ok` 一起看，就能认出每条记录所处的阶段。
+这就是宿主（Harness）的真实工作方式：模型（本例由 `propose()` 模拟）发出的永远只是一个**尚未执行的动作提案**。宿主在调真正的文件写入函数前先过 `approval` 闸口；一旦被拒，宿主不会让循环悬空崩溃，而是构造一条 `ok=false` 的拒绝观察送回下一轮，让提案方知道“这条路走不通，请停下或换方案”。
 
-回看正常路径：第二次提案的 `seen_results=1` 表示它已经收到读取结果；收到写入结果后才提出 `check`。宿主是组织这些步骤的外层程序，它在写入前处理许可，在 `finish` 时独立检查当前配置，再返回 `candidate_ready`。
+再回看 `normal` 路径里的 `seen_results=1`：它证明第二次提案是在确实拿到了第一次 `read` 的返回结果之后才发出的；而整轮收尾时，宿主没有轻信工具自己的汇报，而是在 `finish` 阶段独立重读了一次磁盘文件，才给出 `candidate_ready`。
 
-## 沿代码看四个位置（可选）
+## 第二步：顺着源码看清四处职责边界
 
-想继续读代码，再打开 [`demo.py`](../../examples/first-agent-loop/demo.py) 和 [`test_demo.py`](../../examples/first-agent-loop/test_demo.py)。`observations` 是提案函数收到的工具结果，`events` 是给读者看的过程记录。按下面四处阅读即可，暂时跳过不熟悉的 Python 语法。
+打开 [`demo.py`](../../examples/first-agent-loop/demo.py) 和 [`test_demo.py`](../../examples/first-agent-loop/test_demo.py)，不用纠结语法细节，直接盯住下面四处分工（可配合 [Agent loop 概念图](../../figures/agent-loop/diagram.svg) 与[图的文字说明](../../figures/agent-loop/README.md) 对照）：
 
-1. `propose(observations, mode)` 只返回下一步提案，不能自行写文件。它把上次工具结果当输入；错误或拒绝会让它提出 `stop`。
-2. `run()` 收到 `write` 提案时先记录 `approval`。拒绝时生成一次 `ok=false` 的观察并继续循环，**不调用** `execute()`。
-3. 提案触发的工具读写集中在 `execute()`；`run()` 另负责初始化临时文件和独立终态读取。工具结果的 `ok=true` 仅表示这次调用完成；`write` 并不知道用户是否要求保留重试规则。
-4. `check` 同时检查 `timeout=5` 与 `retries=3`；外层 `run()` 在 `finish` 时再检查当前文件状态。测试把正常、拒绝和回归三条路径固定下来。
+1. `propose(observations, mode)` **只有建议权，没有动手权**：它只根据已收到的工具观察 `observations` 返回下一步想调什么工具；一旦看见报错或拒绝观察就提议 `stop`。
+2. `run()` **在真正执行前卡住审批关口**：遇到 `write` 提案先记下 `approval` 事件；未获批时直接生成失败观察进入下一轮，**一行都不会踏进执行函数** `execute()`。
+3. `execute()` **里的写入工具只管 I/O，不管业务对错**：只要 JSON 写进了临时文件，哪怕把 `retries` 写成了 `0`，`write` 工具照样诚实地返回 `ok=true`。
+4. **双重防线守住完成标准**：工具层的 `check` 同时核对 `timeout == 5` 与 `retries == 3`；外层宿主的 `run()` 在结束前还会再独立读盘复核一次，三条路径全部由单测锁死。
 
-[Agent loop 图](../../figures/agent-loop/diagram.svg)可作为阅读地图；[不看图的文字说明](../../figures/agent-loop/README.md)讲清任务、模型决策、工具执行、观察结果、核对结果与停止各指什么。这里的程序是这张概念图的**教学实现**，不是 Pi、Codex 或任何项目的源码复制。
+## 第三步：亲手拆掉一道防线，看看会发生什么
 
-## 自己改一次，再给出证据
+做一个 1 分钟破坏性小实验：先不运行，只读代码预测——如果把 `execute()` 里 `check` 工具的判断条件删掉一半，改成**只检查超时值** `timeout == 5`（漏掉 `retries == 3`），再跑 `--mode regression` 和单元测试，顶层 `status` 会变成误报通过吗？
 
-先只读程序，猜测把 `check` 改成仅检查 `timeout == 5` 后，`regression` 模式会变成什么；再在临时练习副本中改动并运行测试。只改 `execute()` 中的检查条件，保留其他代码。先写下你的预测、运行结果与哪一层发现问题，再看本篇末尾的参考答案。
+先在心里写下预测，再去临时副本里只改这一处并跑测试，最后对照下面的实验揭秘：
 
-恢复原检查后，在 `normal` 输出里核对三份证据：
+- **现象揭秘**：把工具层 `check` 改弱之后，`regression` 模式里 `check` 工具自己确实会漏判并打出 `ok=true`（就像现实中漏写断言的单测一样绿灯放行）；但最外层 `run()` 在 `finish` 阶段的**宿主独立终态检查**依然会揪出 `retries != 3`，把顶层 `status` 死死摁在 `blocked`！与此同时，第 3 个单元测试也会因为抓不到 `retry rule changed` 错误详情而报警红灯。只有当你把工具检查和宿主终态复核两道防线全都拆光时，错误配置才会蒙混成 `candidate_ready`。
 
-| 要检查什么 | 对应输出 | 接下来查看什么 |
+改回原代码后，再对照 `normal` 输出把[完成证据三件套](../comparisons/completion-and-evidence.md)过一遍手：
+
+| 核验维度 | 在本次 JSON 里看哪个字段 | 它能证明什么、还差什么 |
 | --- | --- | --- |
-| 写入获准 | `event=approval, granted=true` | 实际写入结果。 |
-| 本例写入完成 | `event=tool_result, tool=write, ok=true`，`detail` 中是写后配置 | 写后配置是否满足两个条件。 |
-| 工具检查通过 | `event=tool_result, tool=check, ok=true` | `finish` 时宿主的独立读回。 |
+| **动作已获授权** | `event=approval, granted=true` | 证明写入经过放行；但写进去的值对不对还要往下看 |
+| **文件写入已执行** | `event=tool_result, tool=write, ok=true` | 证明磁盘写入动作完成；但工具本身不懂业务不变量 |
+| **业务约束已核对** | `event=tool_result, tool=check, ok=true` 及顶层 `config` | 证明 `timeout=5` 与 `retries=3` 同时成立，可作为候选结果交给人验收 |
 
-宿主的最终检查体现在最外层 `status` 和 `config` 中，没有单独事件。比较两个 `blocked`：`denied` 没有执行写入，`regression` 已经改错了配置。状态相同，修复位置却不同；过程记录能帮你找到区别。
+## 来源与边界
 
-## 本实验的范围与下一步
-
-固定脚本只检查工具类型和 `ok`，不会根据读取值规划任意写入参数；这里的日志也不是模型的隐藏思考。程序还有 5 步上限，耗尽会返回 `budget_exhausted`，但上述三条路径都不会走到它。候选成果之后的用户接受环节尚未实现。
-
-这个程序用于讲控制流程，没有真实模型、任意提案参数校验、MCP、沙箱或持久会话，也未模拟文件系统谎报成功。接入不可信模型输出前，需要另做安全设计与测试。
-
-想了解远端操作，再选[回执丢失后的对账练习](remote-effect.md)：它用模拟服务和稳定操作 ID 观察“已接收但没拿到答复”的情况。两个程序独立，临时文件无需保留。
-
-## 参考答案：先完成预测再看
-
-只把 `execute()` 中的 `check` 改为检查 `timeout == 5` 时，`regression` 的工具检查会误报通过，但外层 `run()` 的独立终态检查仍会把结果标成 `blocked`；第三个单测还会因缺少 `retry rule changed` 而失败。若连外层检查也删掉，才可能误报 `candidate_ready`。对照自己的记录，看工具检查漏掉了什么、外层检查怎样发现它，以及哪条测试因此失败。同样返回 `blocked`，原因也可能不同，需要结合事件和配置值判断。
+本实验用确定性规则函数 `propose()` 替代真实大模型，专用于拆解宿主循环的提案、审批、执行与双层验收控制流（内置 5 步上限防死循环，超限返回 `budget_exhausted`）。实验不包含真实 LLM 推理、任意参数注入防护、OS 进程沙箱或跨网络副作用；想接着看跨网络操作遇到回执丢失时怎样恢复，可直接进入下一课[按原操作 ID 找回回执](remote-effect.md)。

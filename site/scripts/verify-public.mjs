@@ -41,7 +41,7 @@ if (process.env.DEPLOY_TARGET === 'vercel') {
   await writeFile(path.join(dist, 'vercel.json'), JSON.stringify(config, null, 2) + '\n')
 }
 const sidebar = JSON.parse(await readFile(path.join(site, '.vitepress', 'generated-sidebar.json'), 'utf8'))
-const expected = ['index.html', 'feedback.html', 'downloads.html', ...(pdfPublished ? ['pdf.html'] : []), ...sidebar.flatMap((part) => part.items.map((item) => item.link.slice(1) + '.html'))]
+const expected = ['index.html', 'feedback.html', 'downloads.html', 'trial.html', ...(pdfPublished ? ['pdf.html'] : []), ...sidebar.flatMap((part) => part.items.map((item) => item.link.slice(1) + '.html'))]
 const chapterCount = (await readFile(path.join(site, '..', 'book', 'manifest.txt'), 'utf8')).split(/\r?\n/).filter((line) => line.trim() && !line.trim().startsWith('#') && !line.trim().startsWith('@part ')).length
 const bookItems = sidebar.flatMap((part) => part.items).slice(0, chapterCount)
 if (bookItems.length !== chapterCount) throw new Error('Sidebar has fewer book chapters than the manifest')
@@ -108,7 +108,7 @@ for (const [index, item] of bookItems.entries()) {
   }
 }
 const anchors = new Map([...pages].map(([file, html]) => [file, new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]))]))
-const indexPages = new Set(['feedback.html', 'pdf.html', 'downloads.html', 'concepts.html', 'systems.html', 'comparisons.html', 'sources.html'])
+const indexPages = new Set(['feedback.html', 'pdf.html', 'downloads.html', 'trial.html', 'concepts.html', 'systems.html', 'comparisons.html', 'sources.html'])
 for (const file of expected) {
   const html = pages.get(file)
   if (!html.includes(version.sourceCommit.slice(0, 12))) throw new Error(`${file}: missing reader-visible source revision`)

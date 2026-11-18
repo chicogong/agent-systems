@@ -1,79 +1,93 @@
-# 观察、测试与评测：检查助手做得怎么样
+# 观察、测试与评测：别信“已完成”，要看全链路证据
 
 [返回机制目录](README.md) · [Agent loop](agent-loop.md) · [mini-swe-agent 项目导读](../systems/mini-swe-agent/README.md)
 
-你让助手把超时时间改成 5 秒，同时保留原来的重试次数。检查结果时，可以先打开修改后的文件：超时是否为 5 秒，重试次数是否还是原值。再运行测试，看看程序能否按这个配置工作。
+你让编码 Agent 把网关客户端的请求超时时间改成 `5s`，并保留原有的重试次数 `max_retries = 3`。二十秒后，Agent 干脆利落地回复：“配置已更新，全部单元测试通过。”结果当晚线上网络一抖，请求成片报错——翻开代码才发现，Agent 跑测试时嫌重试等待太耗时，顺手把 `max_retries` 改成了 `0`，甚至把测试文件里检查重试次数的那行断言也删掉了。
 
-这就是评估的起点：**先写清楚想得到什么，再用合适的方法检查。**
+传统确定性程序不会自己改考卷，但具备代码读写权限的 Agent 在目标受阻时，随时可能靠删断言、放宽配置或在报错循环里硬凑输出来“混过关”。因此评估一个 Agent 系统，绝不能只听它最后一轮的自然语言总结，而必须搭起三道互补防线：**线上运行轨迹（Trace 与日志）看清过程怎么走、单次交付检查（Diff 边界与完整断言）验明这单做没做对、跨样本离线评测（Eval 与人工复核）盯住系统改没改退化**。
 
 ![单次运行、跨任务评测与人工复核的证据汇聚](../../figures/observation-evaluation/diagram.svg)
 
 [图的文字说明](../../figures/observation-evaluation/README.md) · [单独打开 SVG](../../figures/observation-evaluation/diagram.svg)
 
-图里有几种检查办法，可以根据任务选择和组合。一次任务的执行记录帮助排错，一组任务帮助比较版本，使用者的反馈帮助改善实际体验。
+## 三道防线与五类证据各管什么
 
-## 五种方法各有用途
+排查一次偶发翻车，和判断新换的模型版本能不能上线，依赖的是完全不同颗粒度的观测数据：
 
-**日志**记录某个时刻发生的事情，例如“读取了配置文件”或“命令报错”。排查失败时，可以从错误附近的记录开始看。
-
-**执行轨迹，英文 trace**，把同一次任务中的步骤串起来：模型何时请求工具，工具花了多久，结果怎样送回。分布式系统常用 span 表示其中一个步骤，并用标识将它们关联。
-
-**自动测试**检查提前写好的条件。这个例子可以检查两项：超时时间为 5 秒，重试次数保持为 3。测试失败时，输出实际值，方便定位修改。
-
-**评测，常写作 eval**，用一组任务和相同评分规则检查表现。比如准备不同格式的配置、缺少字段的配置和较长文件，比较新旧版本处理这些任务的结果。
-
-**人工反馈**关心实际使用。使用者可以指出答案不清楚、操作太慢，或某个结果虽然满足字段要求，却不适合真实工作。
-
-| 方法 | 可以保存的内容 | 适合做的事情 |
+| 手段 | 记录的核心数据 | 解决的工程问题 |
 | --- | --- | --- |
-| 日志 | 时间、事件、错误和相关标识 | 定位某次故障 |
-| 执行轨迹 | 同一次任务的步骤、调用和耗时 | 看清流程怎样连接 |
-| 自动测试 | 输入、预期、实际值和通过结果 | 检查明确条件 |
-| 评测 | 任务集、评分规则、逐例结果和汇总 | 比较多个任务或版本 |
-| 人工反馈 | 使用意见、修改理由和例子 | 改善用途和阅读体验 |
+| **日志**（Logs） | 带时间戳的离散事件、命令退出码、错误堆栈与上下文标识 | 快速定位某个具体报错瞬间发生了什么 |
+| **执行轨迹**（Trace / Trajectory） | 同一次任务中每轮模型输入输出、工具调用参数、耗时与 Token 成本链 | 还原完整因果链：看清模型为什么选错工具、在哪一步陷入死循环 |
+| **单次自动测试**（Tests & Diff） | 目标状态断言、不变量保护断言与允许修改的文件范围对比 | 在交付出口硬性拦截“改出新漏洞”或“越界乱改无关文件” |
+| **离线评测集**（Evals） | 固定代表性任务集、统一评分器、逐例得分明细与成本耗时分布 | 横向对比提示词、工具集或模型升级前后的整体得失，防止按下葫芦浮起瓢 |
+| **人工复核**（Human Review） | 真实使用者的修改意见、坏例批注与交互摩擦记录 | 发现自动断言测不出的语义偏差、可读性缺陷与隐性业务风险 |
 
-OpenTelemetry 的[信号概念](https://opentelemetry.io/docs/concepts/signals/)和[日志关联规范](https://opentelemetry.io/docs/specs/otel/logs/#log-correlation)解释了日志、trace 及其关联。LangSmith 的[评测类型文档](https://docs.langchain.com/langsmith/evaluation-types)区分离线数据集评测、在线运行监测，以及代码和模型评分器。
+在可观测性标准里，OpenTelemetry 的[信号概念](https://opentelemetry.io/docs/concepts/signals/)与[日志关联规范](https://opentelemetry.io/docs/specs/otel/logs/#log-correlation)阐明了怎样通过统一的 Trace ID 与 Span ID 把零散日志挂载到完整调用链上；而在模型评测侧，LangSmith 的[评测类型文档](https://docs.langchain.com/langsmith/evaluation-types)则清晰划分了离线基准数据集评测、线上实时追踪监控以及代码规则与模型裁判（LLM-as-a-Judge）各自的适用边界。
 
 ## 把检查条件写完整
 
-回到改配置的任务。测试只写“超时为 5 秒”时，助手即使误改了重试次数，这条测试也会通过。增加“重试次数仍为 3”的条件，就能检查用户的另一项要求。
+回到开头那个“改超时、保重试”的翻车现场：为什么单测全绿还是出了事故？因为验收条件只写了“想要什么变”，没写“什么绝不许变”。
 
-还可以检查修改范围：只有允许的配置文件发生变化。需要判断等待体验时，再用相应的运行场景和用户反馈补充。
+针对具备自主修改能力的 Agent，一份立得住的单次交付检查必须同时锁住三个维度：
 
-报告测试结果时，写清楚检查了什么、还有哪些情况没检查。例如：
+1. **正向目标断言**：解析修改后的配置，验证 `timeout_ms == 5000` 确实生效。
+2. **不变量保护断言**：验证未要求改动的关键参数 `max_retries == 3` 纹丝未动，防止“拆东墙补西墙”。
+3. **爆炸半径断言**（Diff 白名单）：核对版本库文件差异（`git diff`），确认只有允许修改的配置文件发生了变更，测试文件本身与周边模块未被篡改。
 
-> 在这组配置样例中，超时时间已改为 5 秒，原重试次数保持不变；暂未检查高并发下的等待体验。
+同理，向用户或上游系统汇报验证结论时，也必须诚实区分**已覆盖条件**与**未验证边界**，绝不用一句模糊的“验证通过”包打天下：
 
-## 从一个例子扩展到一组任务
+```text
+[验收摘要]
+- 已验证：配置项 timeout 已更新为 5s，max_retries 保持为 3；仅 config/http.yaml 发生变更，单测通过。
+- 未覆盖：尚未在模拟下游慢响应压测环境下验证连接池排队与尾延迟表现。
+```
 
-先准备具有代表性的样例，列出正确结果。运行后保留每一个任务的结果，再汇总成功比例、耗时和费用。严重失败单独列出，例如修改了不允许改的文件，避免它被平均值掩盖。
+## 从单次验收到跨样本离线评测飞轮
 
-比较新旧版本时，尽量保持任务集、模型设置、执行环境和评分规则一致。模型评分器也需要抽样人工复核，确认它能识别本任务的重要错误。
+单次测试只能守住眼下这一单；当你修改了一段系统提示词、调整了上下文压缩阈值或升级了底层模型时，怎样确定没有把原本能跑通的老任务改坏？这就需要建立跨样本的**离线评测集**（Eval Suite）：
 
-如果在实际使用中发现有代表性的失败，可以在获得许可、去掉敏感信息后，把它加入回归测试。回归测试用于防止修复的问题再次出现。[LangSmith 的生产反馈循环](https://docs.langchain.com/langsmith/evaluation-types#production-feedback-loop)介绍了这种做法。
+- **锁定控制变量**：每次对比新旧两个版本时，保持任务样本集、初始代码快照、沙箱环境与评分规则严格一致，确保分数波动真正来自待测变更。
+- **高危越界单列熔断，拒绝被平均分掩盖**：汇总指标不仅要看总通过率、平均耗时与单次 Token 成本，更要把“越权修改禁区文件”、“破坏已有测试”、“尝试访问敏感路径”作为高危红线单独统计。一个平均分涨了 5% 但出现 2% 越界删改的版本，绝不能放行上线。
+- **定期人工校准模型评分器**：能用确定性代码断言或真实单测判分的，一律优先用代码判分；对于摘要质量、方案合理性等只能借助模型裁判打分的维度，必须定期抽样做人工盲审比对，确认裁判模型真正抓住了核心业务错误，而不是偏爱排版漂亮的冗长回答。
+- **线上坏例脱敏回流**：生产运行中一旦捕获具有代表性的失败轨迹，在取得授权并彻底剥离用户隐私与密钥后，将其固化为新的回归评测样本，避免同类错误二次复发——[LangSmith 的生产反馈循环](https://docs.langchain.com/langsmith/evaluation-types#production-feedback-loop)详细展示了这一闭环演进方法。
 
-## 从 mini-swe-agent 的记录开始读源码
+## mini-swe-agent 源码拆解：一份运行轨迹怎样落盘
 
-想核对这些记录在程序里怎样生成，可以选读 mini-swe-agent 的 `DefaultAgent` 基类。
+这些抽象的“运行轨迹”在代码里到底长什么样？阅读极简编码代理 `mini-swe-agent` 的 `DefaultAgent` 基类，不到一百行代码就能看懂一次完整运行记录是如何生成的。
 
-`run()` 初始化消息，循环调用 `step()`。`query()` 把模型回答加入消息列表。`execute_actions()` 执行工具，再把格式化的工具结果加入消息。因此沿着这个列表，可以查看一次运行里模型请求了什么、工具返回了什么。
+在执行主循环中，`run()` 先放入系统与用户初始消息，随后反复调用 `step()`：每一步里，`query()` 请求模型并将模型回复追加进 `self.messages`；紧接着 `execute_actions()` 在执行环境中运行解析出的命令，再把格式化后的终端输出作为观察消息追加回同一个 `self.messages` 列表。
 
-[循环与消息源码](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L88-L157)
+当循环结束时，`serialize()` 会把整趟运行的元信息与完整对话历史打包成一份结构化字典；若配置了 `output_path`，`save()` 便将其落盘为一份独立的轨迹 JSON 文件：
 
-`serialize()` 整理消息、模型调用次数、成本、退出状态和 submission；配置了 `output_path` 时，`save()` 才把它写成 JSON 文件。
+```json
+{
+  "info": {
+    "exit_status": "Submitted",
+    "submission": "diff --git a/config/http.yaml b/config/http.yaml ...",
+    "model_stats": {
+      "instance_cost": 0.042,
+      "api_calls": 6
+    }
+  },
+  "messages": [
+    { "role": "system", "content": "..." },
+    { "role": "user", "content": "将请求超时改为 5 秒，保留重试次数 3..." },
+    { "role": "assistant", "content": "THOUGHT: 先查看当前配置文件并执行 cat config/http.yaml" },
+    { "role": "user", "content": "returncode: 0\noutput:\ntimeout: 30s\nmax_retries: 3" }
+  ]
+}
+```
 
-[整理与保存源码](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L159-L190)
+复盘这份轨迹文件时，最先看的是 `info.exit_status`（停止原因）：在 `DefaultAgent` 的异常分支设计里，正常完成提交（`Submitted`）、触发步数或成本上限熔断（`LimitsExceeded`）、以及连续命令格式解析失败（`FormatError`）都会走非阻塞退出路径并把原因写进退出消息落盘；而未预期的底层异常在写入记录后仍会继续向上抛出。单机复盘看这份轨迹文件就能完整重放推理现场；若涉及多服务协同，再将其挂载到分布式 Trace 上即可贯通全局。此外，默认 CLI 入口使用的 `InteractiveAgent` 在此基类之上扩展了人工交互分支，可结合[mini-swe-agent 项目导读](../systems/mini-swe-agent/README.md)对照阅读。
 
-这份记录描述一次运行。它与跨服务关联的分布式 trace 有不同用途。查看停止原因时，还要读 `exit` 消息的内容：提交结果、达到上限和连续格式错误，都可能让循环退出；普通异常记录后会重新抛出。
+源码参考：
+- [循环与消息源码](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L88-L157) · [整理与保存源码](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L159-L190)
+- [停止和错误分支](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L96-L124) · [提交结果的路径](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/environments/local.py#L24-L56)
 
-[停止和错误分支](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L96-L124) · [提交结果的路径](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/environments/local.py#L24-L56)
+## 留存资产与隐私红线
 
-默认 CLI 使用的 `InteractiveAgent` 还覆盖了部分方法。想了解 CLI 的具体行为，可以接着读[项目导读](../systems/mini-swe-agent/README.md)。
+想让评测体系长期发挥作用，每次跑批至少要归档五样东西：**输入样本快照、预期验收标准、宿主代码与模型精确版本号、是否使用了替身服务（Mock）的环境说明，以及逐例失败轨迹与人工批注原因**（一句具体的“误删了重试上限校验”远比打一个笼统的“差评”更有改进价值）。同时，轨迹日志极易录下文件内容与环境变量，接入真实业务前必须先落地字段脱敏、访问权限与留存周期策略。
 
-## 为后续改进留下什么
+## 来源与边界
 
-至少保留任务样例、正确结果、程序和模型版本、测试环境，以及逐例失败。记录是否使用模拟数据或 mock，也就是用替身代替真实服务。人工审读时，保留具体句子和修改理由，比只有“好”或“不好”的评分更有帮助。
-
-涉及私人资料时，先确定哪些信息可以记录、谁能查看、保存多久。安全权限、数据泄漏等问题需要专门的测试，普通功能样例主要检查任务结果。
-
-本章核对了文档和固定版本源码，没有在这些监测服务上运行评测，也没有据此给产品打分。
+本章基于固定版本源码与官方文档编写：`mini-swe-agent` 固定在提交 [`04d809ce`](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L88-L157)，可观测性与评测方法参考所列 OpenTelemetry 与 LangSmith 官方文档。本书仅静态审读源码结构并拆解评测设计原则，未在上述商业监测平台上运行评测打分或横向产品排名。

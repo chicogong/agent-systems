@@ -15,10 +15,15 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def export(renderer: Path, slugs: list[str], cache: Path) -> None:
+def export(renderer: Path, slugs: list[str], cache: Path, channel: str | None = None) -> None:
     cache.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as runtime:
-        browser = runtime.chromium.launch(headless=True)
+        try:
+            browser = runtime.chromium.launch(headless=True, channel=channel)
+        except Exception:
+            if channel is not None:
+                raise
+            browser = runtime.chromium.launch(headless=True, channel='chrome')
         page = browser.new_page(viewport={'width': 1280, 'height': 720}, device_scale_factor=4)
 
         def static_asset(route):
@@ -68,6 +73,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--renderer', type=Path, required=True)
     parser.add_argument('--cache', type=Path, default=ROOT / 'tmp' / 'native-export-cache')
+    parser.add_argument('--channel', default=None, help='Optional Playwright browser channel (e.g. chrome)')
     parser.add_argument('figures', nargs='+')
     args = parser.parse_args()
-    export(args.renderer, args.figures, args.cache)
+    export(args.renderer, args.figures, args.cache, args.channel)

@@ -590,8 +590,8 @@
     {
       "id": "event-success",
       "type": "text",
-      "x": 92,
-      "y": 461,
+      "x": 58,
+      "y": 442,
       "width": 176,
       "height": 30,
       "angle": 0,
@@ -627,8 +627,8 @@
     {
       "id": "event-failure",
       "type": "text",
-      "x": 509,
-      "y": 451,
+      "x": 495,
+      "y": 442,
       "width": 154,
       "height": 25,
       "angle": 0,

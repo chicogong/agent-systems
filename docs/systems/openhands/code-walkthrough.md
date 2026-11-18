@@ -1,42 +1,51 @@
-# 跟着 OpenHands SDK 走一条事件路径
+# 跟着 OpenHands SDK 走完一条事件闭环
 
 [返回 OpenHands 首篇](README.md) · [固定 SDK 源码](https://github.com/OpenHands/software-agent-sdk/tree/6ebd820d10794f1b52bb06ef6c19512888a1401b)
 
-上一页的流程是“记录动作→需要时等待批准→执行工具→记录结果”。这页从用户输入开始，沿同步 `LocalConversation.run()` 和默认 `Agent.step()` 找到这些步骤。伪代码只概括流程，具体实现见固定源码。
+如果在接入 OpenHands SDK 时，外层服务看到 `run()` 返回就顺手再调一次 `run()`，会发生什么？答案是：原本停下来等待人工审批的高危工具调用，会被立刻放行执行。
 
-## 输入和动作，都先进入事件清单
-
-`send_message()` 把用户输入变成消息事件 `MessageEvent`，交给 `_on_event`。默认会话处理先用 `ConversationState.append_event()` 加入清单，再通知外部订阅者。存储出错时，后面的通知也会停下。可选的本地显示器（visualizer）则在保存前显示内容，读显示行为时要看对应位置。[用户输入](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1808-L1870) · [保存和通知](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L415-L468)
-
-`run()` 启动循环，一轮轮调用 `agent.step()`。每步先查看当前分支有没有已经记录、但还没有对应结果的动作。找到时，先执行这些待办动作，再进入后续轮次。[运行循环](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1903-L2010) · [先处理待办动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L645-L661)
-
-没有待办动作时，`Agent._step()` 从当前 `state.view` 整理消息，询问模型。模型要求调用工具后，程序先核对名称、参数和动作格式；格式无效时，发出错误事件 `AgentErrorEvent`。[准备并请求模型](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L677-L735) · [核对工具调用](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L1163-L1346)
-
-## 需要批准时，先停下，暂不执行
-
-有效调用先由 `_get_action_event()` 创建并发出 `ActionEvent`。随后 `_handle_tool_calls()` 检查是否需要用户确认：需要时，把会话设为 `WAITING_FOR_CONFIRMATION`，本次 `run()` 退出；无须确认时，继续执行工具。[记录动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L1348-L1382) · [检查用户确认](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L163-L190) · [停在等待确认](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2006-L2010)
-
-这里接入 SDK 的宿主程序必须先取得批准，再调用 `run()`。这个版本的同步路径把等待后再次调用 `run()` 视为批准，会直接清掉等待状态，继续取待办动作；此处没有另查一份新的批准记录。自动把等待中的会话重新运行，会跳过宿主本应做的询问。[这一约定的注释](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L652-L661) · [再次运行时清除等待状态](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1977-L1995)
-
-批准后再次运行，`get_unmatched_actions(active_branch())` 找出当前分支的待办动作。用户拒绝时，宿主则用 `reject_pending_actions()` 为动作生成拒绝结果 `UserRejectObservation`，工具不会执行。[继续运行](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1977-L1995) · [找出待办动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/state.py#L677-L716) · [记录用户拒绝](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2610-L2648)
-
-## 工具做完，把结果与原动作配起来
-
-`_execute_actions()` 把动作交给工具。单次执行传入动作 `action` 和会话 `conversation`，工具返回后，Agent 通常生成 `ObservationEvent`；`ValueError` 会变成 `AgentErrorEvent`。
-
-批次可以并行执行，结果事件按原动作次序发出。若工具修改外部文件或数据，实际修改的先后还要看工具执行过程。[执行一批动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L229-L365) · [执行并整理单个结果](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L1384-L1446)
+为什么会这样？顺着同步 `LocalConversation.run()` 与默认 `Agent.step()` 的真实调用链走一遍，就能看清事件入账、确认挂起、批次执行与异常收尾的每一处咬合细节。
 
 ```text
-LocalConversation.run() → Agent.step()
-  没有待办动作：模型请求工具 → ActionEvent 记入清单 → 检查确认条件
-    无需确认：Tool(action, conversation) → ObservationEvent / AgentErrorEvent
-    需要确认：WAITING_FOR_CONFIRMATION → 本次 run 停止
-      宿主取得批准后再次 run：取出待办动作并执行
-      用户拒绝：UserRejectObservation，不执行工具
+send_message() → MessageEvent → _on_event() [先 append_event 落账，再广播订阅者]
+LocalConversation.run() 循环调用 Agent.step()
+  ├─ 分支 A：当前分支存在未配对 ActionEvent → 直接 _execute_actions() 清偿待办
+  └─ 分支 B：无待办动作 → Agent._step() 从 state.view 构造消息请求模型
+       ├─ 工具名或参数格式非法 → 发出 AgentErrorEvent
+       └─ 校验通过 → _get_action_event() 发出 ActionEvent
+            ├─ 需要确认 → 状态设为 WAITING_FOR_CONFIRMATION，本次 run() 立即退出
+            │    ├─ 宿主获批后再次调用 run() → 清除等待状态，下一轮走分支 A 执行动作
+            │    └─ 宿主调用 reject_pending_actions() → 发出 UserRejectObservation，跳过执行
+            └─ 无需确认 → _execute_actions() 调工具 → 按原动作顺序发出 ObservationEvent / AgentErrorEvent
 ```
 
-## 还有哪些情况会停下
+## 1. 事件入账：为什么先写存储、再发通知
 
-暂停、卡住、达到预算或最大轮数时，`run()` 也会停下。异常使状态变为 `ERROR`，并生成会话错误事件 `ConversationErrorEvent`。标为 `FINISHED`（已结束）后，结束钩子还可以给出反馈，让状态回到 `RUNNING` 继续工作。[查看停止条件](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1933-L2059)
+用户输入通过 `send_message()` 包装成 `MessageEvent` 送入 `_on_event()`。默认的会话回调严守「**先持久化，后广播**」：先调用 `ConversationState.append_event()` 写入事件流，再依次触发外部订阅者。这样一旦底层存储写盘报错，流程当场中断，外部监听者不会拿到未落账的脏状态。
 
-阅读一次工作记录时，先看结束原因，再看工具结果，最后核对实际产物。本篇尚未运行确认和崩溃恢复测试；外部动作是否会重复，以及实际执行环境如何隔离，需要另外检查。远程 Agent Server、ACP 接入和异步 `arun()` 采用的流程也要分别阅读。
+源码里有一处排查显示问题时容易忽略的例外：如果配置了本地可视化器（`visualizer`），它会在 `append_event()` **之前**先行渲染输出，阅读终端回显顺序时要留意这一先后差异。[用户输入](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1808-L1870) · [保存和通知](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L415-L468)
+
+## 2. 步进入口：先清偿历史欠账，再请求模型
+
+`LocalConversation.run()` 启动主循环后，每轮调用一次 `agent.step()`。`step()` 并不会一上来就调大模型，而是先检查当前活动分支里有没有「已记下 `ActionEvent`、却还没有配对结果」的悬空动作：
+
+- **有未配对动作**：说明上一轮在确认门禁或中断处停了下来，本轮必须先把这批待办动作执行完，补齐对应的观察事件，才允许推进后续轮次。[运行循环](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1903-L2010) · [先处理待办动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L645-L661)
+- **没有待办动作**：进入 `Agent._step()`，从 `state.view` 把事件流投影成模型消息列表并发起推理。模型返回工具调用后，程序先核对工具是否注册、JSON 参数能否反序列化为目标动作类型；一旦格式非法，不抛未捕获异常炸毁循环，而是原地生成 `AgentErrorEvent` 回填给下一轮模型自纠。[准备并请求模型](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L677-L735) · [核对工具调用](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L1163-L1346)
+
+## 3. 确认门禁：挂起靠状态退出，批准靠宿主守门
+
+通过校验的工具调用先经 `_get_action_event()` 构造并发出 `ActionEvent`。紧接着 `_handle_tool_calls()` 询问安全与确认策略：一旦需要人工确认，就把会话执行状态切换为 `WAITING_FOR_CONFIRMATION`，外层 `run()` 检测到该状态后立刻跳出循环，工具一行代码也不会执行。[记录动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L1348-L1382) · [检查用户确认](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L163-L190) · [停在等待确认](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2006-L2010)
+
+这就解释了开头的陷阱：在同步路径的设计里，SDK 没有另外发明一张「批准票据事件」，而是直接约定**处于 `WAITING_FOR_CONFIRMATION` 时再次调用 `run()` 即代表宿主已拿到用户批准**。`run()` 入口会把等待状态改回运行态，随后 `get_unmatched_actions(active_branch())` 捞出刚才挂起的 `ActionEvent` 投入执行；反之，如果用户拒绝，宿主必须调用 `reject_pending_actions()`，为每个待办动作补上一条 `UserRejectObservation`，把悬空的动作账目平掉。[这一约定的注释](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L652-L661) · [继续运行](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1977-L1995) · [找出待办动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/state.py#L677-L716) · [记录用户拒绝](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2610-L2648)
+
+## 4. 批次执行与循环终止：事件保序，副作用未必保序
+
+进入 `_execute_actions()` 后，每个动作连同当前 `conversation` 上下文交给对应工具执行。正常返回的 `Observation` 被包装为 `ObservationEvent`；若执行期抛出 `ValueError`，则捕获并转为 `AgentErrorEvent`。
+
+当模型一次提出多个可并行工具调用时，SDK 允许并发执行工具，但在**写回结果事件时严格按原 `ActionEvent` 的顺序依次发出**。这样事件流与模型上下文的因果配对永远整洁有序；但排查问题时要注意，如果两个并发工具同时读写外部磁盘文件，真实文件系统的修改先后仍取决于操作系统调度。[执行一批动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L229-L365) · [执行并整理单个结果](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L1384-L1446)
+
+除等待确认外，`run()` 还会在每轮边界检查其余停止条件：外部请求暂停、死循环卡住检测（stuck）、触达费用预算或最大轮数上限都会让循环停下；未预期异常会将状态置为 `ERROR` 并记录 `ConversationErrorEvent`。有意思的是，即便 Agent 自己宣布 `FINISHED`，结束钩子（stop hook）仍有机会做最后验收——如果验收未过并注入新反馈，会话状态会被拉回 `RUNNING` 继续下一轮修复。[查看停止条件](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1933-L2059)
+
+## 来源与边界
+
+本篇导读依据 [`OpenHands/software-agent-sdk@6ebd820d10794f1b52bb06ef6c19512888a1401b`](https://github.com/OpenHands/software-agent-sdk/tree/6ebd820d10794f1b52bb06ef6c19512888a1401b) 静态核对同步 `LocalConversation.run()` 与 `Agent.step()` 路径。异步 `arun()`、远程 Agent Server、ACP 协议接入以及外部工具在进程崩溃后的重试幂等性，不在本篇覆盖范围内。

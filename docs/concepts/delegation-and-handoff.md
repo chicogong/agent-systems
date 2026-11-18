@@ -1,73 +1,88 @@
-# 委派与交接：给几个助手分工，再把结果合起来
+# 委派与交接：切分独立上下文，拒绝共享大泥球
 
 [返回机制目录](README.md) · [Agent、工作流与多 Agent](agent-workflow-multiagent.md) · [可编辑图源](../../figures/delegation-and-handoff/scene.excalidraw) · [PNG](../../figures/delegation-and-handoff/preview.png)
 
-准备读书会时，可以让一个助手整理活动时间，另一个核对场地，第三个汇总报名要求。最后由协调者检查来源和内容，写成一份统一通知。
+让单个 Agent 独立审查一次横跨鉴权中间件、SQL 迁移脚本与二十多个路由文件的大型发版变更时，它翻到第 25 个文件往往就开始顾此失彼：前面几千行 `grep` 搜索废料把最初的安全约束挤出了注意力焦点。有人灵机一动改成“多 Agent 团队”，却图省事把整段聊天记录原封不动广播给所有子 Agent，还放任它们同时读写同一个配置文件——结果 Token 账单翻了三倍，错误假设互相传染，先改好的文件还被后跑完的节点直接覆盖回旧版。
 
-这就是委派的基本过程：**拆出几份工作，给出各自需要的材料，收回结果，再检查和合并。**
+多 Agent 协作最容易翻车的地方就在这里：**委派不是当甩手掌柜拉大群，而是切分独立的上下文窗口（Context Isolation）并立下严格的输入输出契约**。子任务翻阅几十个文件产生的中间噪音应当锁死在子窗口里就地销毁，交回协调者的只有经过提炼的结构化结论与证据坐标。
 
 ![从分派任务到检查合并的协作过程](../../figures/delegation-and-handoff/diagram.svg)
 
-[图的文字版](../../figures/delegation-and-handoff/README.md)解释了各条箭头。图展示应用可以怎样设计协作；后面用 LangGraph 的一个例子说明“分发输入、收集合并”的代码机制。
+[图的文字版](../../figures/delegation-and-handoff/README.md)逐条拆解了图中的派发、执行与合并连线。下面先厘清两种核心协作拓扑的取舍，再深入 LangGraph 源码看状态分发与归并如何落地。
 
-## 分工时，把要求写到具体事情上
+## 父子委派 vs 控制权交接：两种截然不同的拓扑
 
-以时间和场地两份工作为例：
+在多 Agent 系统里，“把活分出去”其实对应两种完全不同的控制流模型——**父子委派**（Delegation）与**控制权交接**（Handoff）。选错模型，轻则上下文冗余，重则没人对最终交付物负责：
 
-| 内容 | 助手 A：活动时间 | 助手 B：场地信息 |
+| 维度 | 父子委派（Delegation / 扇出归并） | 控制权交接（Handoff / 状态接力） |
 | --- | --- | --- |
-| 任务 | 找到日期、开始时间和结束时间 | 找到地点、楼层和待确认事项 |
-| 材料 | 同一批活动通知及其版本 | 同一批活动通知及其版本 |
-| 允许动作 | 读取指定材料 | 读取指定材料 |
-| 返回内容 | 时间、原文位置、缺失信息 | 地点、原文位置、缺失信息 |
-| 停止情况 | 来源互相矛盾时报告 | 需要联系场地方时先询问 |
+| **谁握最终交付权** | 父协调者（Coordinator）全程保留全局目标与验收权 | 当前节点完成本阶段工作后退场，由下一任专职 Agent 接管会话主导权 |
+| **上下文传递方式** | 给每个子 Agent 开辟隔离窗口，只传该子任务必需的最小材料包 | 将提炼后的阶段状态包与用户意图单向移交给下一棒，不背负前序全量废料 |
+| **返回路径** | 子 Agent 按约定 Schema 把结论与证据交回父节点，由父节点核对合并 | 控制流直接跳转到目标节点继续推进，无需原路返回呼叫方 |
+| **典型工程场景** | 多模块并行代码审计、跨源资料交叉核查、独立子模块同步重构 | 客服分诊台转交账单专员 Agent、架构规划节点移交编码实现节点 |
 
-表里的字段由应用或协调者安排。每份子任务还可以有一个标识、负责人和截止时间，方便查看它属于哪次任务。
+无论采用哪一种拓扑，头号反模式都是**共享大泥球历史**（Shared History Blob）：把主会话里几万字未消化的工具报错、无关闲聊甚至其他系统的访问凭据一股脑塞给下游 Agent。正确的做法是把每次委派或交接都当成一次**跨边界函数调用**——入参最小化、权限最小化、返回值结构化。
 
-交给助手的材料以完成其工作为准。A 需要时间线索，B 需要场地资料；与任务无关的私人聊天和凭据，留在原处。
+## 把委派写成可机审的输入输出契约
 
-## 正常协作怎样进行
+假设发版前协调者要核查一次多租户改造变更，可以拆成两路互不干扰的子任务并行委派：**子代理 A** 专查数据库迁移脚本的锁表风险与非空字段默认值，**子代理 B** 专查 HTTP 路由层是否全部补齐了租户鉴权中间件。
 
-**先拆分。** 时间和场地可以各自整理，就并行进行。如果场地取决于尚未确定的日期，先解决日期，再安排后面的工作。
+协调者派发给子代理的不是一句笼统的“帮我看看有没有问题”，而是一份边界清晰的契约包：
 
-**再派发。** 协调者把对应材料和要求交给每个助手，并记录任务标识。各助手可以分别保存自己的对话和进度；需要共用一份通知时，先说清楚谁能读取、采用哪个版本。
+```json
+{
+  "task_id": "audit-db-01",
+  "goal": "检查本次新增迁移脚本是否存在大表排他锁及非空列无默认值风险",
+  "input_files": ["migrations/20261118_add_tenant_id.sql"],
+  "allowed_actions": ["read_file", "search_schema"],
+  "return_contract": ["finding", "file_line", "severity", "missing_info"],
+  "halt_condition": "若缺少目标表当前行数或索引定义，标记待确认并停止猜测"
+}
+```
 
-**收回结果。** A 返回时间和原文，B 返回地点和原文。缺少楼层时，B 标为待确认，协调者保留这一说明。
+当两路子代理各自在独立上下文窗口里读完文件、交回结构化报告后，协调者真正不可替代的价值才开始显现——**跨路交叉核对**：
 
-**检查合并。** 协调者确认两份结果引用同一批通知。若旧通知写周六、新通知写周日，就回到来源核对版本，再决定怎样写入最终通知。
+- 子代理 A 报告：`migrations/20261118_add_tenant_id.sql:14` 新增了 `tenant_id NOT NULL` 列且无默认值。
+- 子代理 B 报告：内部批量导入路由 `src/routes/batch_import.ts:88` 仍沿用旧版写入逻辑，未注入 `tenant_id`。
 
-**按原要求完成。** 协调者检查时间、地点和报名方式，再交付汇总。是否用于发布，由使用者或事先指定的检查规则决定。只完成其中一项时，可以报告进度，让使用者知道还差什么。
+单看任何一份报告都只是局部观察，协调者把两边证据一对齐，立刻就能揪出“上线即触发写入崩溃”的致命冲突；遇到某一路标记为“缺少线上表规模数据、待 DBA 确认”的未决项，协调者也会原样保留在最终报告里，绝不在汇总阶段把“待确认”美化成“已验证通过”。
 
-## 写入任务怎样避免互相覆盖
+## 并发写入与外部调用：怎样防止互相踩踏
 
-读资料的工作比较容易分开。几个助手需要修改文件时，可以分配互不重叠的文件，或者由一个执行者统一写入，其他人提交建议。
+只读审计天然适合并行扇出；一旦多个子代理需要修改代码或调用外部服务，就必须加上写冲突护栏：
 
-实际写入前，运行程序按用户允许的文件和动作范围检查；需要批准的动作，先由指定的人确认。
+1. **严格切分不相交的写入领地，或改用单一写入者归并**：如果并行改代码，宿主必须在工具门禁层锁死子代理 A 只能写 `migrations/`、子代理 B 只能写 `src/routes/`；只要存在公共头文件或全局配置交叉，就让子代理只返回补丁建议（Diff Proposal），由协调者统一合并写入。
+2. **高危动作收口确认**：文件落盘范围与敏感操作审批仍由宿主运行器按全局策略统一把关，子代理不能自行突破任务授权。
+3. **外部写操作先对账再重试**：如果某个子代理负责调用外部系统接口并发生超时，协调者绝不能直接拉起一个新子代理重发一遍请求，必须先按业务操作标识核实远端是否已经生效，具体机制见[中断与恢复](interruption-recovery.md)。
 
-调用外部服务时，还要记录操作标识，安排确认和重复请求处理。如果一个助手超时，先检查它是否已经做完动作，再决定重试。[中断与恢复](interruption-recovery.md)继续说明这种情况。
+## LangGraph 源码拆解：用 Send 动态扇出，用 Reducer 合并状态
 
-## 可选深入：LangGraph 怎样分发输入
+在代码层面怎样实现“动态拆出 N 个并行子任务，跑完再安全合回主状态”？LangGraph 的 `StateGraph` 提供了一套非常干净的原语组合。
 
-LangGraph 的 `Send(node, arg)` 表示向一个指定节点发送自定义输入。节点可以理解为图里的一步处理函数。
+常规图编排的边在构图时就固定了节点数量，但真实任务往往在运行期才知道要拆成几份（例如本次 PR 一共改动了 7 个独立子包，就要拉起 7 个审查工作者）。为此，LangGraph 在条件边中引入了 `Send(node, arg)` 原语：条件函数遍历待处理列表，为每个目标动态生成一条 `Send` 指令，把专属的局部输入 `arg` 单独投递给目标节点实例，而不是让所有工作者去全局状态里抢食：
 
-官方示例把不同 `subject` 交给 `generate_joke`，分别生成结果：
+```python
+# 条件边动态扇出：为每个待审模块生成独立输入包，并行发往 audit_module 节点
+def dispatch_modules(state: AuditState):
+    return [
+        Send("audit_module", {"module": mod, "rules": state["rules"]})
+        for mod in state["changed_modules"]
+    ]
+```
 
-- 条件函数为每个主题产生一条 `Send`。
-- `arg` 带上这次处理的主题。
-- 目标节点返回一部分状态更新，图再合并这些结果。
+当这 7 个并行的 `audit_module` 实例在同一超步（Superstep）执行完毕，各自返回局部状态更新（`State → Partial<State>`）时，怎样避免最后一个跑完的节点把前 6 个节点的结果覆盖掉？
 
-[Send 定义和示例](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/types.py#L732-L804)
+答案在于状态字段上绑定的 **Reducer**（归并函数）。例如把汇总字段声明为带 `operator.add` 合并规则的列表后，图引擎会把各并行分支返回的列表按序拼接起来，而不是直接做键值覆盖。源码中的经典 `generate_joke` 示例正是用这套“条件边返回 `Send` 列表 + `operator.add` 归并结果列表”展示了 Map-Reduce 式的扇出与汇聚。
 
-`StateGraph` 的节点以 `State → Partial<State>` 交互，也就是“读当前状态，返回需要更新的那部分”。多个节点更新同一个字段时，可以为该字段安排 reducer，中文可理解为合并规则。示例中 `jokes` 是列表，用 `operator.add` 拼接每个节点返回的列表。
+至于前面提到的另一种拓扑——**控制权交接**（Handoff），LangGraph 则另外提供了 `Command` 原语，允许节点在一次返回里同时声明状态增量与下一跳目标节点（包括跨子图导航），无需再绕回原父节点。
 
-[状态与合并规则](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/graph/state.py#L131-L145) · [示例状态与条件边](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/types.py#L751-L775) · [条件边入口](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/graph/state.py#L982-L1030)
+把这套底层机制用进生产多 Agent 系统时，只需牢记一件事：**Reducer 只负责数据结构层面的无冲突拼接，不负责语义层面的真伪核查**。列表拼好之后，协调节点依然必须对照原始约束检查各分片结论是否自洽、是否有子任务超时缺席。
 
-这个例子中的工作者是普通函数，展示的是动态分发和列表合并。把它用到多个 Agent 的任务里，应用还要安排各自目标、权限、失败处理和结果检查。列表拼好之后，也仍需要核对时间、地点等内容是否一致。
+源码与文档参考：
+- [Send 定义和示例](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/types.py#L732-L804)
+- [状态与合并规则](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/graph/state.py#L131-L145) · [示例状态与条件边](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/types.py#L751-L775) · [条件边入口](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/graph/state.py#L982-L1030)
+- [官方 Graph API](https://docs.langchain.com/oss/python/langgraph/graph-api)
 
-LangGraph 的 `Command` 另外支持状态更新、路由和跨子图导航；本篇沿 `Send` 的这条示例讲解分发。[官方 Graph API](https://docs.langchain.com/oss/python/langgraph/graph-api)
+## 来源与边界
 
-## 从一份小分工开始
-
-先选两项可以独立整理的内容，写清楚“做什么、看什么、交回什么”。合并时回到来源核对，并保留缺失信息。稳定以后，再增加执行者或安排更复杂的动作。
-
-本章核对了固定版本源码与文档，没有运行并发调度或故障注入。LangGraph Python 包的[项目元数据](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/pyproject.toml#L5-L13)和[许可证](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/LICENSE#L1-L20)标明 MIT；本篇只概述并链接源码，图是本书的教学图。
+本章基于固定提交的静态源码与官方文档审读编写：LangGraph Python 包固定在提交 [`bdb85b5a`](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/pyproject.toml#L5-L13)（其[项目元数据](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/pyproject.toml#L5-L13)与[许可证](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/LICENSE#L1-L20)标明采用 MIT 协议），本章仅提炼并链接其公开机制，配图为本书自绘架构图；未对大规模并发子图做压测或故障注入实验。

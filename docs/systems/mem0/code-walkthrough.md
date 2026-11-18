@@ -1,35 +1,42 @@
-# 跟着 Mem0 代码走一次写入和检索
+# 代码导读：追踪 Mem0 的事实提炼落库与混合检索漏斗
 
 [返回 Mem0 剖面](README.md) · 固定源码版本 [`f8082a73`](https://github.com/mem0ai/mem0/tree/f8082a7345dadd9e042ebbc40b57b1498c8f6d63)
 
-这篇源码路线跟着两个动作走：把消息整理成记忆，再按问题找回。范围是 Python 开源版的同步 `Memory.add(infer=True)` 与默认检索。`rerank` 指额外重排结果，本篇先看未启用时的路径。下面用简写表示阅读顺序；应用还要把搜索结果加入模型输入。
+在应用里调用 `memory.add(messages, user_id="u1")` 和 `memory.search(query, filters={"user_id": "u1"})` 看似只有两行代码，但底层其实横跨了大模型事实抽取、MD5 局部去重、向量库批量回退以及多信号归一化打分。下面固定在 Python 开源版的同步 `Memory.add(infer=True)` 与默认检索路径（未开启可选 `rerank`），逐段拆解字节流转与隐藏边界。
 
 ```text
 add(messages, user_id="u1", infer=True)
-  → 校验作用域与消息 → 读取近期消息和已有记忆
-  → LLM 提取事实 → embedding / hash 排重 → 尝试写向量与历史
-  → 保存本轮消息 → 返回 {results: [] 或 [{event: "ADD", ...}]}
+  ├─► _build_filters_and_metadata：校验作用域 (user_id / agent_id / run_id)
+  ├─► 采集近期会话消息 + 向量检索最多 10 条既有记忆作为参考
+  ├─► LLM 提取原子事实列表 ──► 空结果？仅保存原始消息并返回 {"results": []}
+  ├─► 计算新事实 embedding + 按文本 MD5 局部排重
+  ├─► vector_store.insert 批量写入（失败则逐条重试）+ 记 ADD 历史 + 实体关联
+  └─► 保存本轮原始消息 ──► 返回 {"results": [{"id": "...", "memory": "...", "event": "ADD"}]}
 
-search(query, filters={"user_id": "u1"})
-  → 校验查询与作用域 → 语义搜索建立候选集
-  → 可用时计算关键词分数和实体加分 → 语义阈值 / 综合排序
-  → 格式化 → 返回 {results: [...]}（也可能为空）
+search(query, filters={"user_id": "u1"}, top_k=5)
+  ├─► 强制校验 filters 中的作用域标识与参数阈值
+  ├─► query embedding 语义检索（放大召回池，建立唯一 candidates 入围池，跳过过期项）
+  ├─► 尝试拉取 keyword_search 分数与实体关联信号
+  ├─► score_and_rank：先卡语义阈值，再叠加可用 BM25 / 实体分并归一化取 top_k
+  └─► 格式化输出（可选 rerank 重排）──► 返回 {"results": [...]} 交由上层应用装入提示
 ```
 
-## 写入：从消息到可检索事实
+## 写入链路：从多轮原始对话到 `ADD` 记录
 
-1. `add()` 拒绝 OSS 不支持的 `timestamp`，经 `_build_filters_and_metadata` 要求 `user_id`、`agent_id`、`run_id` 至少一个，并将字符串或字典消息正规化为列表。`procedural_memory` 与 `infer=False` 不是下列路径。[入口与分支](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L817-L877) · [作用域校验](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L360-L404)
-2. `_add_to_vector_store()` 读取同一会话作用域的最近消息，以新消息生成查询 embedding，最多取十条已有向量记忆，连同它们一起构造提取提示。这一步的已有记忆是提取时的参考，不是本轮准备覆盖的记录清单。[上下文采集](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L916-L953)
-3. LLM 返回的事实解析为 `memory` 列表。调用失败会抛 `LLMError`；若返回空事实或无法解析出事实，则保存原消息并返回空列表。所以，消息存储和事实记录要分别看：这一分支会留下消息，也可能没有新事实。[提取与空结果](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L955-L989)
-4. 对提取出的文本生成 embedding；源码用文本 MD5 与刚检索到的记录及本批次比对，跳过重复或无法取得 embedding 的项。这次排重范围是刚检索到的记录和本批次。没有记录留下时，保存消息并返回空列表。[embedding 与排重](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L991-L1043)
-5. 有记录时先批量 `vector_store.insert`，失败后逐条尝试；随后写 ADD 历史、尝试关联实体，最后保存本轮消息。这里的 **ADD-only** 指此分支不自动更新或删除既有*记忆记录*；实体关联本身可更新其实体存储，显式 `update/delete` API 也另有路径。[向量写入与回退](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1045-L1062) · [历史、实体与消息](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1064-L1206)
-6. 返回值 `{"results": ...}` 的每个 `ADD` 项按构造的 `records` 生成，而逐条回退中的插入异常仅被记录、没有从 `records` 移除。故障时，可拿返回的 ID 去向量库读回，核对每条是否真的保存。这里从代码看到了需要检查的位置，尚未做故障注入。[回退异常](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1050-L1062) · [返回项构造](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1192-L1206)
+1. **入口分流与作用域门禁**：[`add()`](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L817-L877) 首先拦截 OSS 版不支持的 `timestamp` 参数，调用 [`_build_filters_and_metadata`](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L360-L404) 强制要求 `user_id`、`agent_id`、`run_id` 至少传入其一，并把纯字符串或单字典统一规整为消息列表。若传入 `procedural_memory` 或 `infer=False`，控制流会在此提前分叉，不走下面的事实提取漏斗。
+2. **拼装提取上下文**：进入 [`_add_to_vector_store()`](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L916-L953) 后，程序先拉取同作用域的最近消息，再用当前新消息的 embedding 去向量库查出最多 10 条相近既有记忆，连同新消息一起组装成提取提示词。注意这 10 条旧记忆只是给大模型看的“防重复参考背景”，并不是待修改的目标清单。
+3. **LLM 抽取与空事实兜底**：大模型返回 JSON 后解析出候选 `memory` 字符串列表（调用异常直接抛 `LLMError`）。如果模型认为这轮对话纯属寒暄、返回空列表或解析不到有效事实，代码依然会把本轮原始消息存入消息表，然后干净地返回空结果。这意味着**消息留档与事实落库是解耦的两份存储**。[提取与空结果](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L955-L989)
+4. **向量化与局部 MD5 排重**：代码遍历每条新事实生成 embedding，同时计算文本的 MD5 哈希，跟**刚才查出的那最多 10 条既有记忆**以及**当前同一批次已处理的事实**做精确比对，跳过完全重名的条目或生成向量失败的项。注意排重窗口仅限这局部集合而非全库扫描；若全部跳过，同样只保存原始消息并返回空列表。[embedding 与排重](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L991-L1043)
+5. **批量写库回退与 ADD-only 语义**：留下的记录优先调用 `vector_store.insert` 批量入库，若抛错则自动退化为逐条 `insert`；随后依次写入 `ADD` 审计历史、尝试更新实体关联存储，最后保存本轮消息。再次强调，这条自动提取链路对记忆主记录是 **ADD-only** 的（虽然实体存储自身会刷新关联，但向量库里的旧记忆不会被自动改写或删除，需另调显式 `update / delete`）。[向量写入与回退](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1045-L1062) · [历史、实体与消息](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1064-L1206)
+6. **一个值得警惕的回退细节**：查看[回退异常处理](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1050-L1062)与末尾的[返回项构造](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1192-L1206)可以发现，当批量插入失败进入逐条重试循环时，单条插入抛出的异常只记录了错误日志，并没有把失败项从 `records` 列表中剔除——结果函数末尾仍会照着原 `records` 拼出 `event: "ADD"` 返回给调用方。一旦线上向量库出现抖动，不能单凭返回数组断言落盘成功，需按返回 ID 读回核验。
 
-## 检索：入围、加分、返回
+## 检索链路：为什么说它是“语义单门入围、多信号重排”
 
-1. `search()` 拒绝顶层传入的实体 ID，要求在 `filters` 中给出至少一个 `user_id`、`agent_id` 或 `run_id`，并检查 query、阈值和 `top_k`；不通过就不会进入向量检索。[参数校验](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1432-L1461)
-2. `_search_vector_store()` 对 query 做语义 embedding，并以超过请求 `top_k` 的内部数量取得语义结果；它也尝试关键词搜索和实体关联。这些是不同信号，但 `candidates` **只从语义结果构造**，并在默认情况下跳过已过期记录。[三种信号与候选池](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1628-L1677)
-3. `score_and_rank()` 先用**语义分数**过滤候选，再叠加可用的 BM25 分数与实体加分、按活跃信号归一化并取 `top_k`。关键词和实体为已入围候选加分，入围名单仍来自语义搜索。[排序算法](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/utils/scoring.py#L60-L139)
-4. 搜索结果被格式化为记忆对象；仅当调用方启用 `rerank`、配置了 reranker 且已有结果时，才再排序，失败则保留原结果。最终返回 `{"results": ...}`，接下来，调用方决定哪些记录放进模型提示；这一步在应用层完成。[格式化与返回](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1689-L1731) · [可选 rerank](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1493-L1522)
+1. **严格校验 `filters` 形态**：[`search()`](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1432-L1461) 拒绝把 `user_id` 等直接塞在顶层关键字参数里，强制要求放进 `filters` 字典（且至少包含一个合法作用域 ID），同时校验 `query` 非空、分数阈值与 `top_k` 合法，防止误发全表裸查。
+2. **构建唯一语义候选池**：[`_search_vector_store()`](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1628-L1677) 先把 `query` 转为向量，用放大后的内部抓取条数拉回语义最近邻，并过滤掉已过期的记忆条目。紧接着代码虽然也会去调向量库适配器的关键词检索与实体查询，但仔细看 `candidates` 字典的构建逻辑就会发现：**候选池的钥匙完全捏在语义检索手里**——关键词与实体检索只给池内已有记录补充分数，不会往 `candidates` 里塞新记录。
+3. **阈值裁剪与动态归一化**（`score_and_rank`）：进入[`score_and_rank()`](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/utils/scoring.py#L60-L139) 后，先拿**纯语义分数**跟调用方设定的阈值做第一轮淘汰；留下来的候选再叠加当前可用的 BM25 分数与实体命中加分，并根据本次实际启用了哪几路信号做权重归一化，排完序截取前 `top_k` 条。
+4. **格式化与可选重排**：入选记录经[格式化](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1689-L1731)组装成标准字典；如果调用方显式传了 `rerank=True` 且实例配好了 reranker，还会走一趟[可选 rerank](https://github.com/mem0ai/mem0/blob/f8082a7345dadd9e042ebbc40b57b1498c8f6d63/mem0/memory/main.py#L1493-L1522)（重排报错则降级保留原顺序）。最终返回的 `{"results": [...]}` 到此交棒——至于挑哪几条塞进系统提示、塞在什么位置、遇到前后矛盾怎么取舍，全部移交给上层 Agent 应用自己裁决。
 
-这份导读没有运行模型、数据库或向量库。LLM 提取质量、适配器是否实现 `keyword_search()`、实体链接准确性、写入失败时返回值与实际存储的一致性，以及检索结果进入 Agent 上下文后的效果，仍需在固定配置下分别采集运行轨迹和读回结果。
+## 来源与边界
+
+本导读基于 [`mem0ai/mem0@f8082a7345dadd9e042ebbc40b57b1498c8f6d63`](https://github.com/mem0ai/mem0/tree/f8082a7345dadd9e042ebbc40b57b1498c8f6d63) 静态核对 Python OSS 同步路径。本文未连接在线模型或真实向量数据库运行故障注入，各具体向量库适配器是否实现 `keyword_search()`、实体提取准确率及不同 reranker 的排序收益需在目标部署配置下实测验证。

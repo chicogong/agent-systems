@@ -2,67 +2,106 @@
 
 [返回横向对照](README.md) · [观察、测试与评测](../concepts/observation-evaluation.md) · [循环为何停止](loop-and-stop.md)
 
-助手回复“已完成”后，你还需要查看它交出的东西。资料摘要可以对照原文逐句核对；代码修改可以打开文件差异和测试结果检查。下面先看一个资料任务，再看一个配置修改任务，说明怎样把报告中的结论和实际结果对应起来。[《循环为何停止》](loop-and-stop.md)讲程序怎样停下，本篇接着讲交付时该看什么。
+在日常协作里，Agent 最具迷惑性的时刻，往往就是它语气笃定地吐出最后一段总结的那一刻：“已完成全部修改！服务超时已按要求调为 5 秒，相关单元测试全部运行通过，未执行任何远端推送。”
 
-> **范围（2026-09-24 核对）。** 引用 Pi `898ab804`、mini-SWE-agent `04d809ce`、OpenCode `18ef3cc7`、Kimi Code `75a894e9` 的固定源码路径，以及[观察与评测篇](../concepts/observation-evaluation.md)中的官方资料。下文任务与结果为教学构造，尚无四套系统同配置实测。
+如果你只看这句漂亮的自然语言汇报就点下合并，线上事故往往已经在路上了：打开 `git diff` 一看，它在把 `timeout: 30` 改成 `timeout: 5` 的同时，顺手把下一行的 `retries: 3` 覆盖成了 `retries: 0`；而跑绿的那条单测只写了 `assert config.timeout == 5`，压根没检查重试次数，一路绿灯放行。更极端的时候，[运行循环](../concepts/agent-loop.md)其实是因为撞上步数上限被迫停机，或者模型压根没调过测试工具，纯粹顺着上下文惯性“脑补”了一句测试通过。
 
-## 先用一个只读回答看“完成”
+在[《一轮工具调用后，谁决定下一步？》](loop-and-stop.md)里我们看清了程序怎样停下来；本篇专门解决停下来之后的灵魂追问：**为什么“循环正常结束”和“工具返回成功”都不等于“任务真做对了”？到底拿到哪几样硬证据，才能放心签收 Agent 的交付物**？
 
-回到[读书会资料助手](../concepts/agent-loop.md#先看一次正常完成)：用户要活动时间、地点、是否报名，还要每项的出处。助手读到 `D1`、`D2`、`D3` 后，整理三项答案。你可以按编号回到原文，检查它有没有读对、有没有漏项，再决定这份活动说明能否使用。
+## 一个最典型的“假完成”陷阱：改对了目标值，改坏了不变量
 
-若暂时只拿到 `D1`、`D2`，可以先交付“周六 14:00 [D1]、图书馆二楼 [D2]，报名要求待核对”。明确标出缺项，用户就知道下一步要补哪份材料，而不会把未读到的 `D3` 猜成“无需报名”。
+来看一条再常见不过的配置修改需求：
 
-这个例子里，程序结束后还要检查材料和答案，最后由用户确认是否符合要求。换成修改代码的任务，就需要检查文件、测试，以及助手有没有遵守允许修改的范围。
+```text
+把服务请求超时从 30 秒改成 5 秒，保持现有的重试规则（retries=3）不变；
+只修改相关配置文件并运行测试，不要执行 git commit 或 git push；
+最后汇报改了什么、测了什么、还有哪些环境没验证。
+```
 
-## 同一任务：改对数字，还要守住原规则
+面对这条需求，**模型的口头总结只是“自我辩护词”，绝不是呈堂证供**。要把一句轻飘飘的“已完成”变成经得起工程审计的交付，必须核验由**工作区实际改动、可复现测试断言、过程与边界记录**组成的三件套证据链：
 
-设想用户要求：“把服务超时时间从 30 秒改成 5 秒；保持现有重试规则；只改相关文件并运行测试；不要提交或推送。最后告诉我改了什么、测了什么、还没验证什么。”助手交付时，要逐项说明这些要求是否做到，并给出文件和测试记录。
+![Agent 说「已完成」时该查什么：把口头宣告变成三件套核验](../../figures/completion-and-evidence/diagram.svg)
 
-把这条要求拆成清单后，检查就很直接：超时值是 5、重试规则仍在、文件范围合适、相关测试跑过、未提交推送。下表给每类结论配一个检查位置，按需使用即可。
+[图的文字版](../../figures/completion-and-evidence/README.md) · [可编辑图源](../../figures/completion-and-evidence/scene.excalidraw) · [PNG 预览](../../figures/completion-and-evidence/preview.png)
 
-| 想在交付中说什么 | 检查位置 | 接下来还要看什么 |
+对比一下“只听口头汇报”与“查验三件套底账”的巨大反差：
+
+```text
+[模型口头宣告]  "已将 timeout 改为 5s，测试 exit_code=0 全部通过！"
+                        │
+        ┌───────────────┼───────────────┐
+        ▼               ▼               ▼
+  1. 查工作区 Diff   2. 查测试断言覆盖  3. 查执行与边界记录
+  - timeout: 30->5   - 测了 timeout==5  - 真的调过 bash 跑测试吗？
+  - retries: 3->0 ❌ - 漏测 retries==3! - git status / 远端真的干净吗？
+```
+
+只要少看其中任何一件，上述“改对 `timeout` 却把 `retries` 清零”的静默回归就会大摇大摆混过关口。
+
+## 从“循环停了”到“用户签收”：七级结论各查哪份证据？
+
+你在交付报告里每往前迈一步下结论，背后依赖的证据位置就必须往上升一级：
+
+| 你想在报告里写下的结论 | 必须核对的硬证据位置 | 光有它还不够，接下来还要查什么 |
 | --- | --- | --- |
-| “Agent 这一轮结束了” | 对应运行 ID、结束事件或退出状态及原因。 | 文件、测试与任务清单。 |
-| “测试命令执行过” | 同一工作区版本下的命令、参数、环境、退出码、原始输出或测试报告。 | 命令实际检查的条件和失败详情。 |
-| “交付物已产生” | 文件实际内容、diff、基线 commit 与工作树状态。 | 内容是否符合要求，以及其他改动。 |
-| “指定行为通过测试” | 用例、断言、被测版本、输入与环境；本例检查 5 秒值及原重试规则。 | 任务所需的集成环境、真实依赖和未覆盖场景。 |
-| “任务边界遵守了” | 完整改动范围与相关操作记录；本例核对本地 Git 和远端写入情况。 | 记录采集的范围与缺口。 |
-| “候选成果可以提交验收” | 对照原要求的清单、已做检查、未覆盖项和产物位置。 | 指定接受者的判断。 |
-| “用户已接受” | 接受者确认的范围、版本和日期；重要场景加入集成或使用反馈。 | 后续输入与长期使用的表现。 |
+| **1. Agent 这一轮停下来了** | 运行 ID、循环结束事件、退出状态枚举及停止原因 | 它是主动收工，还是撞上步数限额、用户取消或连续报错被迫停机？ |
+| **2. 测试命令确实跑过了** | 同一工作区版本下的工具调用回执、完整命令参数、退出码与原始标准输出 | 退出码为 `0` 只代表进程没崩，那个测试到底断言了哪几个字段？ |
+| **3. 交付物已经落盘生成** | 目标文件的实际内容、`git diff`、基线提交号与当前工作树状态 | 改完的值对不对？有没有顺手污染无关文件或格式化整份配置？ |
+| **4. 要求的行为通过了测试** | 测试用例源码与断言条件（本例须**同时断言** `timeout == 5` 且 `retries == 3`） | 本地单测之外的真实上下游依赖、超时等待体感与集成环境表现 |
+| **5. 严守了任务禁区边界** | 完整改动文件清单、本地提交历史与远端分支状态、相关工具调用审计日志 | 日志采集本身有没有盲区（例如绕过受控工具的子进程操作）？ |
+| **6. 候选成果可提交验收** | 逐条对齐原始需求的核对表、已通过证据链接、诚实列出的未验证缺口 | 最终责任人（Code Reviewer 或业务方）的独立审阅判断 |
+| **7. 用户正式签收通过** | 验收人确认的范围、对应代码版本与上线后监控反馈 | 后续真实流量下的长尾表现与回归守护 |
 
-写报告时，**每个结论后面附上对应的文件或记录**。例如，命令的退出码说明进程如何结束；测试报告说明哪些条件在什么版本和环境下通过；用户确认则说明哪些结果已经被接受。想进一步了解日志、测试与跨任务评测的用途，可以选读[观察与评测篇](../concepts/observation-evaluation.md)。[OpenTelemetry 的信号概念](https://opentelemetry.io/docs/concepts/signals/) · [LangSmith 的评测类型](https://docs.langchain.com/langsmith/evaluation-types)
+做系统可观测性与评测设计时，把**过程追踪信号**（Tracing / Logs）与**结果断言评测**（Evaluations）分开看待会格外清晰：前者帮你还原“当时到底跑了哪些步骤”，后者帮你判定“产出的东西到底合不合格”。进一步阅读可对照[观察、测试与评测篇](../concepts/observation-evaluation.md)，以及 [OpenTelemetry 的信号分类](https://opentelemetry.io/docs/concepts/signals/)与 [LangSmith 的评测类型说明](https://docs.langchain.com/langsmith/evaluation-types)。
 
-## 四套系统怎样记录过程
+## 四套开源系统各自给你留下了什么“查账线索”？
 
-| 固定源码路径 | 程序留下什么记录 | 交付时怎样使用 |
+当你在排查一次交付时，Pi、mini-SWE-agent、OpenCode 和 Kimi Code 的底层循环会留下结构各异的过程记录。读懂这些字段的真实含义，才不会被字面上的 `completed` 误导：
+
+| 固定源码切面 | 系统留下的过程记录 | 验收查账时的正确用法与防坑边界 |
 | --- | --- | --- |
-| [Pi 核心与 coding-agent](../systems/pi/code-walkthrough.md) | `runLoop` 发结束事件；工具错误形成 `isError` 结果；coding-agent 将常规消息记入会话树。 | 用记录定位本次操作，再对照文件差异（diff）与测试输出。 |
-| [mini-SWE-agent 基类／本地环境](../systems/mini-swe-agent/code-walkthrough.md) | 消息尾部 `exit` 结束基类循环；`Submitted`、限额、连续格式错误对应不同出口；配置了保存路径时 `save()` 落文件。 | 先辨认出口原因，再检查 5 秒值和重试条件。默认交互 CLI 的子类要另读。 |
-| [OpenCode 会话处理器](../systems/opencode/code-walkthrough.md) | `ToolPart` 记录单次调用的 `completed/error` 与内容；Session 记录会话 `busy/retry/idle`。 | 调用状态帮助找到对应输出；任务清单用文件和断言检查。 |
-| [Kimi Code 单 turn](../systems/kimi-code/code-walkthrough.md) | `turn.ended` 区分 `completed/cancelled/failed`；`maxSteps`、取消与 steer 影响续跑。 | `completed` 说明本 turn 正常结束；改动、外层目标和用户确认另有检查位置。 |
+| [Pi 核心与 coding-agent](../systems/pi/code-walkthrough.md) | `runLoop` 发出回合结束事件；失败或被拒工具生成带 `isError` 标记的结果；外层 `coding-agent` 把常规消息持久化进会话树 | 用会话树记录锁定本次实际跑过哪些读写与测试命令，再去核对磁盘 `diff` 与测试输出原文 |
+| [mini-SWE-agent 基类／本地环境](../systems/mini-swe-agent/code-walkthrough.md) | 消息末尾出现 `exit` 角色即结束基类循环；正常提交 `Submitted`、费用／步数超限、连续格式错误均走各自出口；配置路径后 `save()` 落盘完整轨迹 | **千万别看到循环返回就当成功**！先看 `exit` 到底是 `Submitted` 还是超限强退，再独立检查 `timeout=5` 与 `retries=3`（交互式 CLI 子类另有确认分支） |
+| [OpenCode 会话处理器](../systems/opencode/code-walkthrough.md) | 每个 `ToolPart` 独立记录单次调用的 `completed / error` 状态与输出内容；`Session` 层记录 `busy / retry / idle` | 会话回到 `idle` 只代表不忙了；顺着 `ToolPart` 找到那次测试命令的真实 `completed` 输出，再结合工作区文件核对需求清单 |
+| [Kimi Code 单 turn](../systems/kimi-code/code-walkthrough.md) | `turn.ended` 事件明确区分 `completed / cancelled / failed`；`maxSteps` 上限、取消信号与 `steer` 共同影响何时收口 | `turn.ended = completed` 仅证明当前回合按控制流正常收束；文件改没改对、外层大目标完没完成仍须去工作区与测试报告里验明正身 |
 
-想追源码，可从 [Pi 的回合结束与工具结果](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L279-L320)、[Pi 工具错误包装](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L773-L861)、[mini-SWE-agent 的循环与退出分支](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L88-L124)、[mini-SWE-agent 的本地提交哨兵](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/environments/local.py#L24-L56)、[OpenCode 的调用结果](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L383-L420)、[OpenCode 的会话状态](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/status.ts#L30-L48)、[Kimi Code 的 turn 结束映射](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L441-L510)读起。它们解释对应版本中的控制与记录分支。
+想深入核对这四套系统的源码记录位置，可直接跳转：
 
-## 一份简短的交付报告
+- **Pi**（`898ab804`）：[回合结束事件与工具结果收束](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L279-L320)、[工具抛错与 `isError` 包装](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L773-L861)
+- **mini-SWE-agent**（`04d809ce`）：[基类循环与多种异常退出分支](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/agents/default.py#L88-L124)、[本地环境提交哨兵识别](https://github.com/SWE-agent/mini-swe-agent/blob/04d809ceab9df28f9adaed044884180159172930/src/minisweagent/environments/local.py#L24-L56)
+- **OpenCode**（`18ef3cc7`）：[`ToolPart` 调用结果状态更新](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L383-L420)、[Session 会话忙闲状态定义](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/status.ts#L30-L48)
+- **Kimi Code**（`75a894e9`）：[`turn.ended` 终态枚举映射](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L441-L510)
 
-可以按三项组织这个配置任务的候选报告：
+## 解剖两个最容易蒙混过关的“伪完成”样本
 
-- **改动**：`config.yaml` 中超时设为 5 秒；diff 中重试配置保持原样，附文件位置。
-- **检查**：两项测试在版本 X、环境 Y 以命令 Z 运行通过，附完整报告。
-- **待确认**：集成环境与实际等待体验还需检查；执行记录中没有提交或推送，远端状态是否独立核查应另写清。
+### 样本一：单测全绿，却悄悄破坏了不变量（漏写守护断言）
 
-X／Y／Z 是需要填写的实际记录位置。这是报告模板，书中尚无这条任务的真实测试结果。
+Agent 提交的测试结果退出码是 `0`，`test_timeout_value` 绿得发亮，但配置文件实际发生了如下变化：
 
-## 两个“看上去完成”的失败样本
+```diff
+ service:
+-  timeout: 30
+-  retries: 3
++  timeout: 5
++  retries: 0
+```
 
-**样本一：测试漏了一项要求。** Agent 把 `timeout` 改为 5 秒，`test_timeout_value` 返回 0，但同时将 `retries=3` 改成了 `retries=0`。查看 diff，并把重试条件加入断言，就能发现缺项。这是教学构造的反例。[观察与评测篇的同题反例](../concepts/observation-evaluation.md#把检查条件写完整)
+为什么测试没拦住？因为测试只写了“新需求要改什么（`timeout == 5`）”，漏写了“老规矩什么不能变（`retries == 3`）”。Agent 修改结构化配置或重写整个函数块时极易顺手抹掉相邻字段——只要核验时坚持**既看完整 `diff`、又把保留条件写进测试断言**，这种暗伤当场就会原形毕露。更多断言设计细节见[观察与评测篇的同题反例](../concepts/observation-evaluation.md#把检查条件写完整)。
 
-**样本二：报告缺少对应记录。** 最终回复写了“已运行全部测试”，却找不到测试工具结果；写了“未推送”，却没有独立核对远端。把同一任务、工作区版本和实际命令连起来，已有结果如实记录，缺项标为“待核对”。失败的测试也留在报告中，方便下一步继续处理。
+### 样本二：总结里写得头头是道，工具轨迹里却查无此证（无证自夸）
 
-## 带回自己的任务
+另一种高频翻车是“幻觉式汇报”：最终回复里写着“已跑完全部相关测试且未推送远端”，但翻遍会话的 `ToolPart` 或 `tool_result` 记录，发现最后一次修改配置之后根本没有任何测试命令调用——它参考的是修改**之前**跑过的那次旧测试结果！或者当某份必读参考资料拉取失败时，它没有坦诚标出“该项待核对”，而是顺嘴编了一个默认结论。
 
-拿一份你熟悉的 AI 交付报告，列出三栏：**原要求、交付内容、检查位置**。把“已完成”拆成具体条目；测试通过就附用例与被测版本，文件生成就检查实际内容，用户确认就写确认范围。没有记录的条目标为“待核对”，方便接着补查。
+对付这类问题的办法简单而刚性：**交付报告里的每一句肯定判断，都必须绑定最后一次写入之后的真实工具回执编号、工作区 `diff` 行号与本地／远端 Git 状态检查输出；凡是没拿到回执或环境受限没测到的项目，一律光明正大地单列在「待确认缺口」里**。坦诚标出哪 10% 还没测，远比假装 100% 搞定更有工程价值。
 
-## 本篇范围
+## 拿来即用的三栏交付模板
 
-本文的源码记录与教学样本用于解释检查位置，尚未对四套系统做这条任务的实测，或评价正确率与用户接受情况。若要继续验证，可在获准的练习仓库固定版本、配置和任务，保存去敏的模型／工具事件、前后 diff、测试报告以及 Git 本地和远端状态，再请另一位读者按原要求检查。
+下次无论让哪款编码助手干活，都可以在系统提示或任务末尾要求它按这三栏交账：
+
+- **实际改动**（附文件与 `diff` 证据）：改了哪几个文件、目标项变成了什么、要求保持不变的相邻配置是否完好无损。
+- **已跑验证**（附命令与回执证据）：在最后一次改动后实际执行了什么命令、退出码是多少、断言覆盖了哪些正向改动与守护条件。
+- **边界与待核对项**（附缺口说明）：本地 `git status` / `git log` 是否确认未越界提交或推送；哪些联调环境、性能表现或未读取到的外部信息仍需人工补验。
+
+## 来源与边界
+
+本文于 2026-09-24 基于 Pi（`898ab804`）、mini-SWE-agent（`04d809ce`）、OpenCode（`18ef3cc7`）与 Kimi Code（`75a894e9`）的固定源码提交及公开可观测性文档核对，重点拆解循环终态记录与工程交付证据链之间的层次关系，未对四套系统在特定基准集上的任务通过率或幻觉率做横向实测对比。

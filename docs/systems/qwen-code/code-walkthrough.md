@@ -1,40 +1,49 @@
-# 跟着 Qwen Code 看工具说明怎样找到、工具怎样调用
+# 跟着 Qwen Code 看延迟工具怎样检索与脱壳执行
 
 [返回首页](README.md) · 固定源码 [`b9840886`](https://github.com/QwenLM/qwen-code/tree/b9840886b86c23f196482cc1ee55d59cbc74df87)
 
-模型要使用一个已注册、但暂时隐藏的工具，可以先请求说明，再交出名称和参数。程序负责找工具、检查条件，最后安排真实执行。下面沿普通工具声明模式的这条流程读源码。
+读 Qwen Code 的延迟工具源码时，最容易混淆两个完全独立的状态：**模型在对话消息里读到了某工具的说明书**，以及**该工具出现在模型 API 的顶层原生声明列表里**。
 
-已预加载、通过 `visibleTools` 显示或采用 `CodeModeOnly` 的工具，走其他分支。伪代码是流程摘要。
+看懂普通工具声明模式下这两件事是怎样分开处理的，就能彻底明白为什么搜索之后没有调 `revealDeferredTool`，以及为什么 `CoreToolScheduler` 必须在执行前拦截并改写 `tool_call`（至于预算内预加载、`visibleTools` 显式放行或 `CodeModeOnly` 分支，则走各自的直接路径）。
 
 ```text
-setTools(): ToolRegistry.getFunctionDeclarations() → 给模型的初始工具清单
-  仍隐藏的延迟工具暂时省略；已注册且可声明的 tool_search / tool_call 留在清单中
+初始化：ToolRegistry.getFunctionDeclarations() → client.setTools()
+  ├─ 隐藏的延迟工具（shouldDefer 且未显露）→ 从顶层原生声明中筛除
+  └─ 常驻工具 + tool_search + tool_call     → 保留在模型原生声明列表中
 
-请求一：tool_search(query)
-  搜索已注册且隐藏的延迟工具 → 返回 <functions>{工具说明}</functions>
-  这一步返回说明，原有工具声明列表保持原样
+第 1 跳：模型调用 tool_search(query)
+  └─ ToolSearchTool 检索隐藏池（或用 select:<name> 精确点名）
+       → returnSchemas() 返回 <functions>{名称、用途、参数 Schema}</functions>
+       → 不调用 revealDeferredTool，顶层原生声明列表保持不变
 
-请求二：tool_call({ name, arguments })
-  CoreToolScheduler → resolveDeferredToolCall → 检查目标与使用条件
-  包装请求换成真实工具名/参数 → 按真实工具的规则继续处理
+第 2 跳：模型调用 tool_call({ name, arguments })
+  └─ CoreToolScheduler 拦截 → resolveDeferredToolCall() 校验双入口与目标合法性
+       → 校验 Agent allowlist / blocklist
+       → 将包装请求原地脱壳为真实工具名与参数 → 进入真实目标的权限审批与执行管线
 ```
 
-## 工具清单先从注册表里筛选
+## 1. 声明筛选：在 `setTools` 入口拦住长尾 Schema
 
-`ToolRegistry.getFunctionDeclarations()` 准备模型可见的工具声明，默认省略仍隐藏的延迟工具。`client.setTools()` 用筛选后的声明设置模型可用的原生工具列表。[筛选声明](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-registry.ts#L835-L869) · [交给模型](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/core/client.ts#L1181-L1204)
+`ToolRegistry.getFunctionDeclarations()` 负责生成传给大模型的函数声明数组。在默认模式下，它会把仍处于隐藏态的延迟工具统统排除在外，再由 `client.setTools()` 将过滤后的精简清单写入底层模型客户端。这样即使本地挂了几十个 MCP 工具，每轮发往大模型的顶层声明也只保留高频工具与 `tool_search`、`tool_call` 两个代理入口。[筛选声明](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-registry.ts#L835-L869) · [交给模型](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/core/client.ts#L1181-L1204)
 
-## 搜索把名称、用途和参数交给模型
+## 2. 搜索返回：只塞文本说明，不改原生工具表
 
-搜索入口 `ToolSearchTool` 自身保持可见。关键词查询从隐藏的延迟工具里找候选，`select:` 按名称精确查询，也可以重看已显示的工具。
+搜索入口 `ToolSearchTool` 自身常驻可见，支持两套检索语法：普通关键词查询会在**尚未显露的延迟工具**里做匹配召回；而 `select:<name>` 前缀支持按精确工具名读取（即便某工具已经显露，也允许用 `select:` 重新调阅参数细节）。
 
-`returnSchemas()` 返回 schema 文本，即工具名称、用途和参数结构。模型先读到这份说明，目标工具的执行留到后续调用。此处不调用 `revealDeferredTool`，原生声明列表保持原样。[建立搜索入口](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L472-L513) · [找候选工具](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L258-L293) · [返回说明](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L295-L411)
+找到候选后，`returnSchemas()` 把这些工具的名称、描述与 JSON Schema 序列化进 `<functions>` 文本返回给模型。关键就在这里：代码特意**不触发工具显露**（不调用 `revealDeferredTool`），也就是说目标工具依然没有被塞进顶层原生声明表——说明书已经作为对话历史落入上下文，而系统工具栏纹丝不动。[建立搜索入口](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L472-L513) · [找候选工具](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L258-L293) · [返回说明](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-search.ts#L295-L411)
 
-## 调用请求先找到目标，再检查使用条件
+## 3. 脱壳与鉴权：把代理信封还原成真实工具调用
 
-模型用 `tool_call` 提交名称和参数后，`resolveDeferredToolCall()` 检查请求格式，找到真实工具，并核对它是否仍是隐藏的延迟工具、是否可声明，以及当前上下文是否排除了它。请求把搜索或调用入口套在自己里面时会被拒绝；缺少配套入口也会被拒绝。通过后，它返回目标工具对象和参数。[解析调用请求](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-call.ts#L60-L211)
+读完 `<functions>` 里的参数结构后，模型通过 `tool_call` 提交 `{ name, arguments }`。此时 `resolveDeferredToolCall()` 充当第一道安检门，逐条核验：
 
-`CoreToolScheduler` 是安排工具执行的调度器。它调用解析器，并检查这个 Agent 的允许/禁止工具清单（allowlist/blocklist），再把包装请求换成真实工具名和参数，进入目标工具的后续流程。权限按真实目标检查，通过后才继续执行。[检查并改写请求](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/core/coreToolScheduler.ts#L2645-L2729) · [安排后续处理](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/core/coreToolScheduler.ts#L2823-L2863)
+- **双入口完整性**：当前环境是否同时启用了配套的搜索与调用入口；
+- **防套娃自指**：拒绝把 `tool_search` 或 `tool_call` 当作 `name` 塞进 `tool_call` 内部；
+- **状态与可见性边界**：目标工具必须真实存在、可声明、未被当前上下文排除，且**确实仍是隐藏的延迟工具**（若该工具本来就已经在原生列表里可见，应当直接调用而非走代理）。
 
-读这段代码时，分别看“模型读到了说明”和“工具出现在原生声明列表”这两件事，就容易理解为什么还需要 `tool_call`。
+全部通过后，解析器才返回真实的目标工具实例与解包后的参数。[解析调用请求](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/tools/tool-call.ts#L60-L211)
 
-本文尚未运行验证模型是否稳定地先搜索再调用，也未测量节省了多少模型输入单位（token）。它提供的是固定源码里的组织方法，效果需要用真实任务另外比较。
+紧接着，工具调度器 `CoreToolScheduler` 接手第二道安检：先对照当前 Agent 的允许与禁止清单（`allowlist` / `blocklist`）检查该真实工具是否获准使用，随后把外层 `tool_call` 包装请求**原地改写为真实工具名与真实参数**，再送入标准确认审批与执行流水线。正因如此，无论是终端弹窗向用户展示的工具名，还是权限策略拦截的对象，永远都是脱壳后的真实目标工具，绝不会被 `tool_call` 外壳糊弄过去。[检查并改写请求](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/core/coreToolScheduler.ts#L2645-L2729) · [安排后续处理](https://github.com/QwenLM/qwen-code/blob/b9840886b86c23f196482cc1ee55d59cbc74df87/packages/core/src/core/coreToolScheduler.ts#L2823-L2863)
+
+## 来源与边界
+
+本篇导读固定在 [`QwenLM/qwen-code@b9840886b86c23f196482cc1ee55d59cbc74df87`](https://github.com/QwenLM/qwen-code/tree/b9840886b86c23f196482cc1ee55d59cbc74df87)，按静态源码还原 `ToolRegistry`、`ToolSearchTool`、`resolveDeferredToolCall` 与 `CoreToolScheduler` 的协作链路；真实任务中的 token 节省幅度与检索召回质量需结合具体工具集实测比较。

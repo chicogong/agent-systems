@@ -1,67 +1,88 @@
-# Hermes：怎样把一次经验变成下次可用的知识
+# Hermes：把排障经验沉淀成受控的跨会话资产
 
 [返回系统目录](../README.md) · [关键代码导读](code-walkthrough.md) · [上下文与记忆](../../concepts/context-vs-memory.md)
 
-假设你和助手一起排查过测试失败。以后遇到同类问题，你希望它记住项目要求，也能沿用那套排查方法。Hermes 把这些经验分开处理：短事实写进记忆，较长的方法写成 Skill，需要时再读；任务结束后，还可以安排一次后台复查，挑出值得保存的经验。更新发生在宿主管理的文件与模型输入中，模型权重训练属于另一件事。
+你花半小时陪 Agent 排完一次棘手的集成测试失败：先确认测试只能跑在隔离容器里、绝不能连生产库，再顺着连接池快照定位到超时根因。关掉当前窗口后，下次再开新会话遇到同类报错，普通助手往往忘得一干二净；可如果反过来放任 Agent 自动把每次对话总结塞进系统提示，不出几天提示词就会膨胀成流水账，甚至把某次偶然猜错的结论当成“项目铁律”永久写死，静默污染后续所有会话。
 
-## 先把两种知识分开
+Hermes Agent 在宿主层搭了一套严密的**跨会话经验治理管线**（不涉及模型权重微调，全部作用于宿主文件与上下文组装）：把高频短约束关进字符受限的 `MEMORY.md / USER.md`，把长篇操作手册拆成按需 `skill_view` 的 Skill，在任务收尾后拉起权限受限的后台 **review fork** 提炼经验，并用**系统提示快照隔离**与**待批准暂存机制**（`staged: true`）守住上下文缓存与知识库质量。
 
-以一个虚构任务说明：你让助手分析测试失败，同时明确“本项目只在隔离的测试环境验证，不操作生产数据”。
+## 短事实进记忆块，长流程进按需 Skill
 
-- 项目要求适合短记忆。`MEMORY.md` 保存环境事实，`USER.md` 保存用户资料，加载后放进系统提示。默认容量分别是 2,200 和 1,375 个字符，按字符而非 token 计算；外部手工写入超限内容时，加载会提醒。[内置存储与加载](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L88-L164)
-- 排查步骤适合 **Skill（可复用的工作方法）**。启动提示通常先列名称和描述；需要时，`skill_view` 读取 `SKILL.md` 或相关文件。这样，长流程可以按需取用。[索引生成](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/prompt_builder.py#L1359-L1415)、[按需读取](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/skills_tool.py#L573-L693)
+同样是“下次还要用的经验”，一句环境红线和一套七步排障SOP对上下文的消耗完全不同。Hermes 在存储入口就把它们拆成了两条轨道：
 
-两种知识都能保存，取用方式各有安排：短记忆随提示带上，Skill 正文在需要时读取。真正执行其中的命令，仍要通过宿主工具和权限检查；加载 Skill 也可能涉及预处理和依赖激活，使用前应审查内容与配置。
+- **高频短事实写入字符受限的记忆文件**：`MEMORY.md` 存放项目与环境事实（默认上限 **2,200 个字符**），`USER.md` 存放用户偏好与背景（默认上限 **1,375 个字符**）。注意这里按字符数而非 token 硬卡上限，随系统提示常驻加载；如果是外部手工塞入了超长文件，加载器会保留磁盘原文但主动发出超限提醒。[内置存储与加载](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L88-L164)
+- **多步操作手册写成可复用的 Skill**：排障流程、部署清单这类长文本写成独立的 `SKILL.md`。系统提示在启动时只渲染一份轻量的「**名称 + 简述**」目录索引；只有当模型判断当前任务需要这套方法时，才主动调用 `skill_view` 把正文及关联参考文件读入当轮工具结果。[索引生成](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/prompt_builder.py#L1359-L1415) · [按需读取](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/skills_tool.py#L573-L693)
 
-## 正常路径：读、做、筛选，再保存
+这样一来，每轮必守的红线（如“严禁连接生产库”）永远在系统提示里兜底，而几百行的排障步骤平时只占一行索引，按需展开后仍受宿主工具权限约束。
 
-1. 开始工作时，启用内置记忆的宿主建立 `MemoryStore`，从磁盘读入短记忆，并为提示准备一份副本，代码称它为 snapshot（快照）。
-2. 系统提示组合该快照与 Skill 索引；模型先看到短记忆和可用流程的名称、描述，流程正文留到需要时读取。
-3. 遇到测试失败时，模型可以调用 `skill_view` 读取排查流程；宿主找到 Skill、检查状态并返回内容，相关参考文件再按需读取。
-4. 排查中发现新的稳定事实，或需要改进流程时，模型提出 `memory` 或 `skill_manage` 调用，宿主检查操作与审批后处理写入。
-5. 一轮结束后，条件满足时，宿主启动 **review fork（独立的后台复查任务）**。它拿着会话材料和受限工具，检查哪些经验值得整理。启动还要求已有最终答复、任务未中断且未禁用后台复查。
-6. 提议可以正式保存，也可以先进入待批准列表。随后重建提示或读取 Skill 时，再查看新知识怎样进入输入。
+## 一条经验从“踩坑”到“入库”的六步闭环
 
-这条路径的具体入口、状态和分支见[代码导读](code-walkthrough.md)。下面只画“已保存、待批准、当前可见”的关系，不是完整系统架构。
+沿着一次完整的排障会话看，Hermes 的知识读取与沉淀按以下顺序运转：
+
+1. **初始化快照**：宿主启动内置记忆时构建 `MemoryStore`，从磁盘加载 `MEMORY.md` 与 `USER.md`，同时冻结一份专供系统提示使用的快照（snapshot）。
+2. **组装轻量提示**：系统提示拼接“短记忆快照 + Skill 目录索引”，让模型既握有全局红线，又知道手头有哪些现成手册可查。
+3. **按需展开手册**：遇到测试失败时，模型调用 `skill_view` 加载对应的 `SKILL.md` 正文，必要时再继续按路径读取 Skill 附带的脚本或参考文档。
+4. **盘中主动记录**：排障途中如果用户明确交代了新规矩，或模型修正了旧流程，模型可直接发起 `memory` 或 `skill_manage` 调用，经宿主门禁与审批检查后处理写入。
+5. **盘后后台复盘**（review fork）：一轮对话收尾时，只要已有最终答复、任务未被中断且未禁用复查，宿主就会派生一个独立的后台复查分支，带着会话记录与受限工具白名单，专门审视“刚才这轮有哪些经验值得留存”。
+6. **正式落盘或暂存待批**：提炼出的改动要么原子写入正式文件，要么生成 `staged: true` 的待批准提议；等后续触发提示重建或再次调用 `skill_view` 时，新资产才会真正进入下一轮推理。
+
+具体函数级跳转可对照[代码导读](code-walkthrough.md)。下图聚焦“磁盘正式文件、系统提示快照、当轮输入与待批准队列”四者之间的状态隔离：
 
 ![Hermes 中持久知识、系统提示快照、当前输入和待批准写入的区别](../../../figures/hermes-session-memory/diagram.svg)
 
 [图源](../../../figures/hermes-session-memory/scene.excalidraw) · [PNG 预览](../../../figures/hermes-session-memory/preview.png) · [不看图的说明与箭头证据](../../../figures/hermes-session-memory/README.md)
 
-## 新笔记在什么时候用上
+## 系统提示快照隔离：为什么写完记忆不能立刻改提示
 
-开始工作时，程序为系统提示准备一份记忆副本。随后，`MemoryStore` 维护的 live entries（当前条目）会随写入更新并保存到磁盘，而 `format_for_system_prompt()` 仍读取准备提示时留下的那份快照。
+假设你在第 5 轮对话里让 Hermes 记下“测试超时统一设为 30 秒”，`MemoryStore` 立刻更新了内存里的 `live entries` 并落盘到了 `MEMORY.md`；但如果你去抓第 6 轮发给大模型的请求包，会发现系统提示里的记忆块**还是第 1 轮启动时的旧快照**。
 
-中途写入新记忆后，要到允许的重建位置重新读取，系统提示中的记忆块才换成新内容。当前任务也能从用户消息和工具结果得到新信息，所以要分别观察提示快照和本轮新增消息。[写入与快照的分离](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L245-L295)、[快照读取](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L463-L481)
+这不是漏刷缓存的 Bug，而是刻意为之的**提示词前缀稳定性设计**：
 
-固定版本的正常会话在上下文压缩提交时，会清除旧提示缓存、重读存储并重建提示。另有一条 detached（分离回合）路径，可以携带预先准备的 seeded prompt（预置提示），沿用这份内容。读代码时按所走路径判断刷新时机。[压缩边界](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/conversation_compression.py#L3144-L3188)、[失效时重载](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/system_prompt.py#L790-L820)
+```text
+会话启动 ──► MemoryStore.load_from_disk()
+              ├── live_entries            (随 memory 工具写入实时更新并落盘)
+              └── _system_prompt_snapshot (冻结！format_for_system_prompt 始终读它)
+                                                │
+                 ┌──────────────────────────────┘
+                 ▼
+      单轮及连续多轮对话期间：系统提示前缀保持逐字节不变（保护 Prompt Cache 命中率）
+                 │
+                 ▼
+      触发上下文压缩 (conversation_compression) ──► invalidate 旧提示缓存 ──► 重读存储生成新快照
+```
 
-## 保存经验时，留意几种结果
+现代大模型推理高度依赖前缀 KV 缓存（Prompt Caching）。如果每次调用 `memory` 工具都实时改写位于上下文最顶部的系统提示，整段长对话的前缀缓存就会瞬间失效，延迟与计费成本陡增。反正当前会话里刚刚发生的用户指令和 `memory` 工具返回结果已经在消息历史里了，模型本轮并不会“失忆”；等到会话增长到触发上下文压缩提交时，宿主本来就要重组历史消息，此时再顺手清除提示缓存、重读最新存储并重建快照，就能以最小代价完成跨阶段刷新（而携带预置 `seeded prompt` 的 `detached` 分离回合则会刻意沿用预置提示）。[写入与快照的分离](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L245-L295) · [快照读取](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L463-L481) · [压缩边界](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/conversation_compression.py#L3144-L3188) · [失效时重载](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/system_prompt.py#L790-L820)
 
-**短记忆容量用完。** `add` / `replace` 超过字符容量会返回失败，要求缩短、合并或移除，而不是悄悄丢弃旧条目。替换是整条 entry 替换，`old_text` 只用于定位；它不是在条目中局部替换一个短语。多条匹配也会拒绝猜测。重复整合失败后有终止提示，避免保存辅助知识拖住用户的答复。[容量与整条替换](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L276-L362)、[连续失败限制](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L93-L131)
+## 防止脏知识污染记忆库的五道工程护栏
 
-**提议进入待批准列表。** 开启 `write_approval` 时，Skill 写入会先暂存；记忆写入则按前台交互、后台等来源决定询问或暂存。暂存结果可以包含 `success: true` 与 `staged: true`，表示提议处理成功，而非正式存储已更新。审批还可能被拒绝。应检查 `staged`、待办记录和实际读回，不只检查一个布尔值。[审批决策](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/write_approval.py#L169-L193)、[Skill 暂存结果](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/skill_manager_tool.py#L618-L648)
+让模型自己写记忆和改 Skill，最大的风险就是“静默写坏”。Hermes 在写入链路上埋了五层防御：
 
-**写入报错后，先读回核对。** 记忆存储先更新当前条目，再写文件；文件写入采用临时文件加原子替换，避免读到半截内容。它处理的是单次文件替换，当前条目、正式文件和工具回包仍可能落在不同进度。Skill 的一条路径则先写文件，再扫描，扫描拒绝时尝试恢复原文；恢复也可能报错。所以，审批前拒绝可停止提交，写入过程报错则需核对文件和状态后再决定重试。[记忆修改顺序](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L245-L274) · [原子文件写入](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/utils.py#L264-L326) · [Skill 写后扫描与恢复](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/skill_manager_tool.py#L350-L369)
+- **容量硬顶与整条替换，拒绝静默丢数据**：`add` 或 `replace` 一旦超出字符配额，工具直接返回失败并要求模型先做缩写、合并或清理，绝不悄悄踢掉老条目。同时 `replace` 采用**整条 entry 替换**——`old_text` 仅作唯一定位子串，若匹配到多条记录则直接报错拒绝盲改；连续整理失败达到上限后还会给出终止提示，防止模型为了塞进一条笔记陷入死循环而卡住主答复。[容量与整条替换](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L276-L362) · [连续失败限制](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L93-L131)
+- **待批准暂存队列与落盘态分离**（`staged: true`）：开启 `write_approval` 时，Skill 修改默认进入暂存区，记忆写入则按前台交互或后台任务来源决定弹窗询问还是暂存。看下面这段典型的暂存回包：
 
-**后台复查使用更小的操作范围。** 无人值守 review 要替换或删除旧记忆时，`replace` / `remove` 会先尝试暂存为待批准提议；暂存失败则拒绝操作，即使通用审批开关关闭也一样。默认 review 工具白名单排除了普通 terminal / 写文件工具；配置中的 `extra_tools` 则可以扩充可用工具。[无人值守删除门禁](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool.py#L167-L204)、[review 白名单](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/background_review.py#L1083-L1124)
+```json
+{
+  "success": true,
+  "staged": true,
+  "message": "Change staged for user approval"
+}
+```
 
-**加载 Skill 可能顺带做准备工作。** `skill_view` 默认路径可预处理正文、尝试激活依赖。因此使用陌生 Skill 前，要一起审查内容、依赖和允许执行的操作。本文只看代码，没有执行激活。[预处理与依赖分支](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/skills_tool.py#L573-L664)
+如果只看 `success: true`，很容易误以为新经验已经写进磁盘；实际上 `staged: true` 代表它只是一份躺在待批列表里的候选提议，用户拒绝后正式存储分毫未动。[审批决策](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/write_approval.py#L169-L193) · [Skill 暂存结果](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/skill_manager_tool.py#L618-L648)
 
-## 与 Pi 对照时，比较什么
+- **原子替换与写后扫描回滚**：记忆落盘走“写临时文件 + 原子 rename”，杜绝进程崩溃留下半截损坏文件；而 Skill 写入的一条路径会在写盘后执行内容安全扫描，一旦扫描拦截便尝试用旧内容回滚（若异常中断则需读回磁盘文件核对真实状态）。[记忆修改顺序](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool_store.py#L245-L274) · [原子文件写入](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/utils.py#L264-L326) · [Skill 写后扫描与恢复](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/skill_manager_tool.py#L350-L369)
+- **后台 `review fork` 权限收窄**：盘后自动拉起的后台复查工作在无人值守状态，因此默认工具白名单直接剔除了普通 terminal 命令执行与任意文件写入工具（除非配置显式追加 `extra_tools`）。更关键的是，哪怕全局关闭了通用写入审批，无人值守 review 一旦试图 `replace` 或 `remove` 既有记忆，依然会被强制拦截进待批准队列（若暂存失败则直接拒绝），防止后台任务静默删改老规矩。[无人值守删除门禁](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/memory_tool.py#L167-L204) · [review 白名单](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/agent/background_review.py#L1083-L1124)
+- **加载 Skill 时的预处理与依赖激活边界**：`skill_view` 并非单纯的 `cat SKILL.md`，默认路径还会对正文做预处理并尝试激活该 Skill 声明的工具依赖，这也是为什么引入外部 Skill 时需要把正文指令与依赖声明一并纳入安全边界考量。[预处理与依赖分支](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/tools/skills_tool.py#L573-L664)
 
-[Pi 的既有剖面](../pi/README.md)区分核心循环与 coding 会话外壳，[Skill 篇](../pi/extensions-and-skills.md)解释按需指令与可执行 Extension。Hermes 这一篇多讲一步：宿主如何把短事实和长流程作为可写的跨任务资产，并为任务后的审视建立独立触发与工具门禁。
+## 与 Pi 的架构取舍对照
 
-对照这两篇，可以看到知识维护逻辑放在哪里：Pi 可以通过扩展增加工作流，Hermes 则在宿主中安排了保存、审批和任务后复查。Hermes 的做法让这些步骤更集中，也增加了缓存刷新、错误知识持久化、审批、并发写入与维护的成本。这是基于本文路径的工程判断；使用效果和性能仍要另外测量。
+把 Hermes 与[Pi 的极简底座剖面](../pi/README.md)及[扩展与 Skill 机制](../pi/extensions-and-skills.md)放在一起对比，能看清两种截然不同的宿主哲学：
 
-## 把保存和使用接起来
+- **Pi 选择做薄内核**：把核心循环压到最简，按需指令走静态 Skill，复杂工作流留给用户通过 Extension 自行挂载；
+- **Hermes 选择在宿主内置知识生命周期**：直接把容量受限的短记忆、可增删改的 Skill 管理、盘后自动复盘（review fork）以及 `staged` 审批队列做成了宿主的一等公民。
 
-选一条短事实和一份排查流程，沿四个位置观察：工具处理结果、正式文件、后续输入、任务结果。`staged: true` 表示提议正在等批准；正式文件改变后，还要看刷新或读取是否发生；最后用一个同类任务检查这份知识是否真的帮到了助手。
+内聚的好处是开箱即具备“越用越熟”的自维护闭环；代价则是宿主必须自己扛起提示快照一致性、脏知识审批拦截、并发文件锁与后台分支权限隔离等一整套状态机复杂度。排查这类系统时，永远要沿着「**工具回包（是否 `staged`）→ 磁盘正式文件 → 提示重建边界 → 下次任务实际输入**」四步核对，而不能只看模型嘴上说了一句“我已经记住了”。
 
-这个小路线能把“助手说记住了”变成可观察的保存和取用过程。测试时使用虚构材料和隔离配置，避免触及个人记忆与生产数据。
+## 来源与边界
 
-## 本篇未覆盖
-
-> 固定研究版本：[`NousResearch/hermes-agent@a9109b07f42685f88397008d0d5a6c3d481b3b28`](https://github.com/NousResearch/hermes-agent/tree/a9109b07f42685f88397008d0d5a6c3d481b3b28)，核对日期 2026-09-27；上游提交时间为 2026-09-27 03:21:39 UTC。[仓库 LICENSE 为 MIT](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/LICENSE)。本稿是静态源码剖面，不是运行评测。
-
-未运行 Hermes、未调用模型、未验证写入审批界面、未做多进程竞争实验；未评估记忆有效性或 Skill 生成质量。外部记忆 provider、压缩算法本体、Skill Hub 安全扫描、完整插件框架、terminal 后端及 Computer Use 留给单独专题。官方滚动文档用于发现线索，遇到与固定源码不一致时，以本文链接的版本限定结论。
+本篇基于 [`NousResearch/hermes-agent@a9109b07f42685f88397008d0d5a6c3d481b3b28`](https://github.com/NousResearch/hermes-agent/tree/a9109b07f42685f88397008d0d5a6c3d481b3b28) 做静态源码核对（核对日期 2026-09-27，上游提交时间 2026-09-27 03:21:39 UTC，[仓库 LICENSE 为 MIT](https://github.com/NousResearch/hermes-agent/blob/a9109b07f42685f88397008d0d5a6c3d481b3b28/LICENSE)）。本文未启动 Hermes 实例、未调用在线模型或验证审批交互界面，也未展开外部记忆 provider、上下文压缩算法内部细节、Skill Hub 扫描器、插件体系、terminal 后端与 Computer Use 模块；若上游滚动文档与该固定提交存在出入，以本文源码行号为准。

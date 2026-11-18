@@ -1,47 +1,68 @@
-# MiMo Code：把长会话切成可恢复的窗口
+# MiMo Code：用异步检查点与水位线接力跑完超长任务
 
-[关键代码导读](code-walkthrough.md) · [来源与版本](../../../sources/mimo-code.md)
+[返回系统目录](../README.md) · [关键代码导读](code-walkthrough.md) · [来源与版本](../../../sources/mimo-code.md)
 
-一次长任务往往要读文件、修改、测试，再根据结果继续。模型每次能收到的材料有容量上限，这就是**上下文窗口**。MiMo Code 的做法是提前整理一份“交接笔记”，等窗口快满时，用笔记和最近的消息准备下一轮输入。读完这篇，你能把提前记笔记、换窗口、继续任务三件事串起来。
+让编码 Agent 跨几十个文件做一次大型模块迁移，聊到第 35 轮时最怕两件事：一是临近上下文窗口上限才临时触发「停机全量摘要」——不仅用户要对着屏幕干等半分钟，而且此时窗口早已塞满海量报错日志，模型在摘要时极易漏掉第 1 轮定下的架构约束；二是如果改成后台异步写摘要，万一换窗口那一刻后台任务刚改了一半文件就报错退出，主 Agent 拿着半截残缺笔记重建上下文，整场任务就会瞬间失忆跑偏。
 
-假设用户让 Agent 迁移一个模块。它已经改了几个文件，还要继续处理测试失败。主 Agent 负责推进任务，宿主另外安排一个 **writer（笔记整理者）**，把目标、进度、文件和下一步写进结构化文件。需要换窗口时，宿主把这些文件与最近的用户原话重新装成输入，主 Agent 接着做。
+MiMo Code 用一套「**提前异步写检查点 + 成功水位线对账 + 预算化窗口重建**」的接力机制化解了这对矛盾：主 Agent 在前台一路推进代码修改与测试，宿主按窗口用量梯度在后台派生独立的 `writer`（笔记整理者）提前提炼结构化交接文件；等窗口真正告警时，再凭已确认的水位线（watermark）无缝换窗。
 
-## 同一项任务，留下三种材料
+## 1. 三层材料分离：原始历史、结构化检查点与投影窗口
 
-| 材料 | 保存什么 | 用在什么时候 |
+为了兼顾「审计不丢细节」与「推理不爆窗口」，MiMo Code 把同一场长任务的数据拆成生命周期各不相同的三份材料：
+
+| 材料层级 | 核心载体与内容 | 何时读写与生效 |
 | --- | --- | --- |
-| 原始会话 | 用户消息、模型回复与工具调用 | 回看历史、查找细节 |
-| 交接笔记 | 会话的 `checkpoint.md`、项目的 `MEMORY.md`，以及任务与笔记 | 换窗口时整理当前进度 |
-| 当前模型输入 | 重建材料和此后的新消息 | 下一次模型请求；每段都有容量预算 |
+| 原始会话账本 | 全量用户消息、模型输出与工具调用记录 | 始终追加保存在会话存储中，供随时回溯与历史检索 |
+| 结构化交接笔记 | 会话级 `checkpoint.md`、项目级 `MEMORY.md`、零散入口 `notes.md` | 后台 `writer` 按阈值分批提炼；`notes.md` 允许主 Agent 随手记 |
+| 当前模型投影窗口 | 重建边界消息（含分项预算组装的交接材料）及此后的新消息 | 窗口溢出重建后，下一轮模型只从最新边界消息往后读取 |
 
-`checkpoint.md` 位于会话内存目录，模板规定 11 节，包括原话意图、下一动作、任务树、当前工作、文件、错误与决策；项目记忆另存 `MEMORY.md`。这两个文件的生命周期不同，`notes.md` 则是主 Agent 可写的零散入口。[路径](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint-paths.ts#L10-L84) · [模板](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint-templates.ts#L1-L100) · [主 Agent 指令](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/llm.ts#L116-L205)。
+其中 `checkpoint.md` 存放在会话专属内存目录，模板硬性规定了 11 个标准章节——涵盖用户原话意图、下一步动作、任务树、当前进展、涉及文件、错误排查与关键决策；跨会话复用的项目知识则沉淀到 `MEMORY.md`。[路径](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint-paths.ts#L10-L84) · [模板](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint-templates.ts#L1-L100) · [主 Agent 指令](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/llm.ts#L116-L205)
 
-## 先记笔记，再换窗口
+## 2. 提前写笔记，到点再换窗
 
 ![MiMo Code 的提前写入与窗口重建](../../../figures/mimo-code/diagram.svg)
 
-[图的文字说明](../../../figures/mimo-code/README.md) · [单独打开 SVG 放大阅读](../../../figures/mimo-code/diagram.svg)。图中的实线跟着主 Agent 的代码路径。宿主做两次判断：**材料用到预设比例，就安排 writer；容量快装不下时，再换窗口。** token 是模型计算输入长度的单位。writer 在后台整理，主任务可以继续。[循环入口](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prompt.ts#L4815-L4889) · [阈值调度](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prune.ts#L238-L425)。
+[图的文字说明](../../../figures/mimo-code/README.md) · [单独打开 SVG 放大阅读](../../../figures/mimo-code/diagram.svg)
 
-官方文章用约 **20%、45%、70%** 说明“尽早提取”的思路；此提交的*默认实现*按窗口大小选梯度：25K–200K 为 20/40/60/80%，200K–500K 为 10% 至 90% 每 10% 一档，更大窗口每 5% 一档；小于 25K 无默认 checkpoint 阈值。阅读这个版本时，以代码中的默认值和实际配置为准，配置可以覆盖这些阈值。[源码默认值](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prune.ts#L24-L58) · [官方文章](https://mimo.xiaomi.com/blog/mimo-code-long-horizon)。
+每轮主 Agent 回复完成后，宿主都会拿最新 token 用量做两道水位判断：**跨过预设梯度阈值时，非阻塞唤醒后台 `writer` 整理笔记；逼近窗口容量红线时，才真正触发窗口重建**。由于 `writer` 在后台异步运行，主 Agent 不必停下来等摘要写完。[循环入口](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prompt.ts#L4815-L4889) · [阈值调度](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prune.ts#L238-L425)
 
-## 宿主怎样把进度交给下一轮
+官方技术博客用约 20%、45%、70% 解释「趁窗口还清醒时尽早提取」的设计直觉；而在本篇核对的固定提交里，代码默认按模型窗口总大小动态分档：25K–200K 窗口取 `20/40/60/80%` 四档，200K–500K 从 10% 到 90% 每 10% 一档，500K 以上每 5% 一档，小于 25K 则不设默认检查点阈值（用户配置可覆盖默认值）。[源码默认值](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prune.ts#L24-L58) · [官方文章](https://mimo.xiaomi.com/blog/mimo-code-long-horizon)
 
-**给整理过的历史标一个位置。** writer 在独立的 child session（子会话）工作，写的是主会话的 checkpoint 文件。启动时，宿主记下这次整理到哪条消息；writer 成功后，才推进 `last_checkpoint_message_id`。这个位置标记叫 watermark，可以理解为“已确认整理到这里”。[子会话及目标路径](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L943-L993) · [成功后推进](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L1009-L1068)。要检查一份笔记是否可用，需要同时看文件和位置标记：writer 中途失败时，文件可能已经变了，标记却还停在上次成功的位置。这两处更新没有统一的原子提交，出错后的恢复需要另做试验。
+## 3. 核心防线：为什么有了检查点文件，还必须核对「成功水位线」
 
-**把交接材料装成下一轮输入。** `rebuildEnsuringCheckpoint` 先检查 checkpoint 和记忆写入开关。开关开启时，优先使用已有的可用笔记；暂时没有，就启动 writer 并限时等待。准备好后，`insertRebuildBoundary` 写入一条特殊用户消息，按各自预算装入任务、checkpoint、最近用户原话、项目与全局记忆、笔记、索引和最近活动。下一轮从这条消息开始读取；旧消息仍保存在会话存储里。[重建决策](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prompt.ts#L844-L1055) · [材料装配](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L1252-L1595) · [边界写入](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L1644-L1720) · [模型侧投影](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/message-v2.ts#L1270-L1294)。
+看懂 MiMo Code 的容错设计，关键在于想明白一个问题：**磁盘上明明已经有 `checkpoint.md` 了，为什么不能直接拿来换窗，非要额外维护一个 `last_checkpoint_message_id` 水位线**？
 
-**准备材料失败时，怎样继续。** writer 失败后，成功位置标记保留上次的值，文件则需要读回检查，可能已经留下部分修改。输入窗口装不下时，程序按配置和可用笔记选择重建；满足备用分支条件时，会走 compaction，也就是从新边界整理模型输入，这样可能省略较早的内容。具体开关和重试条件放在[可选代码导读](code-walkthrough.md)，那里也解释了已有笔记却插入失败时的处理。[writer 失败](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L1010-L1068) · [最后阈值](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prune.ts#L350-L416) · [溢出分支](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prompt.ts#L4871-L4941)。
+原因出在异步文件写入的非原子性上：后台 `writer` 运行在独立的子会话（child session）里，但它直接调用工具修改父会话目录下的 `checkpoint.md`。一旦 `writer` 改了一半遭遇模型超时或校验失败退出，磁盘上的 `checkpoint.md` 可能已经混入了半截未定稿内容！因此，宿主在启动 `writer` 时先记下本次打算整理到哪条消息，但**只有等 `writer` 完整跑通并通过模板校验后，才会把 `last_checkpoint_message_id` 推进到该位置**。这个编号就是**成功水位线**（watermark）——代表「截至这条消息的历史，确已安全收进检查点」。[子会话及目标路径](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L943-L993) · [成功后推进](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L1009-L1068)
 
-## 与 Pi、Codex 放在同一把尺上
+当上下文真正溢出、进入 `rebuildEnsuringCheckpoint` 换窗时，整套前置门禁与兜底路径严丝合缝：
 
-比较维度限定为**长会话的状态接力与错误边界**，不比较模型能力或成败率。MiMo Code 在固定提交里给主 Agent 安排独立 writer、结构化文件、成功 watermark 与窗口重建；额外模型调用、写盘、等待和验证成本换来更明确的接力点。Pi 的已写剖面显示，它的 `pi-agent-core` 只管理运行循环，coding-agent 另外持久化会话树、在需要时压缩或恢复；因此 MiMo 的 writer 生命周期属于更厚的 harness 策略，而非 Agent loop 的必需部分。[Pi 剖面](../pi/README.md) · [Pi 代码导读](../pi/code-walkthrough.md)。Codex 现有剖面聚焦 `exec_command` 的策略、审批与沙箱重试，研究的是执行控制；长会话接力需另查 Codex 的对应实现。[Codex 剖面](../codex/README.md)。
+1. **开关关闭时直接绕过**：函数第一件事就是检查 `checkpoint` 与记忆写入（memory write）两个开关。**只要任一开关处于关闭状态，程序立即跳过整套检查点重建——哪怕磁盘上早就躺着现成的 `checkpoint.md` 也绝不读取**，随后在自动溢出分支退化为常规的 `compaction`（上下文压缩边界）。
+2. **双证齐全才准重建**：两个开关均开启时，必须同时确认检查点文件有效**且**存在合法的成功水位线；若当前还没有可用检查点，则现场拉起或等待正在运行的 `writer`（限时等待）。
+3. **非破坏性边界投影**：拿到可用检查点后，`insertRebuildBoundary` 往会话里插入一条带特殊标记的用户消息，按独立容量预算把当前任务、`checkpoint.md`、最近几轮用户原话、项目与全局记忆、`notes.md`、索引以及水位线之后的近期活动摘要拼装进去。下一轮请求模型时，投影函数直接从这条新边界开始往后截取，而原始旧消息完好无损地留在底层存储里。[重建决策](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prompt.ts#L844-L1055) · [材料装配](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L1252-L1595) · [边界写入](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L1644-L1720) · [模型侧投影](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/message-v2.ts#L1270-L1294)
+4. **失败退路与非原子残余**：如果等待 `writer` 超时或失败导致仍无可用检查点，自动溢出路径同样退回 `compaction` 兜底（但若已有可用检查点却在插入边界时报错，则不会盲目退化，具体分支见[关键代码导读](code-walkthrough.md)）。需要注意，由于文件落盘与水位线更新并非数据库原子事务，`writer` 中途失败时虽不会推进水位线，磁盘文件却可能残留半截改动。[writer 失败](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L1010-L1068) · [最后阈值](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prune.ts#L350-L416) · [溢出分支](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/prompt.ts#L4871-L4941)
 
-这种设计把一部分工作从主 Agent 移给了笔记整理者，也增加了模型调用、写盘和检查成本。重建材料保留最近的用户原话，便于对照摘要；遗漏的旧细节还可以通过历史检索补找。笔记是否准确、Agent 是否会主动补查，要通过具体任务来测。[官方设计说明](https://mimo.xiaomi.com/blog/mimo-code-long-horizon) · [重建材料](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L1362-L1515)。
+下面这段状态快照直观展示了「水位线 + 边界消息」是怎样接力长会话的：
 
-## 核验范围与待审
+```text
+会话表全量历史：msg_01 ... msg_36 ──► msg_37 ... msg_42（主 Agent 在 writer 运行期间继续产生的新消息）
+                              │
+                   last_checkpoint_message_id = msg_36（后台 writer 成功完成后推进的水位线）
 
-> 固定版本：[`XiaomiMiMo/MiMo-Code@a273d3450ee05ba5163320eae59d7716b778e480`](https://github.com/XiaomiMiMo/MiMo-Code/tree/a273d3450ee05ba5163320eae59d7716b778e480)，2026-09-23 获取并静态阅读；仓库根目录 [`LICENSE`](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/LICENSE) 为 MIT，包含 MiMo Code 与 OpenCode 版权行。本篇未运行该提交的长会话。官方[设计文章](https://mimo.xiaomi.com/blog/mimo-code-long-horizon)与[会话文档](https://mimo.xiaomi.com/mimocode/sessions)是会更新的文档声明，若与固定版代码不同，以本篇所列代码为准。
+触发窗口溢出重建 → 插入 msg_43 [Rebuild Boundary User Message]:
+  ├─ [Task & Checkpoint] 11 节结构化进度（已覆盖至 msg_36）
+  ├─ [Recent Verbatim]   最近用户原话（防止摘要扭曲用户真实措辞）
+  ├─ [Memory & Notes]    项目 MEMORY.md + 会话 notes.md
+  └─ [Recent Activity]   msg_37..msg_42 的尾部活动摘要（补齐水位线之后的增量缺口）
 
-本稿完成固定 SHA 的**静态调用链阅读**及图源本地导出检查。2026-09-24 又以 Bun 1.3.5 复跑消息起点对齐纯函数的 7 项测试，全部通过；[来源记录](../../../sources/mimo-code.md)列明了命令与覆盖范围。没有启动 writer、数据库、真实 provider 或完整重建循环，也未进行长期任务与进程中断实验；这 7 项通过不能证明长会话恢复可靠。文章中的长任务性能、Max Mode、Goal 和 Dynamic Workflow 不在本篇调用链内，厂商数字未独立复现；设计文章还明确称受约束命令式工具调用格式尚未迁入。本次在 2026-10-05 重查了 writer 子会话、位置标记和默认阈值；跨窗口恢复、writer 失败和进程中断仍需运行验证。公开发布前还需逐项复核许可及第三方内容。
+下一轮发给模型的投影窗口：仅从 msg_43 开始往后读取（msg_01..msg_42 仍留存在数据库供按需检索）
+```
 
-自测：① 为什么 `checkpoint.md` 存在仍可能无法用于重建？② writer 写失败后为何不能前移 watermark？③ 主 Agent 的原始消息留在存储里，为什么下一轮模型仍可能看不到？
+## 4. 架构权衡：与 Pi、Codex 放在同一把尺上对照
+
+单看「长会话如何接力」这一工程维度：MiMo Code 选择了**重型外骨骼（thick harness）路线**——为主 Agent 配备后台子会话 `writer`、11 节强结构文件、水位线校验与多源预算装配；代价是额外的后台模型调用开销、磁盘读写以及文件与水位线非原子同步的复杂度，换来的是跨多个窗口依然清晰的交接锚点，且刻意保留最近用户原话与历史检索入口以对冲摘要失真。[官方设计说明](https://mimo.xiaomi.com/blog/mimo-code-long-horizon) · [重建材料](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/packages/opencode/src/session/checkpoint.ts#L1362-L1515)
+
+相比之下，Pi 的内核 `pi-agent-core` 只聚焦极简运行循环，把会话树持久化与按需压缩全部留给外层 `coding-agent`（见 [Pi 剖面](../pi/README.md) · [Pi 代码导读](../pi/code-walkthrough.md)）；而本书的 [Codex 剖面](../codex/README.md)则切入另一条正交轴线——`exec_command` 的权限审批与内核沙箱重试机制。把三者合看，正好拼出编码 Agent 在「长程记忆接力」「步间并发队列」与「命令执行边界」三个关键切面的不同解法。
+
+## 来源与边界
+
+本篇核对官方固定提交 [`XiaomiMiMo/MiMo-Code@a273d3450ee05ba5163320eae59d7716b778e480`](https://github.com/XiaomiMiMo/MiMo-Code/tree/a273d3450ee05ba5163320eae59d7716b778e480)（2026-09-23 获取，2026-10-05 复核 `writer` 子会话、水位线推进与默认梯度阈值；仓库根目录 [`LICENSE`](https://github.com/XiaomiMiMo/MiMo-Code/blob/a273d3450ee05ba5163320eae59d7716b778e480/LICENSE) 为 MIT，含 MiMo Code 与 OpenCode 版权声明）。除静态调用链核对外，2026-09-24 另用 Bun 1.3.5 复跑了消息起点对齐纯函数的 7 项单测并通过，命令与边界见[来源记录](../../../sources/mimo-code.md)。本篇未启动真实模型 provider、数据库与完整跨窗口恢复实验；官方[设计文章](https://mimo.xiaomi.com/blog/mimo-code-long-horizon)与[会话文档](https://mimo.xiaomi.com/mimocode/sessions)随版本演进可能与固定提交存在差异，阅读时以本篇所引源码行号为准。

@@ -740,8 +740,8 @@
     {
       "id": "collect",
       "type": "text",
-      "x": 788,
-      "y": 174,
+      "x": 816,
+      "y": 176,
       "width": 115,
       "height": 27,
       "angle": 0,

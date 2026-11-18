@@ -43,14 +43,13 @@ def build() -> None:
         d.box(name + "-head", left, 72, width, 67, color, fill)
         d.text(name + "-name", label, left + 13, 81, width - 26, 18, INK, 8, align="center")
 
-    exchange(d, "request-state", 115, 345, 201, "请求当前网页\nget_browser_state_summary", navy, 128, 275)
-    exchange(d, "state-summary", 345, 115, 253, "返回网页摘要\nBrowserStateSummary", teal, 130, 248)
-    d.elements[-1]["y"] += 9
-    exchange(d, "model-input", 115, 575, 319, "整理消息，询问模型\ncreate_state_messages → LLM", purple, 198, 355)
-    exchange(d, "model-output", 575, 115, 385, "交回动作列表\nAgentOutput.action", purple, 265, 244)
-    exchange(d, "execute-actions", 115, 345, 451, "逐项执行动作\nmulti_act → Tools.act", orange, 128, 250)
-    exchange(d, "action-result", 345, 115, 517, "返回动作结果\nActionResult", orange, 175, 175)
-    exchange(d, "write-history", 115, 805, 583, "有动作结果和网页摘要时，保存本轮\n_finalize → AgentHistory", green, 286, 500)
+    exchange(d, "request-state", 115, 345, 198, "请求当前网页\nget_browser_state_summary", navy, 128, 275)
+    exchange(d, "state-summary", 345, 115, 260, "返回网页摘要\nBrowserStateSummary", teal, 130, 248)
+    exchange(d, "model-input", 115, 575, 324, "整理消息，询问模型\ncreate_state_messages → LLM", purple, 198, 355)
+    exchange(d, "model-output", 575, 115, 388, "交回动作列表\nAgentOutput.action", purple, 265, 244)
+    exchange(d, "execute-actions", 115, 345, 452, "逐项执行动作\nmulti_act → Tools.act", orange, 128, 250)
+    exchange(d, "action-result", 345, 115, 516, "返回动作结果\nActionResult", orange, 175, 175)
+    exchange(d, "write-history", 115, 805, 580, "有动作结果和网页摘要时，保存本轮\n_finalize → AgentHistory", green, 286, 500)
 
     d.box("screenshot-note", 30, 621, 860, 122, "#9dbfe8", "#f4f9ff")
     d.text("screenshot-title", "请求截图 · include_screenshot=True", 47, 635, 820, 19, "#2563a6", 8)

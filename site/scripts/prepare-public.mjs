@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { plainLabel, figureExplanation } from './page-metadata.mjs'
+import { plainLabel, sidebarLabel, renderChapterNavigation, figureTitle, renderFigureDetails, figureExplanation } from './page-metadata.mjs'
 
 const site = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repo = path.resolve(process.env.BOOK_CONTENT_ROOT || path.join(site, '..'))
@@ -83,6 +83,7 @@ function route(source) {
   return '/' + base
 }
 const routes = new Map(paths.map(({ source }) => [source, route(source)]))
+routes.set('docs/reader-trial.md', '/trial')
 const figures = new Set()
 const unresolved = new Set()
 function resolve(source, target) {
@@ -92,13 +93,13 @@ function resolve(source, target) {
   return { resolved, suffix }
 }
 const figureOwners = new Map()
-for (const { source } of paths) {
+for (const { source } of [...paths, { source: 'docs/reader-trial.md' }]) {
   const markdown = await readFile(path.join(repo, source), 'utf8')
   for (const match of markdown.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
     const resolved = resolve(source, match[1]).resolved
     if (/^figures\/[^/]+\/diagram\.svg$/.test(resolved)) {
       const slug = resolved.split('/')[1]
-      if (!figureOwners.has(slug)) figureOwners.set(slug, route(source))
+      if (!figureOwners.has(slug)) figureOwners.set(slug, routes.get(source) || route(source))
     }
   }
 }
@@ -172,22 +173,8 @@ function pageDescription(markdown, title) {
 function feedbackMailto(subject, body) {
   return 'mailto:ghr7719@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body)
 }
-function escapeHtml(value) {
-  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
-}
 function chapterNavigation(source) {
-  const position = bookPosition.get(source)
-  if (!position) return ''
-  const { index, group } = position
-  const previous = bookPaths[index - 1]?.source
-  const next = bookPaths[index + 1]?.source
-  const link = (target, label, className) => target
-    ? `<a class="${className}" href="${route(target)}" aria-label="${label}：${escapeHtml(bookTitles.get(target))}"><span>${label}</span><strong>${escapeHtml(bookTitles.get(target))}</strong></a>`
-    : `<span class="${className} is-empty" aria-hidden="true"></span>`
-  return `<nav class="reading-position" aria-label="本书章节导航" data-book-position="${index + 1}/${chapterCount}">
-  <div class="reading-position-heading"><span class="reading-position-kicker">图解 Agent 系统 · ${escapeHtml(group.text)}</span><span class="reading-position-number">${String(index + 1).padStart(2, '0')} / ${chapterCount}</span></div>
-  <div class="reading-position-links">${link(previous, '上一篇', 'reading-position-previous')}<a class="reading-position-contents" href="/#全书目录">全书目录</a>${link(next, '下一篇', 'reading-position-next')}</div>
-</nav>\n\n`
+  return renderChapterNavigation({ source, bookPaths, bookPosition, bookTitles, route })
 }
 await rm(output, { recursive: true, force: true })
 await mkdir(path.join(output, 'public', 'assets', 'figures'), { recursive: true })
@@ -196,7 +183,7 @@ for (const { source, group } of paths) {
   const title = plainLabel(original.match(/^#\s+(.+)$/m)?.[1])
   if (!title) throw new Error(source + ': missing H1')
   const destination = path.join(output, route(source).slice(1) + '.md')
-  group.items.push({ text: title, link: route(source) })
+  group.items.push({ text: sidebarLabel(source, title), link: route(source) })
   const usedFigures = [...original.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)]
     .map((match) => resolve(source, match[1]).resolved)
     .filter((name) => /^figures\/[^/]+\/diagram\.svg$/.test(name))
@@ -204,12 +191,34 @@ for (const { source, group } of paths) {
   let transformed = rewrite(original, source)
   for (const slug of [...new Set(usedFigures)]) {
     const readme = await readFile(path.join(repo, 'figures', slug, 'README.md'), 'utf8')
-    transformed += '\n\n## 图的文字说明 · ' + slug + ' {#图的文字说明-' + slug + '}\n\n' + rewrite(explanation(readme), 'figures/' + slug + '/README.md') + '\n'
+    const figTitle = figureTitle(readme, slug)
+    const rewrittenExplanation = rewrite(explanation(readme), 'figures/' + slug + '/README.md')
+    transformed += '\n\n' + renderFigureDetails({ slug, title: figTitle, explanation: rewrittenExplanation })
   }
   const frontmatter = '---\ndescription: ' + JSON.stringify(pageDescription(original, title)) + '\n---\n\n'
   const feedback = feedbackMailto('《图解 Agent 系统》阅读反馈：' + title, '章节：' + title + '\n页面：' + origin + route(source) + '\n阅读版本：' + sourceVersion + '\n问题或建议：\n相关证据/链接（如有）：\n')
   await mkdir(path.dirname(destination), { recursive: true })
   await writeFile(destination, frontmatter + chapterNavigation(source) + transformed + '\n\n---\n\n在线预览稿：书稿仍在校稿，系统篇以文内固定源码版本为准；静态阅读不等于运行验收。发现错误或有改进建议？[按本章填写邮件](' + feedback + ')，或查看[反馈说明](/feedback)。\n\n' + sourceVersionMarkdown + '\n')
+}
+{
+  const trialSource = 'docs/reader-trial.md'
+  const trialOriginal = await readFile(path.join(repo, trialSource), 'utf8')
+  const trialTitle = plainLabel(trialOriginal.match(/^#\s+(.+)$/m)?.[1]) || '帮我们试读三篇图解'
+  const trialFigures = [...trialOriginal.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)]
+    .map((match) => resolve(trialSource, match[1]).resolved)
+    .filter((name) => /^figures\/[^/]+\/diagram\.svg$/.test(name))
+    .map((name) => name.split('/')[1])
+  let trialTransformed = rewrite(trialOriginal, trialSource)
+    .replaceAll('https://books.aimake.cc/feedback', '/feedback')
+  for (const slug of [...new Set(trialFigures)]) {
+    const readme = await readFile(path.join(repo, 'figures', slug, 'README.md'), 'utf8')
+    const figTitle = figureTitle(readme, slug)
+    const rewrittenExplanation = rewrite(explanation(readme), 'figures/' + slug + '/README.md')
+    trialTransformed += '\n\n' + renderFigureDetails({ slug, title: figTitle, explanation: rewrittenExplanation })
+  }
+  const trialFrontmatter = '---\ndescription: ' + JSON.stringify(pageDescription(trialOriginal, trialTitle)) + '\n---\n\n'
+  const trialFeedback = feedbackMailto('《图解 Agent 系统》试读反馈', '选读：A / B / C\n阅读方式：网页\n阅读版本：' + sourceVersion + '\n第一版答案（独立完成）：\n卡住的原句、图中节点或箭头：\n是否请 AI 或他人提示；提示后理解有何变化：\n读完后仍想问的问题：\n')
+  await writeFile(path.join(output, 'trial.md'), trialFrontmatter + trialTransformed + '\n\n---\n\n**在线预览稿。** 可直接[按试读模板填写邮件](' + trialFeedback + ')，或查看[阅读反馈说明](/feedback)。\n\n' + sourceVersionMarkdown + '\n')
 }
 for (const slug of figures) {
   const src = path.join(repo, 'figures', slug, 'diagram.svg')
@@ -267,7 +276,7 @@ description: "《图解 Agent 系统》是面向学生、老师和 AI 工具使�
 
 ## 反馈与更正
 
-发现事实错误、图中文字难读或源码链接失效？[查看反馈方式](/feedback)。愿意帮忙检查讲解是否易懂，也可以[任选一篇做简短试读](https://github.com/chicogong/agent-systems/blob/main/docs/reader-trial.md)。阅读不需要登录；目前不收集站内评论。
+发现事实错误、图中文字难读或源码链接失效？[查看反馈方式](/feedback)。愿意帮忙检查讲解是否易懂，也可以[任选一篇做简短试读](/trial)。阅读不需要登录；目前不收集站内评论。
 
 ## 版本与阅读方式
 
@@ -301,7 +310,7 @@ ${sourceVersionMarkdown} PDF 与 Markdown 阅读包有各自的导出版本；�
 
 可公开的问题也可从[GitHub 阅读反馈表单](https://github.com/chicogong/agent-systems/issues/new?template=reading-feedback.yml)提交。请填写章节位置、所读版本与实际现象。也欢迎告诉作者“哪一段突然没看懂”，不必先证明作者写错了。
 
-愿意帮忙试读时，可以[任选一篇图解，换一个例子解释](https://github.com/chicogong/agent-systems/blob/main/docs/reader-trial.md)。请先写自己的判断，再说明提示或 AI 陪读在哪一步有帮助；无需运行代码。
+愿意帮忙试读时，可以[任选一篇图解，换一个例子解释](/trial)。请先写自己的判断，再说明提示或 AI 陪读在哪一步有帮助；无需运行代码。
 
 建议包含：页面链接、原句或图中位置、问题说明，以及可公开引用的上游源码或文档链接。请不要通过邮件发送密钥、私有资料或个人敏感信息。
 

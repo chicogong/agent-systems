@@ -1,54 +1,70 @@
-# DSH 代码导读：几个工具同时做事，结果按顺序交回
+# DSH 代码导读：深挖工具批次的并发池、顺序提交与缺省拒绝
 
-[返回 DSH 首页](README.md)
+[返回 DSH 首页](README.md) · 固定源码版本 [`477b4f42`](https://github.com/deepseek-ai/deepseek-harness/tree/477b4f420553e8a52c2fbccc464d7561b239c443)
 
-接着首页的 A、B、C 例子往下读：这三个工具可以怎样同时开始，B 先完成时结果放在哪里，需要批准的调用又在哪里停下。先跟着正常流程，再看取消与执行环境。
+模型一轮吐出一串工具调用时，如果简单写个 `for...of` 串行 `await`，I/O 密集型搜索会慢如蜗牛；如果粗暴包一层 `Promise.all`，模型一口气生成 30 个命令就能瞬间打爆本地子进程句柄，而且谁快谁先写日志会导致调用与回执错位，遇到半途取消还会留下没人收尸的孤儿任务。
 
-固定版本为 `477b4f420553e8a52c2fbccc464d7561b239c443`，核对日期 2026-09-27。本篇依据静态源码介绍工具批次、批准检查和执行器，尚未启动 DSH。
+这一篇我们直接钻进 DSH 的 `agent-loop`、`tools` 与 `bash-sandbox` 三个核心包，沿着 `A`、`B`、`C` 三次调用的真实流转，看它怎样用六个环环相扣的函数管住并发、顺序、审批与收尾。
 
-## 1. 先决定哪些工具可以一起做
+## 1. 按并发模式动态切组：`executeToolCalls()`
 
-[`executeToolCalls()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L60-L101)先找到发起调用的 Agent 和会话，再查看工具当前的执行模式。允许并行的调用可以组成一组；要求独占的调用单独处理。程序处理后续调用时还会重新看执行模式。
+入口函数 [`executeToolCalls()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L60-L101) 拿到模型开出的一批调用后，先定位发起调用的 Agent 与会话上下文，随后检查每个工具声明的执行模式。
 
-## 2. 先检查每次调用，再安排执行
+它不会把所有调用一锅炖：允许并行的连续调用会被归入同一个并发组；一旦遇到要求独占执行的工具（例如可能引发状态冲突的写操作），就会单独切组串行执行。更细腻的一点是，程序在推进后续组时还会**重新读取执行模式**——因为前一组工具的执行完全可能改变环境状态或工具可用配置，动态重查避免了拿过期的静态假设去跑后面的步骤。
 
-[`runGroup()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L122-L213)限制同时执行的数量。`startCall()` 先记录调用，再完成准备。准备时可能得到拒绝等最终结果，也可能得到一个可以开始执行的对象。
+## 2. 有界并发池与两阶段启动：`runGroup()`
 
-准备按次序进行，实际执行可以重叠。源码把“开始执行”叫 dispatch，把“结果已可交回”叫 ready。按这两个词往下读，就能分别找到工具何时开始、何时做完。
+进入同一个并发组后，[`runGroup()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L122-L213) 用一个有界并发池限制同时在跑的任务上限，防止模型突发海量调用冲垮宿主资源。
 
-## 3. B 先做完，提交器先等 A
+读这段代码时，最核心的心智模型是抓住源码里的两个动作词——**派发执行**（`dispatch`）与**结果就绪**（`ready`）：
 
-同文件的 [`commitReady()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L147-L159)从当前序号开始，依次提交已经就绪的结果。用假设的完成顺序说明：
+- `startCall()` 先按原始调用次序登记槽位并完成前置准备。如果前置检查直接给出了拒绝或参数错误，这个槽位当场就拿到了最终结果（直接 `ready`），根本不会进入 `dispatch`。
+- 只有拿到可执行句柄的调用才会真正 `dispatch` 启动异步任务；多个已派发任务在池容量允许的范围内重叠运行，各自跑完后把结果塞回自己的槽位并标为 `ready`。
+
+## 3. 队头游标保序放行：`commitReady()`
+
+既然 `B` 比 `A` 快得多，为什么最终交回给上层的顺序依然严丝合缝？秘密全在短短十几行的 [`commitReady()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L147-L159) 里。它维护着一个指向队头未提交槽位的游标，每次有任意工具完成时都会尝试推进游标，但只要队头还没就绪就立刻停步：
 
 ```text
-调用次序       A → B → C
-完成次序       B → A → C   （假设）
-结果提交       A → B → C
-B 完成时       A 还没做完，先保留 B 的结果，等 A 就绪
+时刻 t=0ms   派发并开始执行: 槽位[0]=A(慢检索) | 槽位[1]=B(快读文件) | 槽位[2]=C(快读配置)
+                             ▲ commitCursor = 0
+
+时刻 t=20ms  B、C 相继跑完:  槽位[0]=运行中    | 槽位[1]=ready(resB) | 槽位[2]=ready(resC)
+                             ▲ commitCursor 仍停在 0（队头 A 未就绪，B 和 C 原地候场）
+
+时刻 t=3000ms A 终于跑完:    槽位[0]=ready(resA) | 槽位[1]=ready(resB) | 槽位[2]=ready(resC)
+                             └─► commitReady() 一口气推进游标 0 → 1 → 2 → 3，按 A → B → C 顺序提交！
 ```
 
-这里排好的是交回的结果。如果 B 实际修改了远端数据，修改可能已经比 A 更早发生。要知道外部操作的先后，还要看工具本身的执行记录。
+看清这张时序图，你就能立刻分辨两个极易混淆的事实：**内部消息账本的提交次序严格按 `A → B → C` 保序，但外部真实世界的物理发生次序仍是 `B / C` 先于 `A` 完成**。如果两个并发工具对远端系统产生了副作用，排查问题时必须看实际执行时间戳而非消息列表顺序。
 
-## 4. 等待批准的调用，在哪里停下
+## 4. 守卫一票否决与缺省拒绝审批：`prepareExecution()` 与 `serviceAsk()`
 
-[`prepareExecution()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/tools/src/index.ts#L1489-L1539)处理执行前的决定。预执行处理（pre-execute）默认给出 `allow`；给出 `ask` 时，就先询问审批。保护检查（guard）还可以拒绝调用，后续的 allow 处理无法覆盖这项拒绝。最后还会检查是否已经取消。
+前面提到有些调用在 `startCall()` 阶段就会被拦下，这道关卡的具体逻辑位于 [`prepareExecution()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/tools/src/index.ts#L1489-L1539)。它把前置裁决分成了权限清晰的两级：
 
-需要询问时，[`serviceAsk()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/tools/src/index.ts#L1727-L1767)负责取得决定。批准一次会映射为允许；拒绝、取消、服务不可用或缺少 Agent 信息时，会映射为拒绝。因此，需要用户批准的调用，必须先拿到允许才能执行。
+1. **预执行钩子**（`pre-execute`）：默认给出 `allow`，若识别到敏感操作则给出 `ask`（请求人工确认）。
+2. **安全守卫**（`guard`）：拥有**不可覆盖的一票否决权**——只要 `guard` 判定拒绝，哪怕其他预执行钩子给出了 `allow`，最终裁决依然是拒绝；通过后还会再核对一次取消信号。
 
-## 5. 用哪种环境执行命令
+当裁决落入 `ask` 分支时，程序调用 [`serviceAsk()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/tools/src/index.ts#L1727-L1767) 向 Cordis 容器里的审批服务发起询问。这里的映射规则体现了教科书式的**故障闭锁**（Fail-Closed）原则：只有明确收到用户批准才映射为放行；凡是用户拒绝、中途取消、缺少 Agent 身份上下文，或者**当前宿主压根没注册审批服务**，统统映射为拒绝结果返回，绝不留任何灰色放行通道。
 
-[`SandboxBashExecutor.execute()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/shell/bash-sandbox/src/index.ts#L85-L133)读取本次执行策略。`danger-full-access` 使用基础执行器，其他策略通过 [`ctx.sandbox.confine()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/shell/bash-sandbox/src/index.ts#L187-L189)构造带限制的命令。沙箱执行器不可用时会返回相应错误，程序不会在这个分支自动改为普通执行。
+## 5. 严禁静默降级的沙箱执行器：`SandboxBashExecutor`
 
-各操作系统怎样实现这些限制，需要继续检查对应后端；本篇尚未做隔离测试。
+审批放行后，Shell 类命令进入 [`SandboxBashExecutor.execute()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/shell/bash-sandbox/src/index.ts#L85-L133)。它先检查当次调用绑定的沙箱策略：
 
-## 6. 取消、报错和结束提示怎样处理
+- 若策略显式指定为 `danger-full-access`，则直接转交无隔离约束的基础子进程执行器。
+- 若为受限沙箱策略，则调用 [`ctx.sandbox.confine()`](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/shell/bash-sandbox/src/index.ts#L187-L189) 将原始命令包装成受控沙箱命令再启动。
 
-[`runGroup()` 的异常与取消处理](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L219-L242)区分已经开始和还没开始的工作：调度出错时，先等已开始的工具返回，再向上报告错误；取消时，未开始的调用可以记为跳过。已经发出的网络操作是否完成，仍要向目标系统核对。想进一步理解这种情况，可以读[回执与副作用练习](../../labs/remote-effect.md)。
+这里同样有一条极重要的工程防呆：**当策略要求沙箱隔离，但运行环境中没有可用的 `sandbox` 服务时，代码直接返回错误，绝不在后台静默退化回普通裸命令执行**——否则调用方以为命令跑在笼子里，实际上却在宿主机裸奔。
 
-某个结果还可以带 `concludesTurn: true`，表示希望结束当前回合。批次把这个提示汇总为 `concluded`，交给上层程序；余下工具仍按批次流程处理。上层怎样收尾，要继续看调用方。[汇总结束提示](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L147-L159) · [继续批次并返回](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L83-L101)
+## 6. 半途取消排空与回合收尾信号：`concludesTurn`
 
-## 读完可以怎样讲给别人
+如果并发池跑到一半，外部突然拉响取消信号，或者某次调度抛出了未预期异常，该怎么收场？[`runGroup()` 的异常与取消处理](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L219-L242)把池内任务严格切成了两半：
 
-工具先通过执行前检查，允许并行的一起做，结果按请求顺序交回。需要批准却没有批准服务的调用会停下；要知道命令实际能访问哪里，还要看执行策略。
+- **已经派发（`dispatched`）在途的工具**：即使调度出错，外层也会先等待这些已经启动的任务全部落定返回，再向上抛出错误，避免留下悬空的后台子进程；而已经发往外部系统的网络写请求究竟有没有生效，仍需向目标端对账（可延伸阅读[回执与副作用练习](../../labs/remote-effect.md)）。
+- **尚未来得及启动的排队工具**：在取消路径下直接标记为跳过（skipped），不再白白触发新副作用。
 
-若以后补运行实验，可以先在专用、没有真实凭据的环境里放两个假工具，分别记录准备、开始、完成和交回结果。这个实验尚未实现，本篇只提供读代码的方法。
+此外，单个工具结果还可以附带 `concludesTurn: true` 标记（例如专门用于提交最终答案的收尾工具），表示本轮任务应当到此结束。提交器会在批次推进中将它汇总为批次级的 `concluded` 布尔信号，等整批在途工具规规矩矩排空落账后，一并交回外层循环做收尾裁决（见[汇总结束提示](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L147-L159)与[继续批次并返回](https://github.com/deepseek-ai/deepseek-harness/blob/477b4f420553e8a52c2fbccc464d7561b239c443/packages/core/agent-loop/src/tool-calls.ts#L83-L101)）。
+
+## 来源与边界
+
+本文基于官方仓库固定提交 [`deepseek-ai/deepseek-harness@477b4f420553e8a52c2fbccc464d7561b239c443`](https://github.com/deepseek-ai/deepseek-harness/tree/477b4f420553e8a52c2fbccc464d7561b239c443) 的静态源码分析整理，核对日期 2026-09-27。全文聚焦 `agent-loop`、`tools` 与 `bash-sandbox` 三个核心包内的控制流，各平台底层操作系统沙箱后端的具体内核隔离实现不在本篇展开范围内。

@@ -1,44 +1,56 @@
-# 跟着 OpenCode 代码看一次工具调用的进度
+# 跟着 OpenCode 代码走一轮：流式占位、死循环熔断与中断兜底
 
 [返回 OpenCode 首页](README.md) · 固定源码 [`18ef3cc7`](https://github.com/anomalyco/opencode/tree/18ef3cc7c5a25b82114c953a80ccc09f4988f74e)
 
-上一页介绍了工具调用的四个状态。这里继续看一次读取文件的请求：用户消息怎么进入循环，模型的工具调用怎么成为 `ToolPart` 记录，结果又怎样找到原来的记录。
+如果让你手写一个接收大模型流式工具事件的状态机，最容易漏掉三个边界：流式参数分十几个增量分片到达时怎么避免重复建单？模型鬼打墙连续五次用一模一样的参数调同一个工具时怎么刹住车？网络断流或用户强退的那一瞬间，卡在半空中的 `pending` 和 `running` 调用由谁来善后？
 
-下面先列出阅读顺序，再逐步找源码。伪代码是摘要；实际实现通过流事件和异步服务协作。
+下面我们沿着 `packages/opencode/src/session` 里的真实事件流向，把这整条状态机链路从头拆到尾：
 
 ```text
 SessionPrompt.prompt(input)
-  保存用户消息 → loop / runLoop
-  选 agent 和 model → SessionTools.resolve → SessionProcessor.process
+  └─► 落盘用户消息 → loop() / SessionRunState.ensureRunning → runLoop()
+        └─► 选定 Agent 与模型 → SessionTools.resolve(挂载前后置插件钩子) → SessionProcessor.process()
 
-处理模型流事件：
-  tool-input-* → ensureToolCall(callID) → ToolPart.pending
-  tool-call    → updateToolCall(callID) → ToolPart.running
-  tool-result(success) → completeToolCall(callID) → 若匹配 running part，则 completed
-  tool-result(error) / tool-error → failToolCall(callID) → 若匹配 running part，则 error
-  结束时仍未完成的调用 → cleanup() → ToolPart.error (interrupted)
+SessionProcessor.handleEvent(流事件分发)：
+  ├─ tool-input-start/delta/end ──► ensureToolCall(callID)   ──► 幂等创建或复用 ToolPart [pending]
+  ├─ tool-call                  ──► updateToolCall(callID)   ──► 写入完整参数 + doom_loop 检查 [running]
+  ├─ tool-result (成功)         ──► completeToolCall(callID) ──► 仅匹配 running 记录落定 [completed]
+  ├─ tool-result (失败)/error   ──► failToolCall(callID)     ──► 仅匹配 running 记录落定 [error]
+  └─ 流结束收尾                 ──► cleanup() + 外层兜底清扫 ──► 未完成记录统一盖戳 [error, interrupted: true]
 ```
 
-## 从用户输入开始
+## 1. 会话循环拉起与洋葱钩子包装
 
-`prompt()` 保存用户消息，再调用 `loop()`。`SessionRunState.ensureRunning` 管理这个会话的运行过程；`runLoop` 每轮读出历史和任务，选好 Agent 与模型，准备下一次请求。[保存输入](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/prompt.ts#L1042-L1070) · [启动循环](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/prompt.ts#L1343-L1347) · [准备模型请求](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/prompt.ts#L1081-L1132)
+当用户发来新指令，`SessionPrompt.prompt()` 先把用户消息持久化入库，随后进入 `loop()`，由 `SessionRunState.ensureRunning` 保证同一会话受控运行；进入 `runLoop` 后，每一轮读取最新会话历史，挑好当前 Agent 配置与底层模型，准备发起下一轮流式请求（见[保存输入](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/prompt.ts#L1042-L1070)、[启动循环](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/prompt.ts#L1343-L1347)与[准备模型请求](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/prompt.ts#L1081-L1132)）。
 
-`SessionTools.resolve` 给工具加上插件钩子。正常执行按“插件前置处理→真实工具→插件后置处理”的顺序进行；前面抛出错误时，后面的处理也可能被跳过。`SessionProcessor.process` 负责接收模型逐步返回的事件，交给 `handleEvent`。[工具与钩子](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/tools.ts#L92-L132) · [处理流事件](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L643-L665)
+在把工具列表交给模型流之前，`SessionTools.resolve` 为每个工具织好了一层「前置插件钩子 → 真实工具执行 → 后置插件钩子」的包装壳；只要前置钩子抛错，后续真实执行就会被短路拦下。随后，`SessionProcessor.process` 开始逐条拉取模型流式事件并喂给核心分发器 `handleEvent`（见[工具与钩子](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/tools.ts#L92-L132)与[处理流事件](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L643-L665)）。
 
-## 输入正在传来时，先建立记录
+## 2. 幂等流式占位与 `doom_loop` 死循环急刹车
 
-`tool-input-start/delta/end` 表示工具输入开始、陆续到达和结束，都可以触发 `ensureToolCall`。程序用调用编号 `callID` 查找记录：已有记录就复用；没有就创建 `pending` 状态的 `ToolPart`，同时记住它属于哪个消息和会话。[接收输入事件](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L315-L329) · [建立调用记录](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L216-L253)
+在流式生成工具参数的过程中，底层适配器会连续吐出 `tool-input-start`、若干个 `tool-input-delta` 以及 `tool-input-end`。OpenCode 让这三种事件全部汇入同一个幂等入口 `ensureToolCall(callID)`：查表发现该 `callID` 已有记录就直接复用，没有才新建一张状态为 `pending` 的 `ToolPart` 挂到当前助手消息和会话下——哪怕增量事件乱序或密集刷屏，也绝不会生出双胞胎记录（见[接收输入事件](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L315-L329)与[建立调用记录](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L216-L253)）。
 
-完整调用 `tool-call` 到达后，程序把记录改为 `running`，写入参数和开始时间。这里还会检查最近是否反复调用同一个工具，必要时要求 `doom_loop` 许可。收到调用后，程序仍要处理这些执行条件。[记录运行并检查重复调用](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L331-L382)
+等到完整参数拼装完毕、`tool-call` 事件正式抵达时，`updateToolCall` 把这张零件单推进到 `running` 状态，记下完整输入与开始时间。紧接着这里埋了一处极其实用的工程护栏——**死循环检测**（`doom_loop`，见[记录运行并检查重复调用](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L331-L382)）：
 
-## 结果回来时，按编号更新原记录
+- 真实编码场景里，模型偶尔会卡进认知死胡同，比如连续三次用完全相同的参数去调同一个搜索或修改工具，放任不管很快就会烧穿额度。
+- OpenCode 在刚切入 `running` 的关口回看最近调用历史，一旦抓到连续重复调用，立刻触发专门的 `doom_loop` 许可拦截，把「要不要允许它继续原地打转」的决定权交回权限层，而不是盲目放行。
 
-成功结果交给 `completeToolCall`。找到对应且仍为 `running` 的记录后，它写入 `completed`、输出、附件、元数据和结束时间。错误结果或 `tool-error` 交给 `failToolCall`，同样只更新对应的运行中记录，状态变为 `error`。权限拒绝等错误还可能让处理器结束本轮。[分发结果](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L383-L420) · [更新成功或错误记录](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L160-L204)
+## 3. 严格状态守卫对账与双保险中断清扫
 
-结束清理时，程序会短暂等待尚未完成的调用；仍没有结果的记录会变成 `error`，并标上 `interrupted: true`，说明它被中断了。阅读错误时，先看原因是工具报错，还是清理时标记的中断。[清理未完成调用](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L585-L610)
+当工具执行返回时，为什么不能拿到 `callID` 就无脑覆盖状态？因为在异步流和取消竞态下，迟到的回执可能撞上已经被清理的记录。
 
-## 整个会话另有一份状态
+因此无论是成功分支 `completeToolCall` 还是失败分支 `failToolCall`，源码都加上了严格的前置状态守卫：**只有根据 `callID` 找到对应记录、且该记录当前确实处于 `running` 状态时**，才允许落定为 `completed`（写入输出、附件、元数据与结束时间）或 `error`（写入错误信息与结束时间；若遇到明确的权限拒绝等硬错误，还会通知处理器提前终止本轮）（见[分发结果](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L383-L420)与[更新成功或错误记录](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L160-L204)）。
 
-`SessionStatus` 发布 `busy/retry/idle`（忙碌、重试、空闲）事件。进入空闲时，它删除状态表中的该会话项；查询不存在的项目时默认返回 `idle`。这份状态描述整个会话，`ToolPart` 描述其中一次调用。[会话状态表](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/status.ts#L30-L48) · [发布忙碌与重试状态](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L639-L691)
+更关键的是「流突然断了怎么办」。OpenCode 设了里外两道清扫保险：
 
-还可以在 `runLoop` 结束处找到对未完成工具调用的清理检查。[循环结束检查](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/prompt.ts#L1100-L1129) 本篇依据固定源码，尚未采集真实调用日志；实际事件时间和中断后的恢复效果留待运行检查。
+1. **处理器收尾清扫**：单次流处理结束进入 [`cleanup()`](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L585-L610) 时，程序会给在途调用留一个短暂宽限窗口；窗口过后仍未拿到结果的零件单，一律强制转为 `error` 并打上 `interrupted: true` 标记。
+2. **外层循环兜底检查**：在 `runLoop` 退出处还有一道针对历史遗留未完成工具零件的[循环结束检查](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/prompt.ts#L1100-L1129)，确保无论异常从哪一层炸开，持久化的消息树里绝不会残留永恒卡在 `pending` 或 `running` 的死账。排查故障日志时，先看 `interrupted` 字段就能一秒分清「工具自己执行挂了」还是「工具还没跑完就被迫中断了」。
+
+## 4. 外层 `SessionStatus` 的小巧思：空闲即删键
+
+最后看一眼宏观会话状态表 [`SessionStatus`](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/status.ts#L30-L48) 与处理器里[发布忙碌与重试状态](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L639-L691)的配合。
+
+一个长期驻留的本地服务可能积累几百上千个历史会话，如果每个会话都在内存状态表里常驻一条 `{ type: "idle" }`，纯属浪费内存。OpenCode 的写法非常干净：内存字典只存当前正处于 `busy` 或 `retry` 的活跃会话；一旦某个会话收工转入 `idle`，**直接把该 `sessionID` 从内存表里 `delete` 掉**，而外部查询任何不存在的 `sessionID` 时一律兜底返回 `{ type: "idle" }`——零垃圾回收负担，重启进程后所有历史会话也天然处于干净的空闲态。
+
+## 来源与边界
+
+本文基于官方仓库固定提交 [`anomalyco/opencode@18ef3cc7c5a25b82114c953a80ccc09f4988f74e`](https://github.com/anomalyco/opencode/tree/18ef3cc7c5a25b82114c953a80ccc09f4988f74e) 的静态源码分析整理，核对范围为 `packages/opencode/src/session` 目录。不同模型服务商流式分片的细微时序差异及外部插件钩子的自定义异常行为需结合具体接入环境核查。

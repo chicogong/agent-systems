@@ -1,26 +1,48 @@
-# 跟着 OpenClaw Gateway 读显式 `sessionKey` 路由
+# 代码走读：跟着 OpenClaw Gateway 追踪一次显式 `sessionKey` 请求
 
 [返回 OpenClaw 首篇](README.md) · [固定官方源码](https://github.com/openclaw/openclaw/tree/b373c9a9bcd4954ccdab963e3ed71336302b82be)
 
-假设你分别用两个助手维护项目和整理资料，现在要给指定会话发送一项任务。请求带上 `sessionKey` 后，Gateway（请求网关）先检查调用者是否获准发起请求，再解析会话归属；确定实际目标后，还要检查创建和修改权限，通过后才安排执行。下面跟着这次 RPC（远程调用）读代码：owner 表示会话归属，canonical key 表示系统最终使用的会话标识。
+本篇供希望对照 TypeScript 源码追踪网关门禁的读者选读。我们沿着一条携带显式 `sessionKey`（以及可选 `agentId`）的 `agent` RPC 请求，从网络入口一路走到模型执行派发前夜，看清六个关键关口如何衔接。
 
-1. `agentRunHandler` 先检查调用者的授权状态，再用 `validateAgentParams` 校验参数、做开始前检查，通过后调用 `startTurn()`。检查失败就返回错误。[Handler](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/server-methods/agent-run-handler.ts#L10-L51)
-2. `startTurn()` 调 `prepareAgentRequestRouting()`；路由阶段先规范化可选 `agentId`，对不在配置列表中的 Agent 返回 `INVALID_REQUEST`。显式 `sessionKey` 优先于从 `to` 推断的 Agent key，接着交给 `resolveRequestedSessionAgentId()` 判定 owner。[接线](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/agent-turn/agent-turn-service.ts#L119-L149) · [参数选择](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/agent-turn/agent-request-routing.ts#L71-L105)
-3. `resolveRequestedSessionAgentId()` 根据 key 前缀、显式助手标识和已保存的会话归属选择助手。不带助手前缀的 key，还可以按存储归属、兼容规则或唯一助手来选择；仍选不出时，要求调用者补充助手标识。key 格式错误、显式助手未知、key 前缀与显式助手冲突，或存储中的已退役 owner 与请求冲突时，都会被拒绝。全局主会话别名另有规则。[输入与 owner 判定](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/session-request-agent.ts#L112-L207)
-4. 选出 `requestedSessionKey` 后，路由程序检查目标是否符合 `expectedExistingSessionId`、会话是否可用，以及特定 exec 审批后续请求的绑定条件。通过后，它按目标 key/Agent 保留去重标识，读取已有会话，并绑定 canonical key 和 `sessionId`；检查被拒绝时，流程在这里结束。[路由后半段](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/agent-turn/agent-request-routing.ts#L167-L244) · [约束](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/server-methods/agent-expected-session.ts#L43-L67)
-5. `startTurn()` 继续准备内容、处理 reset（重置）等事项。随后，`prepareAgentSession()` 得到 `canonicalSessionKey` 和 `sessionAgentId`，也就是实际要操作的会话与助手。程序再对这个目标检查创建和修改权限，授权失败就返回失败响应。[规范化与授权](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/agent-turn/agent-turn-service.ts#L279-L334)
-6. `prepareAgentRunDispatch()` 检查能否接纳这次运行，同时处理生命周期和去重结果。这些条件允许继续、并返回准备结果后，程序才调度 `startAgentRunExecution()`。要追踪模型怎样运行，可以从这个函数之后的事件接着读。[调度边界](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/agent-turn/agent-turn-service.ts#L557-L583)
+## 1. 入口预检：`agentRunHandler`
+
+请求抵达网关后，`agentRunHandler` 第一时间核验调用方的基础连接授权，随后用 `validateAgentParams` 校验入参结构与前置运行条件。任何格式残缺或未授权连接都在这一步直接拦截，不会触碰后续的会话存储（[`agentRunHandler` 入口](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/server-methods/agent-run-handler.ts#L10-L51)）。
+
+## 2. 路由分流：`prepareAgentRequestRouting`
+
+进入 `startTurn()` 后立即调用 `prepareAgentRequestRouting()`。代码先规范化可选的 `agentId`——只要调用方传了不在当前配置表里的助手 ID，立刻返回 `INVALID_REQUEST`。在寻址优先级上，**显式传入的 `sessionKey` 高于从收件人 `to` 推导出的隐式会话键**，选定后交由下一步判定归属（[`startTurn` 接线](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/agent-turn/agent-turn-service.ts#L119-L149) · [路由参数优先级](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/agent-turn/agent-request-routing.ts#L71-L105)）。
+
+## 3. 归属裁决：`resolveRequestedSessionAgentId`
+
+这是防“串台”的核心函数。它综合三方面线索裁定这段会话归哪个 Agent 管：`sessionKey` 自带的前缀、请求显式传入的 `agentId`、以及磁盘上已有会话记录的 owner：
+
+- 若 key 前缀与显式 `agentId` 互相打架，或者存储里记录的原 owner 已退役且与当前请求冲突，立即报错拒绝；
+- 若传入的是不带前缀的裸 key，则依次尝试按已存归属、兼容映射或“全场唯一助手”规则推导；依然无法唯一确定时，明确要求调用方补齐 `agentId`（[归属裁决逻辑](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/session-request-agent.ts#L112-L207)）。
+
+## 4. 会话可用性与期望绑定校验
+
+确定 `requestedSessionKey` 与归属助手后，路由后半段继续核查：`expectedExistingSessionId`（调用方期望续接的会话 ID）是否与实际一致、目标会话当前是否处于可用状态、以及特定命令审批续接请求是否满足绑定约束。通过后保留请求去重标识（dedupe key），读取已有会话元数据并关联 `sessionId`（[路由后半段校验](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/agent-turn/agent-request-routing.ts#L167-L244) · [`expectedExistingSessionId` 约束](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/server-methods/agent-expected-session.ts#L43-L67)）。
+
+## 5. 坐标归一化与目标级验权：`prepareAgentSession`
+
+回到 `startTurn()` 处理输入准备与可选的会话重置（reset）后，`prepareAgentSession()` 产出最终落库的 `canonicalSessionKey` 与 `sessionAgentId`。紧接着，网关拿着这组最终坐标执行目标级权限核查——判断该客户端身份是否有权创建或修改这段具体会话，未获准则立即终止并返回错误响应（[规范化与目标授权](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/agent-turn/agent-turn-service.ts#L279-L334)）。
+
+## 6. 运行接纳与派发：`prepareAgentRunDispatch`
+
+最后一道闸门是 `prepareAgentRunDispatch()`：它负责运行生命周期登记与重复请求拦截（防止网络抖动重发导致同一回合被并发拉起两次）。确认放行后，才正式调用 `startAgentRunExecution()` 进入模型推理与工具循环（[运行接纳与派发边界](https://github.com/openclaw/openclaw/blob/b373c9a9bcd4954ccdab963e3ed71336302b82be/src/gateway/agent-turn/agent-turn-service.ts#L557-L583)）。
+
+把整条门禁链浓缩成一张速查图：
 
 ```text
 agent RPC(sessionKey, agentId?)
-  → 参数/preflight
-  → 从 key 和 agentId 解析 owner；冲突或无效则拒绝
-  → 检查目标约束与可用性，保留去重标识
-  → prepareAgentSession 得到 canonicalKey / canonicalSessionAgentId
-  → 对规范化目标授权；失败则停止
-  → 交给接纳与派发，再启动后续执行
+  ├─ 1. agentRunHandler           → 连接身份与参数格式预检
+  ├─ 2. prepareAgentRequestRouting → 校验 agentId，确立显式 sessionKey 优先级
+  ├─ 3. resolveRequestedSessionAgentId → 交叉核对前缀 / 参数 / 已存 owner，冲突即拒
+  ├─ 4. expectedSession & 去重预留 → 核验会话可用性与绑定约束
+  ├─ 5. prepareAgentSession       → 归一化 canonicalKey，对最终目标验创建/修改权
+  └─ 6. prepareAgentRunDispatch   → 生命周期与幂等去重放行 → startAgentRunExecution()
 ```
 
-### 版本与待验证项
+## 来源与边界
 
-上述流程来自固定提交的**源码静态核对**，本篇没有启动 Gateway、模拟不同客户端身份（client principal）或构造并发 RPC。不同配置、重连和并发请求中的处理效果仍需运行观察：权限错误怎样返回客户端、去重怎样处理重试，以及全局 scope 别名和渠道入站走哪条路，都需要分别检查。
+本篇基于 [`openclaw/openclaw@b373c9a9bcd4954ccdab963e3ed71336302b82be`](https://github.com/openclaw/openclaw/tree/b373c9a9bcd4954ccdab963e3ed71336302b82be) 静态核对；不同客户端角色（principal）的细粒度权限报错码、断线重连时的去重窗口表现及全局主会话别名分支需结合运行实例进一步观察。

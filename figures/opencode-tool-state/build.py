@@ -53,8 +53,8 @@ def build() -> None:
     d.text("panel-title", "一次调用的记录 · ToolPart / callID", 43, 97, 580, 24, "#2563a6", 8)
     d.text("event-input", "接收参数\ntool-input-*", 46, 144, 180, 20, "#2563a6", 8)
     d.text("event-call", "完整调用到达\ntool-call", 395, 261, 155, 20, "#9a6700", 8)
-    d.text("event-success", "收到成功结果", 92, 461, 176, 23, "#166534", 8)
-    d.text("event-failure", "工具报错", 509, 451, 154, 19, "#b42332", 8)
+    d.text("event-success", "收到成功结果", 58, 442, 176, 23, "#166534", 8)
+    d.text("event-failure", "工具报错", 495, 442, 154, 19, "#b42332", 8)
     d.text("pending-cleanup-label", "收尾清理\npending\nrunning", 565, 267, 110, 20, "#b42332", 8, align="center")
 
     d.text("pending-label", "接收工具输入\npending", 253, 174, 222, 27, ink, 8)

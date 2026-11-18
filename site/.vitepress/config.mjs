@@ -57,7 +57,7 @@ export default defineConfig({
     const pathname = pageData.relativePath.replace(/index\.md$/, '').replace(/\.md$/, '')
     const canonical = `${siteUrl}/${pathname}`
     const isHome = pathname === ''
-    const isArticle = !isHome && !new Set(['feedback', 'pdf', 'downloads', 'concepts', 'systems', 'comparisons', 'sources']).has(pathname)
+    const isArticle = !isHome && !new Set(['feedback', 'pdf', 'downloads', 'trial', 'concepts', 'systems', 'comparisons', 'sources']).has(pathname)
     const title = plainLabel(pageData.title) || '图解 Agent 系统'
     pageData.title = title
     const socialTitle = pageData.frontmatter.socialTitle || title
@@ -109,6 +109,7 @@ export default defineConfig({
       { text: '项目', link: '/systems' },
       { text: '对照', link: '/comparisons/loop-and-stop' },
       { text: '离线阅读', link: '/downloads' },
+      { text: '试读', link: '/trial' },
       { text: '反馈', link: '/feedback' }
     ] : [
       { text: '阅读起点', link: '/' },

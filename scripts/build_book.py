@@ -136,6 +136,8 @@ def public_link(target: Path, label: str, fragment: str) -> str:
     elif relative == "CONTRIBUTING.md":
         url = "/feedback"
         label = "反馈方式"
+    elif relative == "docs/reader-trial.md":
+        url = "/trial"
     elif relative == "LICENSE-CONTENT.md":
         url = "https://creativecommons.org/licenses/by/4.0/"
     elif relative == "LICENSE-CODE":

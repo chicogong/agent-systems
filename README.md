@@ -1,20 +1,18 @@
 # 图解 Agent 系统
 
-**一本免费中文图解教程。跟着图和例子学习 Agent 怎样做事，再把这些方法用到学习和工作中。**
+**一本免费开源的中文图解教程：拆开循环、上下文、工具边界与故障恢复，看清 Agent 怎样把事做成**。
 
 <img src="book/assets/cover-preview.png" alt="《图解 Agent 系统》封面预览" width="220">
 
 [在线阅读](https://books.aimake.cc/) · [学习与应用](docs/learning-and-practice.md) · [选择阅读路线](docs/learning-path.md) · [按书序阅读](book/CONTENTS.md) · [PDF 电子校样](https://books.aimake.cc/pdf)
 
-你可以先看一个资料助手怎样读完几份材料、写出带出处的回答，再了解它怎样调用工具、选择输入、保存记忆和检查结果。书中也有代码修改、网页操作等例子。第一次接触 Agent，用纸笔就能跟着理解；想读代码，再看 Pi、Codex 等项目的实现。
+聊到第 30 轮突然忘掉最开始定下的硬约束；资料明明存进了知识库，回答时却漏掉截止时间；让 AI 改一行超时配置，测试跑绿了，重试次数却被顺手改成了 `0`；外部请求超时未响应，贸然重试又怕把同一笔操作执行两遍——无论日常用 AI 整理材料，还是亲手搭建自动化系统，几乎每个人都会撞上这些棘手时刻。
 
-学生可以用随书材料整理学习卡片，老师可以据此组织讨论，AI 工具使用者可以练习说清任务、选择资料和核对回答。想探索 AI 相关工作，也可以先尝试资料研究、教学表达或编程中的一个小任务，看看自己愿意继续学哪一部分。
-
-这是**持续更新的公开预览稿**。系统篇介绍指定版本中的一条实现路径，章末列出来源和研究范围。
+这些问题单靠“换句提示词”解决不了，因为症结往往出在模型之外的工程链路：**循环靠什么条件推进与停机、上下文怎样筛选装入、工具权限与沙箱怎样拦截爆炸半径、异常中断后靠什么证据恢复**。本书用一张张职责分明的图解与真实流转的数据把黑盒拆开：零基础读者用纸笔跟着日常资料例子就能走通全过程；想深究实现的读者，可以顺着固定 commit 直达 Pi、Codex、OpenCode、LangGraph 等开源项目的关键代码路径。
 
 ## 翻几张图，看看书里怎么讲
 
-每张图讲清一件事，正文用具体例子说明步骤，代码导读供愿意深入的读者选看。点缩略图可打开原尺寸 SVG；每组图都有可编辑 `.excalidraw` 和文字说明。
+每张图聚焦一个核心工程问题，正文配齐正反案例与数据流转，代码导读供需要深入实现的读者按需翻阅。点击缩略图可查看高清矢量 SVG，每组图均附文字版说明与可编辑 `.excalidraw` 源文件。
 
 | 从目标到一份有出处的回答 | 一项任务中，谁负责什么 |
 | --- | --- |
@@ -27,49 +25,47 @@
 | [![沙箱的运行设置、执行记录与结果检查](figures/sandbox-execution/preview.png)](figures/sandbox-execution/diagram.svg) | [![Hermes 的知识文件、提示快照与待批准写入](figures/hermes-session-memory/preview.png)](figures/hermes-session-memory/diagram.svg) |
 | [读沙箱与生命周期](docs/concepts/sandbox-execution.md) | [读 Hermes 的知识维护路径](docs/systems/hermes/README.md) |
 
-想看小字时，点图打开原尺寸 SVG。更多图和文字说明见[图稿索引](figures/README.md)。
+全部插图目录与无障碍文字说明见[图稿索引](figures/README.md)。
 
 ## 你可以怎样读
 
-- **学生、老师与第一次接触 AI 的读者：** 从[学习与应用导读](docs/learning-and-practice.md)的三份虚构资料开始，看一份带出处的回答怎样形成，再读 [Agent 循环](docs/concepts/agent-loop.md)。学生可以整理知识与问题，老师可以把同一例子改成讨论活动；不用先学习代码。
-- **已经在用 AI，希望用得更好：** 用[学习与应用](docs/learning-and-practice.md#把方法带到你的场景)中的任务卡，练习说清目标、选择资料、区分事实与建议、核对结果。卡住时可选用[AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读)，再读[上下文与记忆](docs/concepts/context-vs-memory.md)。
-- **想探索 AI 相关方向：** 先选一个小任务，例如整理资料或解释一个概念，试着做一页简报或一张图。沿[阅读路线](docs/learning-path.md)继续学其中用到的方法。
-- **想读懂一个项目：** 从 [Pi 的运行核心与外壳](docs/systems/pi/README.md)或[Codex 的命令审批与执行](docs/systems/codex/README.md)开始。系统篇给出上游仓库、固定 commit、关键源码位置、正常/失败路径与未验证范围，不要求把整个仓库从头读完。
-- **正在设计自己的系统：** 按问题查[机制](docs/concepts/README.md)、[跨系统对照](docs/comparisons/README.md)和[术语表](docs/glossary.md)。可以先从工具权限、上下文预算或任务恢复中选一项，再比较不同项目怎样处理。
+- **学生、老师与零基础读者**：从[学习与应用导读](docs/learning-and-practice.md)开始，看几份零散通知怎样变成句句有出处、缺项单列待查的可靠说明，再顺读 [Agent 循环](docs/concepts/agent-loop.md)。学生可用来梳理课程重点，老师可直接改成课堂讨论活动，全程无需写代码。
+- **已经在用 AI、想告别幻觉与返工**：用[学习与应用](docs/learning-and-practice.md#把方法带到你的场景)中的任务卡练习拆解目标、核对证据与划清操作边界；再读[上下文与记忆](docs/concepts/context-vs-memory.md)，看清为什么“存了资料”不等于“模型这轮看见了”。遇到卡点可搭配[AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读)对练。
+- **想探索 AI 相关产品或技术方向**：先挑一件具体小事（整理多源简报、拆解概念或设计一张工具说明卡），保留从初稿翻车到修正验收的完整记录，再沿[阅读路线](docs/learning-path.md)按阶深入你最感兴趣的环节。
+- **想读懂一个真实开源项目**：从分层清晰的 [Pi 的运行核心与外壳](docs/systems/pi/README.md)或 [Codex 的命令审批与执行](docs/systems/codex/README.md)切入。每篇锚定单一版本的入口函数、核心回路与失败分支，无需从头通读整座仓库。
+- **正在设计或调优自己的系统**：带着具体问题直查[核心机制](docs/concepts/README.md)、[跨系统对照](docs/comparisons/README.md)和[术语表](docs/glossary.md)，横向比较不同项目在循环终止、状态持久化、权限审批与超时恢复上的架构取舍。
 
-读到不熟悉的地方，可以选用[AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读)：把当前段落或图交给常用助手，指出卡在哪里，请它解释。再回到书中核对，并试着用另一个例子说明同样的过程。
+读到陌生的图或代码段时，随时可以用[AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读)里的苏格拉底提示词：先说出自己的理解，让助手追问卡点，再回到原文与源码逐条核对。
 
 ## 内容地图
 
-| 章节类型 | 你会得到什么 | 从这里试看 |
+| 章节类型 | 解决什么问题 | 推荐试看 |
 | --- | --- | --- |
-| **学习与应用** | 用一组随书资料尝试回答、教学活动或工作简报，形成自己的任务卡与修改记录 | [把所学用起来](docs/learning-and-practice.md) · [阅读路线](docs/learning-path.md) · [AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读) |
-| **机制图解** | 一条任务怎样经过模型、工具、上下文、记忆、权限和恢复；图旁写明例子与反例 | [Agent loop](docs/concepts/agent-loop.md) · [MCP、Skill 与工具](docs/concepts/mcp-skill-tool-lifecycle.md) · [观察与评测](docs/concepts/observation-evaluation.md) |
-| **开源项目讲解** | 一个版本里的具体步骤，以及连接这些步骤的关键代码 | [Pi](docs/systems/pi/README.md) · [OpenCode](docs/systems/opencode/README.md) · [LangGraph](docs/systems/langgraph/README.md) |
-| **横向对照** | 围绕同一个问题，比较不同做法和取舍 | [循环与停止](docs/comparisons/loop-and-stop.md) · [四种状态](docs/comparisons/four-kinds-of-state.md) · [权限与恢复](docs/comparisons/permission-and-recovery.md) |
-| **可选小实验** | 用随书脚本观察读取、输入选择、结果查询和错误处理 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [上下文预算](docs/labs/context-budget.md) · [远端结果查询](docs/labs/remote-effect.md) · [本地 HTTP 回执](docs/labs/http-receipt.md) |
+| **学习与应用** | 把“明确约束、锚定出处、单列待查”落回学习、备课与日常工作交接 | [把所学用起来](docs/learning-and-practice.md) · [阅读路线](docs/learning-path.md) · [AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读) |
+| **机制图解** | 拆清模型、工具、宿主、上下文、Skill/MCP、沙箱与评测各自守哪道边界 | [Agent loop](docs/concepts/agent-loop.md) · [MCP、Skill 与工具](docs/concepts/mcp-skill-tool-lifecycle.md) · [观察与评测](docs/concepts/observation-evaluation.md) |
+| **开源项目讲解** | 追踪固定 commit 里的真实调用链，看一线项目如何把概念写成可维护代码 | [Pi](docs/systems/pi/README.md) · [OpenCode](docs/systems/opencode/README.md) · [LangGraph](docs/systems/langgraph/README.md) |
+| **横向对照** | 同一工程难题放在一起比，看清不同架构方案的收益与代价 | [循环与停止](docs/comparisons/loop-and-stop.md) · [四种状态](docs/comparisons/four-kinds-of-state.md) · [权限与恢复](docs/comparisons/permission-and-recovery.md) |
+| **可选小实验** | 用零依赖 Python 标准库脚本在本地复现输入裁剪、回执丢失与幂等查证 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [上下文预算](docs/labs/context-budget.md) · [远端结果查询](docs/labs/remote-effect.md) · [本地 HTTP 回执](docs/labs/http-receipt.md) |
 
-系统案例覆盖 Pi、DSH（DeepSeek Harness）、Codex、OpenCode、mini-SWE-agent、OpenHands、Browser Use、Qwen Code、Kimi Code、MiMo Code、Letta Code、Hermes Agent、Mem0、LangGraph、OpenClaw 与 GPT Researcher。它们包括编码助手、运行框架和记忆组件。每个项目选一条具体路径来讲，例如工具怎样执行、经验怎样保存、长任务怎样继续。逐篇范围见[系统索引](docs/systems/README.md)，后续选题见[选题地图](docs/program.md)与[扩写计划](docs/curriculum-expansion.md)。
+开源系统篇覆盖 Pi、DSH（DeepSeek Harness）、Codex、OpenCode、mini-SWE-agent、OpenHands、Browser Use、Qwen Code、Kimi Code、MiMo Code、Letta Code、Hermes Agent、Mem0、LangGraph、OpenClaw 与 GPT Researcher，横跨编码助手、编排运行时与记忆组件。每篇聚焦项目最具代表性的一条实现主干，完整清单见[系统索引](docs/systems/README.md)，整体规划见[选题地图](docs/program.md)与[扩写计划](docs/curriculum-expansion.md)。
 
-也介绍[沙箱](docs/concepts/sandbox-execution.md)，说明怎样安排代码运行的文件、网络和资源；[Computer／Browser Use](docs/concepts/computer-and-browser-use.md)用填表任务讲清观察页面、执行操作和读取结果。想进一步观察检查过程，可以选择[资料与工具权限小实验](docs/labs/evidence-contract.md)。
+围绕高风险执行边界，书中还专门拆解了隔离文件与网络爆炸半径的[沙箱](docs/concepts/sandbox-execution.md)、观察页面并守住提交边界的[Computer／Browser Use](docs/concepts/computer-and-browser-use.md)，以及核对引用真伪与越权调用的[资料与工具权限小实验](docs/labs/evidence-contract.md)。
 
 ## 选择顺手的阅读方式
 
 | 入口 | 适合什么场景 |
 | --- | --- |
-| [在线阅读站](https://books.aimake.cc/) | 手机阅读、章节导航、搜索和反馈；公开站按人工发布批次更新。 |
-| [GitHub 书序目录](book/CONTENTS.md) | 直接看唯一的 Markdown 源稿、代码链接、图源和修订历史。 |
-| [可携带 Markdown 阅读包](https://books.aimake.cc/downloads) | 固定版本 ZIP，导入 Obsidian 或普通 Markdown 阅读器；相对链接、图与可选练习的代码随包保留。[自行构建](book/README.md#markdown-阅读包)。 |
-| [PDF 电子校样](https://books.aimake.cc/pdf) | 固定页序浏览、批注和下载；它不是印刷母版，更新不由每周 Action 自动覆盖。 |
+| [在线阅读站](https://books.aimake.cc/) | 手机与桌面端沉浸阅读、章节检索与快捷反馈；按人工校验批次发布更新。 |
+| [GitHub 书序目录](book/CONTENTS.md) | 直接浏览唯一 Markdown 源稿、源码行号链接、图源与修订记录。 |
+| [可携带 Markdown 阅读包](https://books.aimake.cc/downloads) | 打包下载固定版本 ZIP，离线导入 Obsidian 或任意阅读器，附图与实验脚本完整保留，也支持[自行构建](book/README.md#markdown-阅读包)。 |
+| [PDF 电子校样](https://books.aimake.cc/pdf) | 适合平板连续翻阅与划线批注的电子校样版。 |
 
-正文只维护一份。`book/manifest.txt` 决定 GitHub 目录、网站、PDF 和阅读包的书序；导出物不是第二份稿件。线上站与本地仓库可能处于不同发布批次，**精确篇数、页数和验收缺口以[当前状态](docs/roadmap.md)为准**。
+全书只维护一份 Markdown 源稿，由 `book/manifest.txt` 统一驱动网站、目录、阅读包与 PDF 的章节顺序；最新完稿进度与待补事项以[当前状态](docs/roadmap.md)为准。
 
 ## 证据、图源与参与
 
-系统篇注明结论来自**源码、官方文档、运行记录还是推断**，未核对的部分也会列出；上游版本记录在[来源台账](sources/README.md)。图的 `.excalidraw`、SVG、PNG 与文字说明成组维护，具体规则见[图稿规范](figures/STYLE.md)。书稿如何校对、哪些检查已经完成，可查看[写作与校稿方法](docs/editorial-plan.md)和[出版验收单](docs/publication-checklist.md)。
+本书是一部持续迭代的公开书稿。系统篇结论严格区分**静态源码、官方文档与本地确定性实验**，章末统一列出核对过的上游固定 commit（汇总于[来源台账](sources/README.md)）及未覆盖边界；图稿与校对标准详见[图稿规范](figures/STYLE.md)、[写作与校稿方法](docs/editorial-plan.md)与[出版验收单](docs/publication-checklist.md)。
 
-哪句话没读懂、哪张图不好看，或发现内容和源码对不上，都欢迎告诉我们。附上章节链接，说明具体位置即可：[网站反馈入口](https://books.aimake.cc/feedback) · [贡献指南](CONTRIBUTING.md)。作者联系邮箱：[ghr7719@gmail.com](mailto:ghr7719@gmail.com)。
+读到拗口的句子、看不清的箭头，或发现源码解读有偏差，欢迎随时指出章节与位置：[网站反馈入口](https://books.aimake.cc/feedback) · [贡献指南](CONTRIBUTING.md) · 作者邮箱 [ghr7719@gmail.com](mailto:ghr7719@gmail.com)。也诚邀你参与[三道看图破案试读](docs/reader-trial.md)，检验书里的图解是否真正把问题讲透。
 
-如果愿意帮我们检验“图和例子是否真的讲明白”，可以[任选一篇做简短试读](docs/reader-trial.md)：看完换一个情况，用自己的话解释即可，不需要运行代码。
-
-本书原创文字与图使用 [CC BY 4.0](LICENSE-CONTENT.md)，构建脚本使用 [MIT](LICENSE-CODE)；上游项目、商标和第三方素材遵守各自许可。本仓公开的是持续完善的预览稿，不表示完整源码审计、外部读者验收或正式出版已经完成。[封面与书脊设计参考](book/assets/README.md)也不等同于印厂可直接使用的文件。
+本书原创正文与插图采用 [CC BY 4.0](LICENSE-CONTENT.md) 许可，构建与实验脚本采用 [MIT](LICENSE-CODE) 许可；所引用的上游开源项目、商标及第三方资料遵循各自原有许可，[封面与书脊设计参考](book/assets/README.md)仅供数字预览与排版示意。

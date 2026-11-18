@@ -115,7 +115,7 @@ def check_public_readiness(path: Path) -> None:
     reader = PdfReader(str(path))
     blocked: list[str] = []
     reader_host = urlparse(READER_URL).netloc
-    site_paths = {"/", "/feedback"}
+    site_paths = {"/", "/feedback", "/trial"}
     site_paths.update(public_route(source) for source in manifest_paths())
     site_paths.update(public_route(ROOT / source) for source in PUBLIC_SUPPLEMENTS)
     site_paths.update(f"/assets/figures/{folder.name}/diagram.svg" for folder in (ROOT / "figures").iterdir() if (folder / "diagram.svg").is_file())

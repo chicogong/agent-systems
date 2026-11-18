@@ -1,67 +1,83 @@
-# 中断、重试与恢复：把没做完的任务接着做
+# 中断、重试与恢复：先对账外部世界，再决定怎么续跑
 
 [返回机制目录](README.md) · [Pi 代码导读](../systems/pi/code-walkthrough.md) · [LangGraph 检查点导读](../systems/langgraph/code-walkthrough.md)
 
-创建工单时，应用发送请求，服务端保存工单并返回 ID，应用记下这个 ID，再处理后续工作。
+Agent 调用外部接口创建故障工单或发起客户退款时，第 10 秒突然抛出网络超时（`ReadTimeout`），或者用户在终端按下了 `Ctrl+C`。最省事的容错写法是一行 `retry(3)`，或者从上一轮检查点（Checkpoint）直接重跑这个工具节点——结果五分钟后，客户收到三笔重复退款，值班群里炸出三张一模一样的紧急工单。
 
-如果页面一直没有返回结果，可能是请求没有到达，也可能是工单已经创建，只是返回消息丢了。接着做之前，先查询这次操作的状态，避免多建一张。
+为什么“回滚本地检查点重跑”会闯下大祸？因为分布式系统里有一条绕不过去的物理铁律：**网络超时不等于操作失败，只代表结果未知**。请求可能死在去程半路，也可能远端服务器早已落库扣款，仅仅是回执报文断在了归途。**本地进程的内存与状态机可以随时回滚或续跑，但已经飞出宿主的外部副作用无法时光倒流——恢复之前，必须先凭幂等键或原业务单号向外部系统对账**。
 
 ![工具调用中断后的结果对账与恢复决策](../../figures/interruption-recovery/diagram.svg)
 
 [单独打开 SVG](../../figures/interruption-recovery/diagram.svg) · [可编辑图源](../../figures/interruption-recovery/scene.excalidraw) · [PNG 预览](../../figures/interruption-recovery/preview.png) · [图的文字版](../../figures/interruption-recovery/README.md)
 
-## 先分清几个常用动作
+## 先拆清五个动作：重问模型不等于重调写接口
 
-**取消**是请求当前运行或工具停止，程序再确认实际停止状态。已经发送到外部服务的操作，需要另行查询和处理。比如关闭浏览器以后，刚才提交的工单仍可能已经保存。
+设计恢复链路前，必须把本地控制流动作与远端业务语义彻底分开：
 
-**重试**是再做一次请求。重新询问模型，通常是在重新生成回答；重新调用创建工单的工具，则可能再次写入外部系统。安排重试时，要明确重做的是哪一步。
+| 机制 | 实际发生了什么 | 外部副作用边界 |
+| --- | --- | --- |
+| **取消**（Cancel / Abort） | 向当前 Agent 循环与本地工具发出停止信号，等待进程回到空闲态 | 本地停下了，但已发上网络的 HTTP 写请求仍可能在远端继续落地 |
+| **重试**（Retry） | 对失败步骤再次发起调用 | 重试无状态模型推理或纯只读查询通常安全；盲目重试写接口则会造成重复写入 |
+| **幂等键**（Idempotency Key） | 客户端为同一次业务意图绑定唯一标识 `K` 随请求发送 | 支持幂等的服务端认出同一 `K` 与相同参数时，直接返回首次结果而不重复执行 |
+| **检查点**（Checkpoint） | 将 Agent 执行到某一步的消息历史与图状态快照持久化落盘 | **只备份本地记忆，不备份外部世界**——回退检查点绝不会撤回已发出的工单 |
+| **人工接管**（Escalation） | 冻结当前任务并完整保留请求指纹与已知线索，交由人工裁决 | 当远端既不可查又无幂等保证、或对账结果前后矛盾时的唯一安全出口 |
 
-**幂等**让外部服务识别“这是同一次业务操作”。如果接口支持幂等键，客户端给创建工单的请求带上一个固定标识，重复发送时，服务按约定返回原结果或保持同一效果。这个约定由具体接口提供，需要核对有效期、参数和使用规则。
+## 预写意图账本：为什么发出请求后才记日志就已经晚了
 
-**检查点，英文 checkpoint**，保存程序执行到某一步的状态。恢复时，程序可以找到上次保存的位置继续运行；外部服务里的工单仍按真实状态处理。
+如果等外部接口返回工单号才写本地记录，一旦等待响应途中宿主断电或超时，重启后你连“刚才到底发没发过请求、带的是什么参数”都无从查起。
 
-**人工处理**适合结果冲突、无法查询或操作风险较高的情况。程序保留请求信息和已有结果，交给人决定继续、修正还是停止。
+工程上可靠的处理方式是在真正发包**之前**先落一条**预写意图记录**（Write-Ahead Intent Ledger），把状态拆成明确的跃迁闭环：
 
-## 把一次创建过程记录清楚
+```json
+// 第 1 步：发包前落盘预写记录（此时尚未产生网络副作用）
+{
+  "intent_id": "inc-20261118-0042",
+  "tool": "create_incident_ticket",
+  "idempotency_key": "idem_9f81c2a0",
+  "params_hash": "sha256:4b91e7...",
+  "status": "IN_FLIGHT"
+}
 
-下面是应用可以采用的设计示例，不是 Pi 或 LangGraph 内置的工单流程。
+// 第 2 步：遭遇 ReadTimeout，恢复程序醒来看到 IN_FLIGHT，绝不盲目生成新单号！
+// ──► 先用 idempotency_key / intent_id 调查询接口对账：
+//     分支 A（远端已存在 ticket_8819）──► 补填单号，状态改为 COMMITTED，继续下游步骤
+//     分支 B（确认未生效，且在幂等有效期内）──► 携带原 idem_9f81c2a0 与原参数安全重放
+//     分支 C（无查询手段且无幂等承诺）──► 状态置为 UNKNOWN_NEEDS_HUMAN，停机告警待人工核实
+```
 
-1. **发送前记下操作。** 保存业务标识 K、请求参数、发送时间和任务要求。需要批准的动作，先完成确认。
-2. **收到结果就登记。** 成功时记录外部工单 ID；明确失败时记录原因，再判断是否适合重试。
-3. **超时后先查询。** 用 K 或外部请求 ID 查状态。已经创建，就使用原工单继续。
-4. **按接口约定处理未查到的结果。** 一次查询没有记录时，旧请求可能还在执行，也可能查询数据尚未更新。要重新发送，需可靠确认旧请求已结束且没有生效，并确认接口允许安全重试；或者接口明确支持用原幂等键安全重放。条件不清楚时，保留“结果未知”，交给人核对。
-5. **设定停止条件。** 每次重试仍使用约定有效期内的同一业务标识和同一组参数，并限制次数与截止时间。查询不可用、约定过期或结果矛盾时，暂停并交给人处理。
+落地这套五步对账协议时，还有两个分布式细节需要格外当心：
 
-接口既不提供可靠查询，也没有幂等保证时，有副作用的操作不应自动重发。先保留“结果未知”的状态，避免为了得到一个成功提示而重复创建。
+1. **第一次没查到，不代表旧请求一定死了**：在异步落库或读写分离架构下，在途慢请求可能还在远端队列里排队，或者从库尚未同步。只有在确认旧请求已彻底终止未生效、或者远端接口原生支持用同一幂等键原子去重时，才能自动重放。
+2. **严守幂等键的参数指纹与过期窗口**：以 [Stripe 的幂等说明](https://docs.stripe.com/api/idempotent_requests)为例，服务端会校验同一幂等键附带的请求参数是否一致（参数变了会直接报错拦截），且幂等键在超过保留期（如 24 小时）清理后再次发送会被当成全新交易。[AWS 对迟到请求与幂等重试的说明](https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/)同样深入剖析了超时重发与迟到请求交错时的防护设计。因此自动重试必须严格限制最大次数与截止时间窗，过期一律转人工。
 
-例如 Stripe 的幂等接口会核对参数，键清理后再次使用可能成为新请求。[Stripe 的幂等说明](https://docs.stripe.com/api/idempotent_requests)可以用来理解规则，但具体有效期和行为要以所用接口为准。[AWS 对迟到请求与幂等重试的说明](https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/)也讨论了这一情况。
+## Pi 源码拆解：干净的取消收敛与模型层退避重试
 
-## Pi：取消运行，或重试模型请求
+在单机编码 Agent 里，最频繁的中断来自两处：用户主动按快捷键叫停，以及上游大模型 API 偶发限流报错。开源项目 Pi（`earendil-works/pi`）把这两条路径处理得非常克制。
 
-Pi 的核心 `Agent.abort()` 向当前运行发出取消信号。coding-agent 的 `AgentSession.abort()` 还处理重试等待等操作，并等待运行回到空闲状态。
+先看**取消如何干净收尾**。底层 `Agent.abort()` 负责拉响当前运行轮次的取消信号（`AbortController`）；而外层应用级的 `AgentSession.abort()` 还会一并打断正在倒计时的重试等待定时器，并阻塞等待内部循环真正收敛回空闲态。这样用户在取消后立刻输入下一句指令时，新旧两轮事件流绝不会混在一起抢状态。
 
-[核心取消](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L332-L349) · [应用层取消](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L2072-L2092)
+再看**什么错误才由宿主自动重试**。在 `AgentSession` 中，当一轮运行因可重试的模型服务错误（如速率限制 `429` 或服务端过载）中断时，会话层会检查重试开关与上限次数，先睡眠一段可随时被用户取消的**指数退避**（Exponential Backoff）窗口，再调用 `Agent.continue()` 续跑。失败那次尝试仍保留在底层完整记录中备查，但重新组装发给模型的上下文消息时会剔除半截失败残片。
 
-对于可重试的模型错误，`AgentSession` 会检查开关和次数，等待一段可取消的退避时间，再调用 `Agent.continue()` 继续。退避就是失败后先等一会儿，避免立刻重复请求。失败尝试仍保存在原始记录里，下一次交给模型的消息可以省略这次失败。
+注意这里的清晰边界：Pi 内置的自动重试**只针对无外部业务副作用的模型推理请求**；至于第三方工具执行失败能不能重试、怎么取消，必须由具体工具结合外部系统语义单独实现。
 
-[运行后的重试判断](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L1468-L1529) · [退避等待](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L3375-L3419)
+源码参考：
+- [核心取消](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L332-L349) · [应用层取消](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L2072-L2092)
+- [运行后的重试判断](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L1468-L1529) · [退避等待](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L3375-L3419)
 
-这条代码处理的是模型请求错误。第三方工具是否支持取消或重试，还要查看该工具的实现和外部接口。
+## LangGraph 源码拆解：检查点续跑、分叉修正与刷盘时机
 
-## LangGraph：从保存的执行状态继续
+对于跨步骤、长周期的工作流，LangGraph 通过 **Checkpoint**（检查点）机制让状态图具备了暂停、崩溃恢复与历史分叉（Time Travel）能力：
 
-LangGraph 可以按 `checkpoint_id` 找到一个旧状态。应用也可以用 `update_state(old_config, values)` 在旧状态基础上写出一个新版本，再用返回的配置继续。如果系统无法确定由哪个节点更新，还需要指定 `as_node`。
+- **定点恢复与分叉修改**：运行器可以按指定的 `checkpoint_id` 精确加载某一步的历史快照；如果人工排查发现某一步状态有误，还可以调用 `update_state(old_config, values)`（必要时显式指定 `as_node` 声明以哪个节点的身份写入更新），在旧快照基础上派生出一个新的状态分支配置，接着往后运行。
+- **刷盘持久性（`durability`）权衡**：检查点什么时候落盘直接决定崩溃丢多少进度。在本书核对的版本中，`durability` 默认为 `async`（后台异步写检查点，兼顾吞吐）；设为 `sync` 时，每一步推进前必须等待检查点同步落盘完毕（最稳妥，容忍进程随时硬崩）；设为 `exit` 则只在整趟运行退出时才保存一次（中途崩溃将丢失中间步状态）。
+- **存储后端选型**：源码自带的 `InMemorySaver` 仅将状态存在进程字典中，明确标定用于本地调试与测试；生产环境跨进程重启恢复必须挂载数据库级持久化存储。
 
-[加载指定版本](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/_loop.py#L1629-L1654) · [读取旧状态](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/main.py#L1640-L1675) · [检查与保存新版本](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/main.py#L1905-L2047) · [上游分叉测试](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/tests/test_time_travel.py#L143-L218)
+把 LangGraph 检查点与前面的外部对账铁律合起来看，就能避开最隐蔽的深坑：**假设节点在发完建单请求后、尚未完成检查点落盘前宿主进程崩溃，重启后图状态会回退到建单节点执行之前——但远端系统里的那张工单很可能已经建好了**！因此凡是包含外部写操作的图节点，都应把预先生成的 `idempotency_key` 先存入前序检查点状态里，这样无论重启重跑多少次，节点拿到的都是同一个幂等键，配合预写对账就能稳稳幂等收敛。
 
-保存时机也需要选择。本书核对的版本，`durability` 默认为 `async`；`sync` 在下一步前完成保存，`exit` 在退出时保存。[参数说明](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/main.py#L2705-L2711)
+源码与文档参考：
+- [加载指定版本](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/_loop.py#L1629-L1654) · [读取旧状态](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/main.py#L1640-L1675) · [检查与保存新版本](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/main.py#L1905-L2047) · [上游分叉测试](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/tests/test_time_travel.py#L143-L218)
+- [参数说明](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/main.py#L2705-L2711) · [示例存储说明](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/checkpoint/langgraph/checkpoint/memory/__init__.py#L33-L44) · [持久化文档](https://docs.langchain.com/oss/python/langgraph/persistence)
 
-示例中的 `InMemorySaver` 在内存里保存状态，源码将它定位为调试和测试用途。实际需要跨进程恢复时，应用还要选择合适的持久化存储。[示例存储说明](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/checkpoint/langgraph/checkpoint/memory/__init__.py#L33-L44) · [持久化文档](https://docs.langchain.com/oss/python/langgraph/persistence)
+## 来源与边界
 
-恢复检查点后，仍回到外部服务核对已经发送的操作。例如图状态回到了创建工单之前，服务端的第一张工单却可能已经存在。
-
-## 下一步怎样检查
-
-可以用假数据测试三种情况：发送前中断、服务已经处理但返回消息丢失、查询结果迟到。分别记录请求标识、保存位置和外部结果，再观察恢复过程。
-
-本章核对了固定版本源码和官方文档，没有运行上述框架或做故障注入。工单记录、幂等重试和人工处理，是本书给应用设计的建议。
+本章基于固定版本静态源码与官方文档编写：Pi 固定在提交 [`898ab804`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L332-L349)，LangGraph 固定在提交 [`bdb85b5a`](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/_loop.py#L1629-L1654)。文中的预写意图账本与五步对账流转属于面向应用层的通用分布式工程设计，并非 Pi 或 LangGraph 内置的开箱工单组件；本书未对上述框架做断网或进程强杀的混沌故障注入测试。

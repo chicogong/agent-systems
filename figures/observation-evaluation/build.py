@@ -55,9 +55,9 @@ for key, y, title, subtitle, stroke, fill in [
     label(f"{key}-title", title, 479, y + 12, 224, 39, 26, stroke)
     label(f"{key}-sub", subtitle, 479, y + 58, 224, 30, 22)
 arrow("run-log", 286, 232, [(0, 0), (100, 0), (169, -79)])
-label("run-log-label", "产生", 315, 177, 70, 28, 22, "#41586c")
+label("run-log-label", "产生", 310, 188, 70, 28, 22, "#41586c")
 arrow("run-trace", 286, 270, [(0, 0), (169, 23)])
-label("run-trace-label", "关联", 334, 229, 70, 29, 22, "#41586c")
+label("run-trace-label", "关联", 320, 244, 70, 29, 22, "#41586c")
 arrow("run-assert", 286, 312, [(0, 0), (98, 0), (169, 121)])
 label("run-assert-label", "检验", 315, 335, 70, 29, 22, "#705840")
 

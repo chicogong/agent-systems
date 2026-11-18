@@ -1,16 +1,41 @@
-# 代码导读：`steer` 何时成为模型上下文
+# 代码导读：`steer` 何时真正进入模型上下文
 
 [返回主篇](README.md) · [图的文字版](../../../figures/kimi-code/README.md)
 
-测试还在运行，你补充了一句“先解释失败原因”。这句话先进入等待区，在下一步开始前追加到模型输入；模型原本准备结束时，程序也会再查看等待区。下面沿这条路径找到对应代码，再看回合如何启动、结束和取消。
+当测试脚本还在后台轰鸣，用户敲下一句「先解释失败原因」。这句话从进入 `TurnFlow.steer()` 到真正出现在大模型的 `messages` 数组里，中间究竟跨过了哪些状态锁、Hook 与循环关口？
 
-1. **先启动一个回合。** `prompt()` 用 `turn.prompt` 记录初始输入，再调用 `launch()`。当前没有活动回合时，`launch()` 分配回合 ID、用于取消的 `AbortController` 和执行者（worker）；已有回合正在运行时，它会拒绝并行启动第二个回合。[`prompt/launch`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L120-L180)
-2. **找到新消息的等待区。** `steer()` 在忙时把输入放进 `steerBuffer`，在空闲时调用 `launch()`。忙时返回 `null`，表示沿用已有回合；消息此时在等待区，下一步才会处理。[`steer`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L130-L143)
-3. **把等待消息写入上下文。** `flushSteerBuffer()` 按到达顺序调用 `context.appendUserMessage()`，然后清空等待区。它负责准备输入，模型请求和工具执行由后面的步骤负责。[`flushSteerBuffer`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L265-L273)
-4. **回合开始时，处理初始输入。** `runOneTurn()` 发出 `turn.started`，并追加初始输入。用户来源的输入还要经过 `UserPromptSubmit` hook（输入提交时的回调）；这个回调可以让本次工作在进入模型循环前结束。[turn 起点与 hook](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L415-L561)
-5. **每一步前，取出补充消息。** `runStepLoop()` 调用通用的 `runTurn()`，交给它构造消息的 `buildMessages`、工具集合和各个回调。`beforeStep` 先刷新 steer，再检查是否需要压缩上下文、注入材料；随后构建**下一步**模型消息时，就能包含已经追加的输入。[`runStepLoop`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L563-L604)
-6. **准备结束时，再取一次补充消息。** 一步以 `tool_use` 结束时，`runTurn()` 继续下一步；否则，它调用 `shouldContinueAfterStop()`。Kimi Code 的这个回调先刷新 steer，有新消息就要求继续。因此，即使模型本来准备结束，刚到的补充要求也可以让当前回合再走一步。[`runTurn`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L82-L117) · [停止回调](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L611-L657)
-7. **找到继续工作的条件。** 没有新消息时，宿主还检查目标状态和一次 `Stop` hook；需要补做就继续，否则结束。每一步前也检查取消信号和步数上限，因此“消息已经收下”和“下一步已经运行”要分别观察。[停止优先序](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L618-L657) · [loop 上限与异常](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L74-L128)
-8. **用户取消时，发出中止信号。** `cancel()` 向活动回合发信号；`runOneTurn()` 将中止记为 `cancelled`，将异常记为 `failed`，再发出 `turn.ended`。有活动 goal（持续目标）时，外层还可以驱动连续回合；本篇的图只画一个回合内怎样处理 steer。[取消](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L205-L216) · [结束映射](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L441-L510) · [goal 外层驱动](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L282-L393)
+顺着 `packages/agent-core` 的 8 个关键节点走一趟，就能把「回合互斥启动 → 忙时缓冲 → 步前优先刷盘 → 停机压哨续命 → 取消与异常收尾」整条状态机拼完整。
 
-本文固定在 [`75a894e9`](https://github.com/MoonshotAI/kimi-code/tree/75a894e9ad5e8d49509664b3daaa1bbc9bb39432) 的 `packages/agent-core`，按源码解释上述安排。`UserPromptSubmit` hook 的具体配置尚未细查，真实运行中的事件顺序仍需观察。
+```text
+空闲时 prompt() / steer() → launch() [单活动回合互斥锁 + 分配 turnId & AbortController]
+  └─ runOneTurn() 发出 turn.started → UserPromptSubmit hook → runStepLoop() → runTurn()
+       │
+       ├─ 每步起点：检查 AbortSignal 与 maxSteps
+       ├─ beforeStep：flushSteerBuffer() ──► 检查上下文压缩 ──► 注入补充材料 ──► buildMessages()
+       ├─ 模型推理 & 工具执行（忙时新到的 steer() 一律暂存进 steerBuffer 并返回 null）
+       └─ 本步无 tool_use 时：shouldContinueAfterStop()
+            ├─ 1. flushSteerBuffer() 有新消息？ → 返回继续，跑下一步 Step！
+            ├─ 2. 持续 goal 未完结 / Stop hook 要求补做？ → 返回继续
+            └─ 3. 全部满足结束条件 → 退出循环，记录 completed / cancelled / failed
+```
+
+## 1. 回合互斥入口：`prompt()` 拒并跑，`steer()` 忙时转缓冲
+
+1. **单回合互斥锁**（`prompt` / `launch`）：新任务由 `prompt()` 记录初始输入并调 `launch()` 启动。当前空闲时，`launch()` 分配唯一回合 ID、绑定专属 `AbortController` 并拉起后台 worker；若已有活动回合正在运行，`launch()` 直接拒绝并行开启第二个回合，保证同一会话上下文同一时刻只有一个执行流在写消息。[`prompt/launch`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L120-L180)
+2. **忙时分流缓冲**（`steer`）：`steer()` 在空闲时同样走 `launch()` 开新回合；一旦检测到当前正忙，就把输入消息与来源推入 `steerBuffer`，立即返回 `null`——告诉调用方「消息已收妥，并入当前回合处理」。[`steer`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L130-L143)
+3. **保序出队写入**（`flushSteerBuffer`）：刷盘函数本身极度纯粹——按消息抵达先后逐条调用 `context.appendUserMessage()` 写入会话上下文，随即清空 `steerBuffer`。它只管把话递进上下文，绝不越界触发模型调用。[`flushSteerBuffer`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L265-L273)
+
+## 2. 步进循环：为什么必须在上下文压缩前刷入 `steer`
+
+4. **回合起点与前置拦截**（`runOneTurn`）：worker 进入 `runOneTurn()` 后先广播 `turn.started` 并写入初始输入。若输入来自用户，还会先过一道 `UserPromptSubmit` hook——这个回调有权在真正进入大模型循环之前直接拦停并结束本次回合。[turn 起点与 hook](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L415-L561)
+5. **步前刷盘顺序**（`runStepLoop` → `beforeStep`）：进入 `runStepLoop()` 后，宿主把 `buildMessages`、工具集与生命周期钩子交给通用循环 `runTurn()`。注意 `beforeStep` 内部的严格先后顺序：**第一步先调 `flushSteerBuffer()`，第二步才检查是否触发上下文压缩（compaction）与补充材料注入**，最后调用 `buildMessages` 组装下一步请求。如果顺序反过来，刚压缩完的窗口可能漏算新指令的长度，甚至在整理历史时把用户刚发来的纠偏弄丢。[`runStepLoop`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L563-L604)
+
+## 3. 停机三道门与取消收尾
+
+6. **压哨防漏检查**（`shouldContinueAfterStop`）：当某一步模型输出以 `tool_use` 结尾时，`runTurn()` 自然推进到下一步；若模型没调工具、打算收尾，循环不会立刻退出，而是调用 `shouldContinueAfterStop()`。Kimi Code 在这个回调里**第一顺位再次刷新缓冲区**（`flushSteerBuffer()`）——只要在最后关头捞出了新到的补充消息，立刻返回继续信号，让当前回合无缝多跑一步。[`runTurn`](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L82-L117) · [停止回调](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L611-L657)
+7. **继续工作的优先级链与硬上限**：只有确认 `steerBuffer` 为空后，`shouldContinueAfterStop()` 才会往下检查活动目标（goal）状态以及一次性的 `Stop` hook 是否要求补做收尾工作。与此同时，`runTurn()` 每步开头都会硬性检查取消信号与 `maxSteps` 步数上限——所以排查日志时要分清：「消息已被 `steer()` 收进缓冲」不等于「下一步一定来得及在触达 `maxSteps` 或取消前跑出来」。[停止优先序](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L618-L657) · [loop 上限与异常](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/loop/run-turn.ts#L74-L128)
+8. **取消信号映射与外层目标循环**：用户主动取消时，`cancel()` 触发当前活动回合的 `AbortController`；`runOneTurn()` 捕获中止后将其归类为 `cancelled`（未捕获运行异常则归为 `failed`），最后发出 `turn.ended` 事件。如果外层还挂着未完结的持续 `goal`，外层驱动器会在回合结束后按策略拉起后续回合。[取消](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L205-L216) · [结束映射](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L441-L510) · [goal 外层驱动](https://github.com/MoonshotAI/kimi-code/blob/75a894e9ad5e8d49509664b3daaa1bbc9bb39432/packages/agent-core/src/agent/turn/index.ts#L282-L393)
+
+## 来源与边界
+
+本篇导读固定在 [`MoonshotAI/kimi-code@75a894e9ad5e8d49509664b3daaa1bbc9bb39432`](https://github.com/MoonshotAI/kimi-code/tree/75a894e9ad5e8d49509664b3daaa1bbc9bb39432) 的 `packages/agent-core` 目录，静态梳理单回合内 `TurnFlow` 与 `runTurn` 的代码路径；外层 `UserPromptSubmit` 与 `Stop` hook 的宿主配置策略及多端高并发事件交错时序需结合运行时日志另行核查。

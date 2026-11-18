@@ -2,70 +2,96 @@
 
 [返回横向对照](README.md) · [批准与沙箱](../concepts/approval-vs-sandbox.md) · [四种状态](four-kinds-of-state.md)
 
-一次外部动作可以按三步理解：先获得许可，执行并留下记录，再查看目标系统的结果。比如部署补丁，操作者确认后，助手给这次操作分配编号并记下来，再发出请求。本例假设部署服务支持按这个编号查询，助手就能查询状态并报告结果。Agent 框架主要帮助安排前两步；目标服务的查询接口帮助完成第三步。
+设想这样一个让人后背发凉的线上瞬间：Agent 准备好了一次生产补丁发布请求，终端弹出确认框，你仔细核对参数后按下了“批准”。请求发出去 15 秒后，网络抖了一下，工具调用抛出一行 `TimeoutError`。紧接着，急于完成任务的 Agent 捕获异常准备“自动重试”——顺手生成了一个新的请求编号再发一次。三分钟后监控报警炸响：生产集群同时拉起了两套发布任务，把数据库迁移锁死。
 
-> **范围（2026-09-24 核对）。** 对照 Codex 普通 `exec_command`、OpenHands SDK 的本地会话、OpenCode 的 `session` 工具状态，以及 LangGraph Python `Pregel` 的 checkpoint 路径。部署与超时是教学推演，尚无同环境实测；固定版本见末节。
+很多人在做 Agent 权限设计时，只盯着前半场——“高危动作执行前一定要让人点批准”。却忽略了分布式系统里最凶险的后半场：**一旦写操作跨出本机网络遇到超时，“已经批准过”不仅不是无脑重发的通行证，反而是最容易酿成重复执行事故的陷阱**。
+
+本篇把 Codex、OpenHands、OpenCode 和 LangGraph 四套源码摆在一起，拆解一个核心工程问题：**当外部动作中断或超时后，本地 Agent 框架究竟帮我们记住了什么，又有哪些生死攸关的对账步骤必须由应用与目标服务联手兜底**？
 
 ![超时后先查询原操作，再决定是否重试](../../figures/permission-and-recovery/diagram.svg)
 
-[图的文字说明](../../figures/permission-and-recovery/README.md) · [单独打开 SVG 放大阅读](../../figures/permission-and-recovery/diagram.svg)。图中虚线表示超时后尚未区分的三种可能状态；各项目的具体实现见下表。
+[图的文字说明](../../figures/permission-and-recovery/README.md) · [单独打开 SVG 放大阅读](../../figures/permission-and-recovery/diagram.svg)
 
-初读时先沿图走一遍“连接超时 → 查询原操作”，再看三种可能的服务状态。想亲手观察，可以选[不联网的回执查询练习](../labs/remote-effect.md)，再回来对照下面的源码位置。
+想在终端花 3 分钟亲手体验这种“回执丢了但远端其实已经生效”的现场，可以先跑一遍[不联网的回执查询练习](../labs/remote-effect.md)，再回来对照下面的四套源码切面。
 
-## 一个请求，三类可能的状态
+## 为什么收到 Timeout 时，绝不能直接换号重发？
 
-继续上面的部署任务：操作者同意执行，助手发出了请求，但这次连接超时。现在先用发送前记下的操作编号查询结果。查询时需要区分三种情况：请求尚未被接收、仍在途中，或已被接收并处于排队／执行／完成中的某一步。直接换一个编号重发，可能又建一个部署任务。
+在本地调一个纯内存函数，抛异常通常意味着没执行成；但跨网络调用部署、发信、扣款等外部服务时，**客户端收到 `Timeout` 本质上不是操作失败通知，而是观测链路失联**。在超时发生的那一秒，远端服务其实正处于三种你暂时分不清的状态之一：
 
-有些服务只在回执里返回任务编号。回执丢了，就得使用它提供的其他可靠查询办法；暂时无法查询时，记录“结果未知”，等待核对。编号是否可查、查询是否及时，要看服务的具体规则。
+1. **根本没收到**：报文断在去程半路，远端风平浪静。
+2. **还在路上或排队中**：请求正卡在网关队列或慢事务里，你前脚刚判定超时，它后脚就落盘生效（迟到提交）。
+3. **早已执行成功，只是回执丢在回程**：服务已经建好发布单甚至跑完了，唯独返回给 Agent 的 `200 OK` 断在了半路。
 
-查结果时，需要同时看本地和目标服务。本地的策略与确认记录说明动作怎样获准，事件和 checkpoint（执行状态快照）记录程序进度；部署 ID 对应的服务状态说明远端做到哪一步。沙箱配置则用于检查进程的文件和网络访问范围。
+看一眼本地账本与远端状态在超时瞬间的真实错位：
 
-## 四条路径分别看见了什么
+```json
+{
+  "local_agent_record": {
+    "operation_id": "deploy-2026-patch-09",
+    "approval": "granted_by_operator",
+    "transport_result": "ReadTimeout after 15s",
+    "known_remote_outcome": "UNKNOWN"
+  },
+  "possible_remote_truths": [
+    "never_received",
+    "in_flight_or_queued",
+    "already_executed_receipt_lost"
+  ]
+}
+```
 
-| 本文追踪的路径 | 动作前的控制点 | 中断后的本地记录 | 使用时还要接上什么 |
+如果在发送前没有先把稳定的 `operation_id` 持久化记在本地，或者远端服务压根不支持按原 ID 查询与幂等重放，那么超时之后盲目换一个新 ID 再发一次，在第 2 和第 3 种情况下就会百分之百制造**双倍外部副作用**。如果某些外部接口只在成功回执里才生成任务单号，一旦回执丢失且没有业务侧幂等键可查，唯一诚实安全的动作就是标为「**结果未知，暂停等待人工对账**」。
+
+## 四套源码分别守住了哪一段本地账本？
+
+Agent 框架并不能替远端部署系统实现幂等接口，但它们各自在**动作前放行**与**中断后本地进度记录**上提供了关键抓手：
+
+| 追踪的源码切面 | 动作前的控制闸口 | 中断或异常后的本地记录 | 接外部写操作时必须补齐什么 |
 | --- | --- | --- | --- |
-| [Codex：普通 `exec_command`](../systems/codex/README.md) | `Forbidden` 禁止、`NeedsApproval` 请求确认、`Skip` 免普通询问；允许后再选择执行沙箱。 | 首次沙箱拒绝后，可按条件停止、再询问或第二次尝试；本篇未核对跨进程动作日志。 | 实际执行结果与远端状态查询。`Skip` 跳过的是普通询问，沙箱仍另选。 |
-| [OpenHands：本地会话](../systems/openhands/README.md) | `ActionEvent` 先记录，需确认时停在 `WAITING_FOR_CONFIRMATION`。宿主取得用户确认后才再次 `run()`；拒绝会配对 `UserRejectObservation`，工具不执行。 | 下一次 `Agent.step()` 可找回当前分支无对应结果的动作并执行；观察或错误事件与动作配对。 | 宿主的确认入口，以及恢复前的外部结果查询。再次 `run()` 本身会被 SDK 视为隐式批准。 |
-| [OpenCode：会话处理器](../systems/opencode/README.md) | 此路径可见重复调用的 `doom_loop` 许可点；一般权限规则需另查。 | `ToolPart` 按 `callID` 区分等待、运行、完成、错误；清理未收束调用时可记为 `interrupted`。 | 保留原错误类型，再按操作 ID 查外部结果；模型流重试与工具重试分别判断。 |
-| [LangGraph：Python 图与 checkpointer](../systems/langgraph/README.md) | 此 checkpoint 路径主要处理执行状态；人类批准和工具授权需另查。 | 按 thread／namespace／checkpoint 选择状态或新建分支；可用快照受 saver 与 `durability` 设置影响。 | 目标系统的查询、取消或补偿接口；图状态恢复与远端动作分别处理。 |
+| [Codex：普通 `exec_command`](../systems/codex/README.md) | 策略判出 `Forbidden`（禁行）、`NeedsApproval`（求批）或 `Skip`（免普通询问）；获批后再选执行沙箱 | 首次因沙箱受限失败后，按严格条件决定停下、请求确认或二次尝试 | 本地命令外的远端结果查询；牢记 `Skip` 只跳过常规询问，不跳过沙箱选择 |
+| [OpenHands：本地会话](../systems/openhands/README.md) | 先写下 `ActionEvent`；需人工确认时挂起在 `WAITING_FOR_CONFIRMATION`，被拒则配对写入 `UserRejectObservation` | 下次 `Agent.step()` 会扫描当前分支**尚无对应观察结果的待办动作**并执行；正常或报错观察与原动作严格配对 | 宿主侧明确的确认收集入口与恢复前远端对账——**注意再次调用 `run()` 本身会被 SDK 视为隐式批准**！ |
+| [OpenCode：会话处理器](../systems/opencode/README.md) | 该路径内可见针对重复死循环调用的 `doom_loop` 许可拦截点 | `ToolPart` 按 `callID` 追踪等待、运行、完成与错误；会话中断清理时将未收束调用统一标为 `interrupted` | 严格区分“模型流网络退避重试”与“工具动作重试”；遇到 `interrupted` 先按操作 ID 查外部结果 |
+| [LangGraph：Python 图与 checkpointer](../systems/langgraph/README.md) | 图引擎在超步边界保存状态快照（人工审批可借中断节点挂起） | 按 `thread` / `namespace` / `checkpoint` 恢复进度或从旧快照分叉；实际落盘时机受 Saver 与 `durability` 模式约束 | **图状态回滚绝不等于远端撤销**！切分支重跑前必须先核对原请求是否已在外部生效 |
 
-这张表可以按手头的问题来读：检查动作是否获准，看 Codex 和 OpenHands 的对应步骤；查一次工具调用的进度，看 OpenCode；查任务保存了哪版状态，看 LangGraph。四条路径处理的对象不同，实际使用时常常需要组合这些检查。
+## 沿着三道生死分岔读懂源码细节
 
-## 关键分岔：事前拒绝、返回错误、结果未知
+### 分岔一：动作在执行前就被拦下——状态干净，绝无外部残留
 
-**动作前被拒绝，就查许可记录。** Codex 的 `Forbidden` 和被拒绝的 `NeedsApproval` 都停在普通命令执行前。OpenHands 明确拒绝时，用 `UserRejectObservation` 配对待办动作。等待确认后再次调用 `run()` 会清除等待态并找回动作，因此宿主应先收集人的确认，再调用它。[Codex 策略与审批](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L151-L220) · [OpenHands 确认分支](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L163-L190) · [OpenHands 拒绝配对](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2610-L2648) · [隐式确认与清除等待态](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1977-L1995)
+最理想的中断发生在刀落下之前。Codex 的 `Forbidden` 与未获批的 `NeedsApproval` 都在拉起子进程前直接收口；OpenHands 在用户明确拒绝时，会往事件流里补一条 `UserRejectObservation` 与先前的 `ActionEvent` 完成配对，工具函数一行都不会跑。
 
-**调用返回错误，就保留原错误类型。** 测试失败有测试输出，执行器拒绝有拒绝原因，远端超时则还要查询结果。Codex 只在源码规定条件下考虑沙箱拒绝后的重试。OpenCode 用 `tool-result`／`tool-error` 收束匹配且正在运行的 part；模型流故障另有延迟重试路径。辨认重试的是模型请求还是工具动作，才能选对处理方法。[Codex 条件性重试](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L310-L506) · [OpenCode 结果与清理](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L383-L420) · [OpenCode 模型流退避](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L641-L695)
+但读 OpenHands 源码时有一个极易踩坑的细节：**当会话停在 `WAITING_FOR_CONFIRMATION` 等待人工拍板时，一旦宿主代码再次调用 `run()`，SDK 会直接清除等待标志并捞起那条挂起的动作去执行**（相当于隐式批准）！因此宿主界面必须先拿到人类明确的“同意 / 拒绝”指令，拒绝时显式走拒绝逻辑，绝不能在崩溃重启后闭着眼睛自动调 `run()`。[Codex 策略与审批](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L151-L220) · [OpenHands 确认挂起分支](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L163-L190) · [OpenHands 拒绝事件配对](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2610-L2648) · [OpenHands 再次 `run()` 隐式放行](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1977-L1995)
 
-**没有拿到结果，就结合本地进度查询远端。** OpenHands 通过动作／观察配对找待处理动作；OpenCode 将未收束调用标成中断错误；LangGraph 从 checkpoint 找可继续的图状态。它们帮你定位进度，目标服务的查询再补上外部结果。
+### 分岔二：调用明确报错返回——保留原始错误类别，分清“重试模型”还是“重试工具”
 
-保存方式也要一起看：OpenHands 事件可能采用内存后备；LangGraph 的 `InMemorySaver` 用于调试／测试，`async`、`sync`、`exit` 则有不同持久化时机。本篇尚未做崩溃注入或生产 saver 测试。[OpenHands 未配对动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/state.py#L677-L716) · [OpenHands 存储回退](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/state.py#L506-L541) · [OpenCode 中断清理](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L585-L610) · [LangGraph 持久化模式](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/main.py#L2705-L2711)
+不是所有报错都能混为一谈：单元测试断言失败有明确输出，本地沙箱越界有权限拒绝码，而远端接口超时则意味着结果未知。
 
-## 把机制用到实际任务
+在 OpenCode 的 `processor.ts` 里，你会看到非常清晰的层次隔离：如果只是请求大模型流式接口时遇到速率限制或网络闪断，处理器在内部按退避策略自动重连模型；但如果是一个正在运行的 `ToolPart` 收到 `tool-error`，它只会如实更新该 `callID` 对应的部件状态交给下一轮判断，**绝不会在底层自作主张把带副作用的工具偷偷重跑三遍**。同理，Codex 也只在满足特定沙箱受限条件时才进入受控的二次尝试。[Codex 条件性重试](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L310-L506) · [OpenCode `ToolPart` 结果更新](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L383-L420) · [OpenCode 模型流退避重试](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L641-L695)
 
-按当前需要找阅读入口：
+### 分岔三：中途断电或超时失联——先靠本地进度找现场，再靠原 ID 向远端对账
 
-- 限制本地命令的访问范围：读 Codex 的命令策略、审批与沙箱。
-- 让人先看动作再放行：读 OpenHands 的事件与确认顺序，并设计宿主确认入口。
-- 查一批工具调用在哪中断：读 OpenCode 的调用级状态。
-- 从图的旧状态继续：读 LangGraph 的 checkpoint／分支，再选 saver 与持久化模式。
+当进程意外中断或请求超时未归时，四套系统会用各自的方式把“停在哪儿了”暴露出来：OpenHands 通过比对动作与观察的配对缺口找出悬空动作；OpenCode 在清理阶段把还没收尾的 `ToolPart` 统一标成 `interrupted`；LangGraph 则允许你从最近的 `checkpoint` 捞回图状态。
 
-这是按已读机制组织的设计思路，各产品的完整能力还需看其他路径。
+但这里藏着两重必须警惕的工程边界：
 
-涉及邮件、部署等外部变化时，再接上应用层流程：发送前分配稳定操作 ID；目标服务支持幂等键时，按它的规则使用；超时后先按 ID 查询。查到已发生，就记录结果；结果仍不清楚，就暂停并交人工核对。
+1. **先查你的本地账本是不是真落盘了**：OpenHands 状态存储支持内存回退；LangGraph 的 `InMemorySaver` 只适合本地调试，且 `sync`（每步同步落库）、`async`（异步刷盘）和 `exit`（退出时才写）三种 `durability` 模式在进程硬崩溃时能保住的进度截然不同。[OpenHands 查找未配对动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/state.py#L677-L716) · [OpenHands 存储回退](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/state.py#L506-L541) · [OpenCode 未收束调用中断清理](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L585-L610) · [LangGraph 持久化模式](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/main.py#L2705-L2711)
+2. **切回旧快照不等于时光倒流**：在 LangGraph 里从某个旧 `checkpoint` 派生新分支，只会改写图引擎接下来读取的本地状态；如果旧分支在崩溃前已经把部署请求发了出去，远端集群根本不知道你在本地“读档重来”了！[LangGraph 快照字段](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/types.py#L711-L733) · [LangGraph 从旧状态保存新版本](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/main.py#L1640-L1676)
 
-一次“查无记录”还要结合查询延迟和旧请求是否在途。可考虑重试的依据是：目标服务给出可信的终态否定并保证旧请求不会迟到，或明确支持同键安全重放。这是从源码范围提出的工程建议，具体规则需要向目标服务核对。
+## 给高危外部工具配一张“四步恢复铁律”
 
-比如从旧 checkpoint 建一个新分支，只改变图接下来使用的状态；已经发送的部署仍在远端。先查那次部署，再决定新分支是否发起动作。[LangGraph 快照字段](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/types.py#L711-L733) · [LangGraph 从旧状态保存新版本](https://github.com/langchain-ai/langgraph/blob/bdb85b5aa87a21de68371d2e534b81aeed398f57/libs/langgraph/langgraph/pregel/main.py#L1640-L1676)
+只要你的 Agent 需要触碰发邮件、改数据库、提工单、发版本这类不可逆外部副作用，请直接在工具封装层焊死这四步流程：
 
-## 看图并写一张恢复卡
+1. **发前落号**：在真正发起网络调用前，先按业务任务生成确定性的 `operation_id`（幂等键）并写入本地持久日志。
+2. **超时先查**：遇到连接断开或读超时，**第一步永远是拿着原 `operation_id` 调查询接口对账**，而不是重调写入接口。
+3. **警惕假 404**：即使查询返回“未找到”，也要考虑读写分离延迟与旧请求仍在途的可能——只有当目标服务明确支持**同 `operation_id` 幂等重放**（重复收到同一键只返回首次结果，不重复执行），或者能确证旧请求已彻底失效时，才允许携带**原 ID** 重试。
+4. **未知即停**：既查不到确切终态、目标接口又不保证同键幂等时，唯一正确的出口是停在 `unknown` 状态，把原操作 ID、发生时间与查询入口交接给人类核实。
 
-图上方是本地记录：提案、审批、发送、超时、查询；下方是目标服务的三种可能状态，已接收又分排队、执行和完成。沿箭头先走到查询；无法可靠查询或安全重放时，终点就写“未知，等待核对”。
+## 来源与边界
 
-给部署任务列出三项：**许可记录、程序进度、服务结果**。在每项旁写出到哪里查，或由谁确认。外部结果未知时，记下原操作 ID 和查询办法，接手的人就能沿着这些记录继续核对。
+本文于 2026-09-24 基于以下四个项目的固定提交做静态源码路径与上游测试断言核对：
 
-## 适用范围与固定来源
+- **Codex**：[`openai/codex@c44deff7b1083e9660ac55d02122481f1cdf139b`](https://github.com/openai/codex/tree/c44deff7b1083e9660ac55d02122481f1cdf139b)（聚焦普通 `exec_command` 策略、审批与编排路径）
+- **OpenHands SDK**：[`OpenHands/software-agent-sdk@6ebd820d10794f1b52bb06ef6c19512888a1401b`](https://github.com/OpenHands/software-agent-sdk/tree/6ebd820d10794f1b52bb06ef6c19512888a1401b)（聚焦本地会话 `ActionEvent` 确认与动作—观察配对恢复）
+- **OpenCode**：[`anomalyco/opencode@18ef3cc7c5a25b82114c953a80ccc09f4988f74e`](https://github.com/anomalyco/opencode/tree/18ef3cc7c5a25b82114c953a80ccc09f4988f74e)（聚焦 `session` 处理器中 `ToolPart` 状态流转与中断清理）
+- **LangGraph**：[`langchain-ai/langgraph@bdb85b5aa87a21de68371d2e534b81aeed398f57`](https://github.com/langchain-ai/langgraph/tree/bdb85b5aa87a21de68371d2e534b81aeed398f57)（聚焦 Python `Pregel` 的 `checkpointer` 快照与持久化模式）
 
-部署例子用于说明判断方法，四个项目的已读路径各有不同；本篇未声称它们都自带部署工具。本地命令沙箱、事件配对和 checkpoint 也各有适用对象。外部操作的安全重放要由目标服务实现，端到端只执行一次仍需独立测试。
-
-**固定来源。**[Codex `c44deff7`](https://github.com/openai/codex/tree/c44deff7b1083e9660ac55d02122481f1cdf139b) · [OpenHands SDK `6ebd820d`](https://github.com/OpenHands/software-agent-sdk/tree/6ebd820d10794f1b52bb06ef6c19512888a1401b) · [OpenCode `18ef3cc7`](https://github.com/anomalyco/opencode/tree/18ef3cc7c5a25b82114c953a80ccc09f4988f74e) · [LangGraph `bdb85b5a`](https://github.com/langchain-ai/langgraph/tree/bdb85b5aa87a21de68371d2e534b81aeed398f57)。以上仅为静态源码与上游测试断言的解释；没有对四套系统进行同任务、同配置、同外部服务的运行比较。
+文中的线上部署超时用于串联跨系统恢复决策逻辑，并非四套框架内置同款部署插件或同环境故障注入实测；端到端的“恰好生效一次”能力始终取决于目标外部服务的幂等协议实现与独立集成测试。

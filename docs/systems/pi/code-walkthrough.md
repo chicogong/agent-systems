@@ -1,69 +1,101 @@
-# 跟着 Pi 代码走一轮
+# 跟着 Pi 代码走一轮：从 `prompt()` 到会话树投影
 
 [返回 Pi 首页](README.md) · 固定源码版本 [`898ab804`](https://github.com/earendil-works/pi/tree/898ab804050730e9dcefb4443875d5a932aa6a32)
 
-继续用“读取文件，再根据内容工作”这个任务看代码。主线很简单：Pi 接收任务，准备模型输入，执行模型要求的工具，再把工具结果交给下一轮。下面按这条主线找到对应函数。
+自己动手写过第一个 Agent 循环的人，几乎都会在三天内撞上同一批暗礁：模型输出撞上 `max_tokens` 被拦腰截断，半截残缺的 JSON 参数直接把工具层炸崩；用户趁工具跑着的时候追发了一句话，结果两条并发循环同时往 `messages` 数组里乱塞消息；上游 API 偶发 529 过载报错，重试一次却把上一次失败的残骸留在上下文里，惹得模型一脸茫然。
 
-本文依据固定版本的静态源码；伪代码只是便于阅读的摘要，尚未运行验证。
+这一篇我们就以「读取文件并修改代码」为主线，像拆解机械机芯一样，顺着 `pi-agent-core` 与 `pi-coding-agent` 的真实函数签名跟读一整轮，看 Pi 是怎样在几百行核心代码里把这些工程暗礁逐一排干的。
 
-## 1. 接收任务，整理要给模型的消息
+## 1. 单入口互斥与消息双层转换
 
-`Agent.prompt()` 把输入准备成用户消息，交给 `runAgentLoop`。已有任务正在运行时，第二个 `prompt()` 会被拒绝；新输入应放进队列，或等当前任务结束。[任务入口](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L367-L442)
+一切从 [`Agent.prompt()`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L367-L442) 开始。它做的第一件防呆动作，就是**严禁重入**：只要当前已经有任务在跑，第二个直接打进来的 `prompt()` 调用会被当场拒绝，逼着调用方明确表态——你到底是想中途改方向（走 `steer`），还是等干完活再加菜（走 `followUp`），从根源上杜绝两个循环并发篡改同一份内存状态。
 
-`runLoop` 负责一轮轮工作。模型回复中有工具调用时，程序还要执行工具、送回结果，所以一项任务可能请求模型多次。循环准备收尾时，还会查看是否有用户排队的后续输入。[循环安排](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L162-L320)
+通过入口检查后，用户任务进入 [`runLoop`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L162-L320)。每次真正向大模型发起流式请求前，Pi 不会把内存里的原始消息直接裸发出去，而是依次走过三步准备管线（见[准备这一轮](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L181-L241)与[组成模型输入](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L380-L406)）：
 
-每次联系模型前，先运行已配置的 `prepareRequest`，再用 `transformContext` 调整当前消息，用 `convertToLlm` 转成模型接口接受的格式。流式接口会逐步接收模型输出。[准备这一轮](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L181-L241) · [组成模型输入](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L380-L406)
+1. **请求前准备**（`prepareRequest`）：运行宿主配置的请求前异步准备逻辑（例如刷新动态状态）。
+2. **业务上下文裁剪**（`transformContext`）：在 Agent 内部消息层面做裁剪、注入或过滤（此时操作的仍是应用认识的业务消息对象）。
+3. **协议格式映射**（`convertToLlm`）：最后一步才把业务消息翻译成 `pi-ai` 统一模型接口所需的标准协议格式，交给 `streamFn` 流式拉取回复。
 
-## 2. 检查工具调用，再执行并交回结果
+为什么要把 `transformContext` 和 `convertToLlm` 拆成两步？因为应用常常会在内存消息上挂载 UI 展示字段或内部标记——先在业务层剪裁完，最后再做纯净的协议映射，两边才不会互相污染。
 
-程序先找到模型要求的工具，核对参数，再运行已配置的前置钩子 `beforeToolCall`。钩子是允许应用插入处理逻辑的函数；这个钩子可以拦下调用。通过后，才执行工具并运行后置钩子 `afterToolCall`。工具找不到、参数不对或被拦下时，程序直接生成错误结果，跳过执行和后置钩子。[执行前的检查](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L703-L771) · [执行与结果处理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L773-L861)
+## 2. 工具调用的四道防线：截断拦截、钩子门禁与并行保序
 
-这些钩子由宿主应用选择配置。应用注册了哪些工具、设置了哪些检查，以及进程能访问哪些资源，共同决定实际权限；Pi 核心没有因此自动获得沙箱隔离。[可配置的 AgentOptions](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L113-L140)
+当模型流式吐完一条带工具调用的回复时，新手最容易犯的错是拿到 `toolCalls` 就立刻遍历执行。Pi 在真正调工具前立下了四道关键防线：
 
-模型一次要求多个工具时，默认可以并行执行。全局配置或其中一个工具要求顺序执行时，整批会改为顺序执行。并行路径等待结果后，仍按原调用次序写入。两个工具同时改同一文件时，实际修改仍可能冲突。[默认模式](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L244-L250) · [选择执行模式](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L505-L520) · [收集并行结果](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L583-L657)
+### 第一道：输出截断整批熔断
 
-如果模型输出因长度限制被截断，工具参数可能还没生成完整。程序会给整批调用生成失败结果，留给后续处理。[输出截断处理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L475-L499)
+如果模型正在生成一段三百行的 `write` 文件内容，突然撞上输出长度上限（`length` 截断），工具参数虽然外层结构看似存在，内容却只写了一半。一旦贸然执行，就会用半截残废代码直接覆盖掉用户磁盘上的好文件！因此 Pi 先检查停止原因：只要因长度超限截断且含有工具调用，**当场给整批调用生成失败结果返回**，绝不让残缺参数触碰真实工具（见[输出截断处理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L475-L499)）。
 
-## 3. 把途中补充的话放进合适的一轮
+### 第二道：参数校验与前后置钩子短路
 
-`steer()` 把调整方向的输入放进 steering 队列，在首次模型请求前和回合之间处理。`followUp()` 把后续输入放进另一个队列，等本次运行准备结束时处理。两条队列都存在当前进程内存里。[放入队列](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L142-L173) · [取出 steering](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L174-L215) · [取出 follow-up](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L279-L320)
+对于完整生成的调用，程序依次查找工具定义、校验参数结构，再调用宿主配置的 `beforeToolCall` 钩子。只要找不到工具、参数不合法或被前置钩子拦截，程序立刻合成错误结果，**直接跳过真实执行与后置钩子**（`execute` 与 `afterToolCall`）；只有放行后才执行工具并走后置处理（见[执行前的检查](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L703-L771)与[执行与结果处理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L773-L861)）。需要注意，这些钩子与工具列表都通过[可配置的 AgentOptions](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L113-L140) 注入，`pi-agent-core` 本身并不自带操作系统级沙箱。
 
-终端 coding-agent 还会保存会话：`AgentSession` 收到消息结束事件 `message_end` 后，把常规消息交给 `SessionManager`。它把带有父子关系的消息组织成会话树，可保存为 JSONL 文件，再挑出当前分支的内容给模型。[交给会话管理器](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L921-L943) · [会话树](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L976-L1005) · [整理当前分支](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L543-L582)
+### 第三道：一票降级的并行与严格按序落账
 
-把主线放在一起看：
+模型一轮同时发起三个 `read` 调用时，串行等待太慢；可如果其中夹了一个有副作用的工具呢？Pi 的[默认模式](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L244-L250)允许并行，但在[选择执行模式](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L505-L520)时采用「一票否决」：只要全局配置要求串行，或者当前批次里**哪怕只有一个工具**不允许并发，整批就退回顺序执行。而在并行分支里，[收集并行结果](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L583-L657)等所有任务返回后，仍严格按模型原本请求的次序写入消息列表（当然，若两个并行工具同时写同一个外部文件，磁盘层面的竞态仍需工具自身规避）。
+
+## 3. 双队列检查点与核外事件落盘
+
+工具跑完一轮后，用户在途中发来的补充指令怎么进场？对照源码里的三个位置，双队列的咬合时机非常清晰：
+
+- **写入队列**：`steer()` 与 `followUp()` 把新消息分别压入各自的内存队列（见[放入队列](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L142-L173)）。
+- **轮间急转弯**（`steering`）：在首次请求模型前、每个回合之间，甚至在异步 `prepareRequest` 跑完之后都会再次补查 steering 队列——哪怕用户正好卡在准备请求的几十毫秒空隙里按下回车，这句纠偏指令也能赶在本轮发往模型前塞进去（见[取出 steering](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L174-L215) 与[准备之后再看新输入](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L181-L207)）。
+- **收尾续单**（`follow-up`）：只有当模型不再请求工具、steering 也已清空、整个循环眼看就要收工退出时，才去检查 follow-up 队列，把追加任务拉进来开启下一轮（见[取出 follow-up](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L279-L320)）。
+
+与此同时，`runLoop` 内部一行写磁盘的代码都没有。每当一条用户、助手或工具消息尘埃落定，它只管广播 `message_end`；外层 `pi-coding-agent` 里的 `AgentSession` 监听到这个事件后，才把常规消息交给 `SessionManager`，以带父子指针的节点追加进 JSONL 会话树（见[交给会话管理器](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L921-L943)、[会话树](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L976-L1005)、[整理当前分支](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L543-L582)，特定维护操作下也会[重写会话文件](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L1124-L1134)）。
+
+把核内循环与核外持久化的配合画在一张图上，主干一目了然：
 
 ```text
-prompt(input) → runLoop
-  每次模型请求前：transformContext → convertToLlm → streamFn
-  若有完整工具调用：核对参数/前置检查 → [通过后 execute/后置处理] → 工具结果
-  回合间：检查 steering；本来要结束时：检查 follow-up
-  coding-agent 收到 message_end → SessionManager 保存消息/整理当前分支
+Agent.prompt(input) ──► runLoop
+  │
+  ├─► [请求前] drain(steering) → prepareRequest → 补查 steering → transformContext → convertToLlm → streamFn
+  ├─► [有工具调用] 检查长度截断 → 校验参数 / beforeToolCall → execute → afterToolCall → 生成 toolResult
+  ├─► [回合推进] 若有工具结果或新 steering，继续下一轮
+  └─► [准备收尾] finishTurn 决策 → 若未强制结束则 drain(followUp)，有内容就继续跑，否则发 agent_end
+
+（核外订阅）AgentSession 监听 message_end ──► SessionManager 追加 JSONL 节点并维护当前分支
 ```
 
-箭头帮助你跟读流程。最后一行由终端应用订阅事件完成，位于 `runLoop` 外部。常规消息会追加到会话记录，其他处理也可能[重写会话文件](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L1124-L1134)。
+## 4. 循环停机与续跑契约：错误转消息、`terminate` 与 `continue()`
 
-## 4. 继续还是结束，由哪些条件决定
+在循环内部，**工具执行抛错不等于循环崩溃**。无论是工具内部抛异常，还是 `afterToolCall` 后置钩子抛错，都会被捕获并包装成带 `isError: true` 的工具结果送回下一轮，让大模型亲眼看到报错栈并自己想办法补救。只有当一个非空工具批次里**所有已完成调用的结果都显式要求终止**（`terminate: true`）时，工具批次才会主动要求提前结束本轮运行（见[处理工具错误](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L773-L814)、[处理后置钩子](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L816-L861)与[整批结束条件](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L685-L687)）。
 
-工具抛出的异常会变成带 `isError` 的结果消息，让模型知道哪里出了问题，再决定下一步。后置钩子可以调整结果；它抛错时也会生成错误结果。模型接下来是否重试，要看后续决策。非空批次中，所有已完成调用的结果都带 `terminate: true` 时，批次才要求结束。[处理工具错误](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L773-L814) · [处理后置钩子](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L816-L861) · [整批结束条件](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L685-L687)
+宿主还可以通过 `finishTurn` 精细接管收尾动作：返回 `end` 会立刻发出 `agent_end` 并跳过后面的 follow-up 队列；返回 `continue` 则在既无工具调用也无排队输入时，强行拿着现有历史再催模型往下走一步（见[回合收尾](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L279-L320)）。
 
-应用还可以用 `finishTurn` 决定收尾：返回 `end` 时立即发结束事件 `agent_end`，跳过后续 follow-up 检查；返回 `continue` 时，如果工具结果和排队消息都没有带来下一轮，就再用已有消息请求一次模型。准备下一轮花了时间时，程序也会补查此前没有取到的 steering 输入。[回合收尾](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L279-L320) · [准备之后再看新输入](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L181-L207)
+而当一次运行停下后，外部想调用 `continue()` 接着跑时，必须遵守大模型 API 的底层铁律——不能把一条孤零零的 `assistant` 回复作为末尾直接发给模型。因此 [`Agent.continue()`](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L380-L408) 发现末尾是助手回复时，会依次尝试从 steering 和 follow-up 队列捞出新输入垫在后面，两边都空就直接报错；[底层继续入口](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L62-L99)同样要求转换后的末尾消息必须是用户输入或工具结果。
 
-重新调用 `continue()` 也需要合适的消息。最后一条是模型回复时，它先取 steering，再取 follow-up；没有新输入就报错。底层普通继续入口要求已有消息，并拒绝直接以模型回复作为末尾。送到模型接口时，转换后的最后一条还应是用户输入或工具结果；这个格式要求由转换后的消息决定。[Agent.continue()](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L380-L408) · [底层继续入口](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L62-L99)
+## 5. 故障恢复分层：核心快速止损，外壳接管重试与溢出压缩
 
-## 5. 模型报错、消息太长或用户取消
+为什么 `pi-agent-core` 不直接在 `runLoop` 里写死指数退避重试和自动摘要压缩？因为不同宿主（CLI 交互终端 vs 批处理评测脚本）对等待时间和摘要损耗的容忍度完全不同。Pi 的做法是**底层立停，外层施救**：
 
-模型回复以 `error` 或 `aborted`（报错或取消）结束时，底层循环发出本轮和整次运行的结束事件，并跳过回复中的工具调用。异常抛到 `Agent` 外层时，它会生成说明错误或取消的模型消息，再发结束事件。[底层处理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L240-L255) · [外层异常处理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L503-L550)
+- **核心层快速止损**：一旦模型流以 `error` 或 `aborted` 结束，`runLoop` 立刻跳过回复中未跑的工具调用并发出结束事件；未捕获异常冒泡到 `Agent` 外层时，也会补一条记录错误或取消原因的助手消息再干净退出（见[底层处理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L240-L255)与[外层异常处理](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L503-L550)）。
+- **外壳层瞬态报错重试**（无痕抹除坏回合）：`AgentSession` 接住结束后，判断错误类型与重试预算；决定重试时，那条失败的半截回复**依然保留在原始 JSONL 账本里备查**，但会被打上 `context_edit` 标记，使得下一次发给模型时自动隐去这次失败尝试，退避等待后再干净重发（见[选择是否重试](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L1468-L1529)、[整理重试消息](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L1015-L1031)与[等待后再试](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L3375-L3419)）。
+- **外壳层上下文溢出压缩**：如果报错是因为消息塞爆了模型窗口（Context Overflow），无脑重试只会再炸一次。`AgentSession` 会把这类错误分流到自动压缩管线：先对旧历史生成压缩摘要腾出窗口，再最多重试一次；若某轮回复已正常收尾但逼近阈值，则只做压缩为下一轮腾地方（见[区分错误类型](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L3322-L3329)与[压缩与继续](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L2599-L2696)）。
+- **用户主动取消**：触发取消时，`Agent.abort()` 拉响底层中止信号，终端层的 `abort()` 则一并掐断正在倒计时的重试定时器与后台压缩任务，等待状态归于空闲——当然，取消信号只能停住未完成的计算，此前已经落盘的文件修改或已发出的外部网络写操作不会自动回滚（见[核心取消](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L332-L349)与[终端应用取消](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L2072-L2092)）。
 
-终端应用可以在底层运行结束后重试部分模型错误。`AgentSession` 检查错误类型、重试开关和次数，等待一段时间后再继续。失败尝试仍保存在原始历史中，但用 `context_edit` 标记，下一次送给模型的消息会省略它。[选择是否重试](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L1468-L1529) · [整理重试消息](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L1015-L1031) · [等待后再试](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L3375-L3419)
+## 6. 调试长会话失忆：看懂消息的「三层投影」
 
-消息超出模型可接收的大小，叫“上下文溢出”。终端应用把它交给另一套压缩恢复流程：启用自动压缩时，判断能否先缩短消息再继续；溢出后的这种重试最多一次。某些回复已成功完成时，只做压缩，为后续工作腾出空间。[区分错误类型](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L3322-L3329) · [压缩与继续](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L2599-L2696)
+很多开发者在排查长会话问题时会纳闷：「我明明在 `.jsonl` 会话文件里看到了第 5 轮那条消息，为什么第 30 轮模型表现得完全没见过它？」
 
-用户取消时，`Agent.abort()` 发出取消信号；终端应用的 `abort()` 还会停止重试等待、压缩等操作，并等当前工作转为空闲。已经改过的文件或已发出的网络请求，仍需单独检查结果，取消信号不会自动把它们还原。[核心取消](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent.ts#L332-L349) · [终端应用取消](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L2072-L2092)
+读完 Pi 的链路就会明白，磁盘里存的跟模型眼睛里看到的根本不是同一份数组，中间隔着**三层投影**（见[保存消息](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L921-L943)、[会话父子关系](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L976-L985)、[整理当前分支](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L543-L582)与[最终模型消息](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L380-L406)）：
 
-## 6. 保存了什么，与下一轮看什么
+```text
+第 1 层：JSONL 完整会话树（全量审计账本）
+  [msg_1] ──► [msg_2: 529 失败尝试] ──► [context_edit: 隐藏 msg_2] ──► [compaction: 1~15 轮摘要] ──► [msg_16]
+                 └──► [另一条历史分叉分支...]
 
-终端应用先保存常规消息，接着根据当前会话分支整理模型输入。整理时可以使用压缩摘要，也可以按 `context_edit` 省略一些旧消息。这个从完整记录整理当前输入的过程，在代码里叫“投影”。模型请求前，`transformContext` 和 `convertToLlm` 还可以继续调整消息。
+第 2 层：SessionManager 当前分支投影（Agent 内存视图）
+  只沿当前叶子节点的父指针回溯，用 compaction 摘要替换旧节点，剔除被 context_edit 屏蔽的失败记录
+  ──► [summary(1~15), msg_16]
 
-所以，查一段旧内容时，可以顺着三个地方读：完整会话记录、当前分支整理出的消息、最终交给模型的消息。某条记录保留在历史里，下一轮也可能已经省略它。[保存消息](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/agent-session.ts#L921-L943) · [会话父子关系](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L976-L985) · [整理当前分支](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/coding-agent/src/core/session-manager.ts#L543-L582) · [最终模型消息](https://github.com/earendil-works/pi/blob/898ab804050730e9dcefb4443875d5a932aa6a32/packages/agent/src/agent-loop.ts#L380-L406)
+第 3 层：单次请求最终载荷（Provider 线协议视图）
+  再经 transformContext 动态裁剪 + convertToLlm 协议转换
+  ──► 发往大模型的最终 messages 字节流
+```
 
-这些会话保存、压缩和重试策略属于 coding-agent 应用。只接入 `pi-agent-core` 的程序，需要自行选择相应策略；实际持久化、恢复效果和不同模型服务的行为仍待运行验证。
+顺着「原始账本 → 分支投影 → 请求载荷」这三级台阶逐层核对，任何「上下文丢了或多了」的疑难杂症都能在几分钟内定位到具体哪一层动了刀。
+
+## 来源与边界
+
+本文基于官方仓库固定提交 [`earendil-works/pi@898ab804050730e9dcefb4443875d5a932aa6a32`](https://github.com/earendil-works/pi/tree/898ab804050730e9dcefb4443875d5a932aa6a32) 的静态源码分析整理，核对日期 2026-09-23。其中第 5、6 节的自动重试、溢出压缩与 JSONL 会话树属于 `pi-coding-agent` 应用层策略；若仅将 `pi-agent-core` 嵌入自定义宿主，持久化与恢复逻辑需由宿主自行实现。
