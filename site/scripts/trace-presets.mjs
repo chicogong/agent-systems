@@ -158,7 +158,7 @@ export const TRACE_LABS = {
     id: 'context-budget',
     title: '上下文预算与可见性：为什么「存了」不等于「看见了」',
     route: '/labs/context-budget',
-    companionRoutes: ['/concepts/context-vs-memory', '/concepts/cache-and-cost-economics', '/comparisons/persisted-vs-visible'],
+    companionRoutes: ['/concepts/context-vs-memory', '/comparisons/persisted-vs-visible'],
     question: '当预算紧张时，按时间逆序塞满窗口会怎样丢失最早的安全约束？',
     modes: [
       {
@@ -715,6 +715,287 @@ export const TRACE_LABS = {
             explanation: '同一把锁核对出 payload 不一致，拒绝篡改旧记录也拒绝新写入，返回 409 保护一致性。',
             payload: { status: 409, body: { status: 'payload_conflict', operation_id: 'task-42:publish-v1' } },
             state: { conflict_rejected: true, registered_effects: 1, payload: 'publish-v1' }
+          }
+        ]
+      }
+    ]
+  },
+  'prefix-cache': {
+    id: 'prefix-cache',
+    title: 'KV 前缀缓存与缓存失效对比 (Prefix Cache Hit vs Bust)',
+    route: '/labs/prefix-cache',
+    companionRoutes: ['/concepts/cache-and-cost-economics'],
+    question: '为什么在系统提示开头塞入动态时间戳或乱序工具声明，会导致整段上下文缓存全盘击穿？',
+    modes: [
+      {
+        id: 'layered_hit',
+        label: '严格分层与纯追加 (layered_hit, 96.1% 命中)',
+        cli: 'python3 examples/prefix-cache/demo.py --mode layered_hit',
+        verdict: {
+          status: 'high_cache_hit',
+          badge: 'high_cache_hit · 96.1% 缓存命中',
+          tone: 'ok',
+          summary: '系统指令与工具表置顶固定，历史消息纯追加，末尾仅附单步瞬态标记；5 轮请求累计 38,100 Token 中 36,600 Token 命中缓存。'
+        },
+        steps: [
+          {
+            title: '首轮装配与命中系统前缀锚点',
+            actor: 'assembler -> engine',
+            event: 'cache_read(prefix_anchor=6800)',
+            explanation: '将全局恒定的系统准则（6,000 tokens）与严格按字典序排列的工具表（800 tokens）排在最前；命中常驻 KV 缓存锚点，首轮仅对 200 tokens 用户输入做增量计算。',
+            payload: {
+              layer_1_system: '固定角色与安全边界 (6,000 tokens)',
+              layer_2_tools: ['execute_command', 'read_file', 'write_file'],
+              layer_3_history: '空 (首轮)',
+              layer_4_user: '请修复 auth.py 中的超时重试逻辑 (200 tokens)',
+              system_has_dynamic_timestamp: false
+            },
+            state: {
+              step: 1,
+              total_input_tokens: 7000,
+              cache_read_tokens: 6800,
+              cache_created_tokens: 200,
+              uncached_tokens: 200,
+              step_hit_rate: '97.1%',
+              ttft_ms: 120
+            }
+          },
+          {
+            title: '纯追加工具观察并命中完整前缀',
+            actor: 'runtime -> assembler',
+            event: 'cache_read(prefix_hit=7000)',
+            explanation: '模型调用 read_file 后，宿主将工具观察纯追加（Append-Only）至队尾；引擎比对发现前 7,000 tokens 字节级完全一致，跳过注意力重算直接命中显存 KV 状态。',
+            payload: {
+              tool_called: 'read_file("auth.py")',
+              observation_tokens: 300,
+              mutated_history: false,
+              append_only: true
+            },
+            state: {
+              step: 2,
+              total_input_tokens: 7300,
+              cache_read_tokens: 7000,
+              cache_created_tokens: 300,
+              uncached_tokens: 300,
+              step_hit_rate: '95.9%',
+              ttft_ms: 95
+            }
+          },
+          {
+            title: '多步迭代持续保持 96%+ 命中率',
+            actor: 'runtime -> assembler',
+            event: 'cache_read(prefix_hit=7300)',
+            explanation: '第 3 轮模型提议 write_file 并运行测试，历史观察继续向后追加；前 7,300 tokens 再次全部命中，GPU 仅计算新增的 300 tokens。',
+            payload: {
+              tool_called: 'write_file("auth.py")',
+              observation_tokens: 300,
+              cache_anchor_intact: true
+            },
+            state: {
+              step: 3,
+              total_input_tokens: 7600,
+              cache_read_tokens: 7300,
+              cache_created_tokens: 300,
+              uncached_tokens: 300,
+              step_hit_rate: '96.1%',
+              ttft_ms: 95
+            }
+          },
+          {
+            title: '任务收工与全周期账单核验',
+            actor: 'token_ledger',
+            event: 'audit(overall_hit_rate=96.1%)',
+            explanation: '循环出口处宿主对账：5 轮累计输入 38,100 Token，其中 36,600 Token 成功命中前缀缓存，综合命中率高达 96.06%，GPU 首字响应时间降低 78%。',
+            payload: {
+              total_turns: 5,
+              total_input_tokens: 38100,
+              cached_tokens: 36600,
+              uncached_tokens: 1500,
+              overall_hit_rate: '96.06%'
+            },
+            state: {
+              status: 'high_cache_hit',
+              cost_reduction: '86.5%',
+              latency_reduction: '78.2%',
+              ledger_verified: true
+            }
+          }
+        ]
+      },
+      {
+        id: 'dynamic_timestamp',
+        label: '提示词注入动态时间戳 (dynamic_timestamp, 0% 击穿)',
+        cli: 'python3 examples/prefix-cache/demo.py --mode dynamic_timestamp',
+        verdict: {
+          status: 'cache_bust_timestamp',
+          badge: 'cache_bust_timestamp · 0% 命中全盘击穿',
+          tone: 'danger',
+          summary: '在 System Prompt 首行注入秒级时间戳（如 2026-11-22 14:30:15），导致第一块 Token 哈希每步改变，整段几万 Token 缓存 100% 击穿，步步全额重算。'
+        },
+        steps: [
+          {
+            title: '系统提示开头注入秒级动态时间戳',
+            actor: 'assembler',
+            event: 'inject(header="当前时间：2026-11-22 14:30:00")',
+            explanation: '习惯性在系统提示首行拼入秒级时间戳；首轮无缓存，写入 7,000 tokens 的初始前缀。',
+            payload: {
+              system_header: '当前时间：2026-11-22 14:30:00',
+              system_tokens: 6000,
+              cache_lookup: 'miss'
+            },
+            state: {
+              step: 1,
+              total_input_tokens: 7000,
+              cache_read_tokens: 0,
+              cache_created_tokens: 7000,
+              uncached_tokens: 7000,
+              step_hit_rate: '0.0%',
+              ttft_ms: 680
+            }
+          },
+          {
+            title: '时间戳跳变导致第 1 块词元前缀击穿',
+            actor: 'engine -> cache_lookup',
+            event: 'cache_bust(token_0_diff)',
+            explanation: '8 秒后进入第 2 轮，时间戳变为 14:30:08；由于前缀匹配从左往右逐块校验，第 4 个词元改变导致后面跟的 6,000+ tokens 缓存瞬间全部作废！',
+            payload: {
+              prev_timestamp: '14:30:00',
+              curr_timestamp: '14:30:08',
+              diverged_token_index: 4,
+              invalidated_tokens: 7000
+            },
+            state: {
+              step: 2,
+              total_input_tokens: 7300,
+              cache_read_tokens: 0,
+              cache_created_tokens: 7300,
+              uncached_tokens: 7300,
+              step_hit_rate: '0.0%',
+              ttft_ms: 770
+            }
+          },
+          {
+            title: '步步跳变导致步步全额重算',
+            actor: 'engine',
+            event: 'full_recompute(tokens=7600)',
+            explanation: '第 3 轮时间戳跳至 14:30:16，缓存再次 0% 命中；GPU 必须重新对整整 7,600 tokens 进行一次全量 KV 投影与注意力矩阵计算。',
+            payload: {
+              curr_timestamp: '14:30:16',
+              recomputed_tokens: 7600,
+              cache_read_tokens: 0
+            },
+            state: {
+              step: 3,
+              total_input_tokens: 7600,
+              cache_read_tokens: 0,
+              cache_created_tokens: 7600,
+              uncached_tokens: 7600,
+              step_hit_rate: '0.0%',
+              ttft_ms: 815
+            }
+          },
+          {
+            title: '击穿雪崩对账：账单激增 7.4 倍',
+            actor: 'token_ledger',
+            event: 'audit(cache_bust_confirmed)',
+            explanation: '全流程 5 轮累计输入 38,100 Token 全额走未命中原价计费（0% 命中率）；相比高命中模式算力开销暴增 7.4 倍，每一步 TTFT 干等近 1 秒。',
+            payload: {
+              total_turns: 5,
+              total_input_tokens: 38100,
+              cached_tokens: 0,
+              uncached_tokens: 38100,
+              overall_hit_rate: '0.0%'
+            },
+            state: {
+              status: 'cache_bust_timestamp',
+              cost_multiplier: '7.4x',
+              root_cause: 'dynamic_timestamp_at_prefix_head',
+              remedy: 'keep_system_static_or_move_time_to_tail'
+            }
+          }
+        ]
+      },
+      {
+        id: 'shuffled_tools',
+        label: '工具定义无序重排 (shuffled_tools, 前缀失效)',
+        cli: 'python3 examples/prefix-cache/demo.py --mode shuffled_tools',
+        verdict: {
+          status: 'cache_bust_shuffled',
+          badge: 'cache_bust_shuffled · 工具重排破坏前缀',
+          tone: 'danger',
+          summary: '字典遍历无序或每步动态增删 tools 声明（如 [read, write] 变 [write, read]），使紧随其后的数千 Token 历史全部脱靶，命中率跌至冰点。'
+        },
+        steps: [
+          {
+            title: '首轮使用工具声明序 [read, write, bash]',
+            actor: 'assembler',
+            event: 'declare_tools([read, write, bash])',
+            explanation: '首轮以字典自然序声明工具定义（800 tokens），建立前缀缓存块。',
+            payload: {
+              tool_order: ['read_file', 'write_file', 'execute_bash'],
+              tools_tokens: 800
+            },
+            state: {
+              step: 1,
+              total_input_tokens: 7000,
+              cache_read_tokens: 0,
+              cache_created_tokens: 7000,
+              uncached_tokens: 7000,
+              step_hit_rate: '0.0%'
+            }
+          },
+          {
+            title: '乱序注入 [bash, read, write] 震荡前缀',
+            actor: 'assembler -> engine',
+            event: 'cache_bust(tool_schema_diverged)',
+            explanation: '第 2 轮因字典遍历无序导致工具声明顺序颠倒；系统指令虽然命中（6,000 tokens），但在工具定义处发生分叉，后续所有对话与观察缓存全灭！',
+            payload: {
+              prev_order: ['read_file', 'write_file', 'execute_bash'],
+              new_order: ['execute_bash', 'read_file', 'write_file'],
+              matched_prefix_tokens: 6000,
+              diverged_tokens: 1300
+            },
+            state: {
+              step: 2,
+              total_input_tokens: 7300,
+              cache_read_tokens: 6000,
+              cache_created_tokens: 1300,
+              uncached_tokens: 1300,
+              step_hit_rate: '82.2%',
+              tool_order_diverged: true
+            }
+          },
+          {
+            title: '工具表位置靠前导致下游历史完全无法复用',
+            actor: 'engine',
+            event: 'partial_cache_miss',
+            explanation: '底层模板中工具定义紧贴系统指令之后；工具顺序一变，紧随其后的多轮对话与观察即使逐字未改，也全被位移打碎，无法复用已有 KV 块。',
+            payload: {
+              unreusable_history_tokens: 1000,
+              recomputed_total: 1600
+            },
+            state: {
+              step: 3,
+              total_input_tokens: 7600,
+              cache_read_tokens: 6000,
+              cache_created_tokens: 1600,
+              uncached_tokens: 1600,
+              step_hit_rate: '78.9%'
+            }
+          },
+          {
+            title: '生产级防线：固定 Schema 与执行门禁',
+            actor: 'host_policy',
+            event: 'enforce(sort_keys=True)',
+            explanation: '治理规范确立：工具声明序列化必须统一按键名排序（sort_keys=True）并固定；不可用的工具靠宿主执行门禁拦截，绝不在单步循环中动态改写工具表。',
+            payload: {
+              policy: 'freeze_tool_schema_order',
+              defense: 'intercept_at_execution_gate'
+            },
+            state: {
+              status: 'cache_bust_shuffled',
+              mitigation_verified: true
+            }
           }
         ]
       }

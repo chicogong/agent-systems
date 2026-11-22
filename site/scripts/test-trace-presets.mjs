@@ -2,8 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { TRACE_LABS, resolveTraceLab } from './trace-presets.mjs'
 
-test('all 5 labs define deterministic modes, CLI commands, and non-empty trace steps', () => {
-  const expectedIds = ['first-agent-loop', 'context-budget', 'evidence-contract', 'remote-effect', 'http-receipt']
+test('all 6 labs define deterministic modes, CLI commands, and non-empty trace steps', () => {
+  const expectedIds = ['first-agent-loop', 'context-budget', 'evidence-contract', 'remote-effect', 'http-receipt', 'prefix-cache']
   assert.deepEqual(Object.keys(TRACE_LABS), expectedIds)
 
   for (const lab of Object.values(TRACE_LABS)) {
@@ -40,6 +40,14 @@ test('resolveTraceLab routes lab pages and companion reading pages cleanly', () 
   const companionComparison = resolveTraceLab('/comparisons/completion-and-evidence/')
   assert.equal(companionComparison?.lab.id, 'http-receipt')
   assert.equal(companionComparison?.isPrimaryLabPage, false)
+
+  const companionPrefixCache = resolveTraceLab('/concepts/cache-and-cost-economics')
+  assert.equal(companionPrefixCache?.lab.id, 'prefix-cache')
+  assert.equal(companionPrefixCache?.isPrimaryLabPage, false)
+
+  const primaryPrefixCache = resolveTraceLab('/labs/prefix-cache')
+  assert.equal(primaryPrefixCache?.lab.id, 'prefix-cache')
+  assert.equal(primaryPrefixCache?.isPrimaryLabPage, true)
 
   assert.equal(resolveTraceLab('/'), null)
   assert.equal(resolveTraceLab('/systems/pi'), null)

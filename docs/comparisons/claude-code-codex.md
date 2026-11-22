@@ -34,6 +34,32 @@
    - 在 **Codex** 的固定源码路径中，策略层先对普通命令给出三选一裁决：`Skip`（免除常规人工询问）、`NeedsApproval`（挂起请求你拍板）或 `Forbidden`（直接拦截拒绝）。**注意 `Skip` 跳过的只是人工弹窗，不是沙箱隔离**——获准放行后，`ToolOrchestrator` 依然会为进程挑选首次执行沙箱；只有当首次运行因沙箱限制失败且满足严格重试条件时，才会进入受控的升级询问或二次尝试分支。[Claude Code 权限与沙箱交互](https://code.claude.com/docs/en/permissions#how-permissions-interact-with-sandboxing) · [Codex 策略映射](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/exec_policy.rs#L394-L460) · [Codex 编排器执行](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L151-L309)
 5. **依据测试回执迭代并收口交付**：第一次跑 `npm test -- orders` 应当如期失败（证明回归测试真能抓到重复建单 Bug），改完幂等校验逻辑后再跑一次应当变绿。最终交付物不是一句“修好了”，而是工作区真实 diff、测试命令原始输出，以及“未执行 `commit` / `push`、远端工单未改动”的边界确认。
 
+## 多级子 Agent 编排：探索、规划与执行的上下文分水岭
+
+在大型工程代码库（成百上千个文件、数万行逻辑）中，若让单一 Agent 在单条长会话中包办一切，很快会遭遇三大崩溃瓶颈：
+1. **注意力稀释与上下文腐化（Context Rot）**：前序 20 轮产生的 `grep` 粗排垃圾与冗长构建日志迅速吞噬十几万 Token，导致最初强调的“严禁修改公共 API 签名”等核心红线被模型淡忘；
+2. **KV 前缀缓存频繁击穿（Prefix Cache Bust）**：单会话中每一次工具输出的细微变动都会导致后续推理的 KV 缓存全部作废，产生数倍的 Token 账单与首字延迟惩罚；
+3. **单点失效与重试代价过高**：一旦 Agent 在某个局部模块陷入死循环，整条主会话必须经历昂贵的上下文压缩（Compaction）甚至重置。
+
+为了克服单会话瓶颈，现代命令行编程助手广泛演进出分层子 Agent 协作拓扑：
+
+```text
+用户任务 ──► [Coordinator 主协调者] (常驻长会话，系统提示与核心红线永久固顶)
+                 │
+                 ├── 委派探索 (只读权限) ──► [Explorer 子 Agent] (独立上下文，搜完即销毁)
+                 │                             └─► 仅交回结构化证据包（目标文件与关键行号）
+                 │
+                 ├── 委派修改 (局部领地) ──► [Coder 子 Agent] (写权限或 Diff Proposal 补丁)
+                 │                             └─► 仅交回工作区补丁与修改摘要
+                 │
+                 └── 委派验证 (沙箱测试) ──► [Verifier 子 Agent] (执行构建与单测)
+                                               └─► 仅交回测试退出码与未覆盖断言
+```
+
+这种多级编排带来了两大核心工程确定性：
+- **上下文预算与 KV 缓存保护**：Explorer 在排查 Bug 时执行 30 次文件读取，产生 50,000 Token 的过程垃圾。子 Agent 任务结束后，这 50,000 Token **随子会话直接销毁**，只给 Coordinator 交回一份两百字的结构化 JSON 证据包。Coordinator 的历史前缀得以保持纯净递增，在整个任务周期内维持 **95% 以上的前缀缓存命中率**。
+- **工具权限降级与防踩踏**：在派发子 Agent 时，宿主从协议层实施权限裁剪——给 Explorer 注册的工具集彻底剔除 `Bash` 和 `Write`，杜绝其在搜索过程中意外改动文件；多个 Coder 并发时，通过工作区目录前缀进行领地切分，或统一以 `git diff` 补丁提议交由 Coordinator 汇总结算，从根源消除并发写入覆盖冲突。
+
 ## 一张表对齐两边的控制边界
 
 | 核心控制问题 | Claude Code（基于官方文档公开行为） | Codex（基于固定 Rust 源码与官方文档） |

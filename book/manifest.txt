@@ -12,6 +12,7 @@ docs/concepts/context-vs-memory.md
 docs/labs/context-budget.md
 docs/concepts/session-compaction-and-memory.md
 docs/concepts/cache-and-cost-economics.md
+docs/labs/prefix-cache.md
 docs/concepts/approval-vs-sandbox.md
 docs/concepts/extensibility-layers.md
 docs/concepts/mcp-skill-tool-lifecycle.md
