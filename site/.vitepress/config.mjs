@@ -98,16 +98,27 @@ export default defineConfig({
       ['meta', { name: 'twitter:title', content: socialTitle }],
       ['meta', { name: 'twitter:image', content: `${siteUrl}/assets/share/book.png` }]
     )
-    const identity = { '@type': 'Person', name: 'chicogong', url: `${siteUrl}/back/about-author` }
-    const book = { '@type': 'WebSite', '@id': `${siteUrl}/#website`, name: '图解 Agent 系统', url: `${siteUrl}/`, inLanguage: 'zh-CN' }
+    const identity = { '@type': 'Person', name: 'chicogong', url: 'https://github.com/chicogong' }
+    const book = {
+      '@type': 'Book',
+      '@id': `${siteUrl}/#book`,
+      name: '图解 Agent 系统',
+      alternateName: 'Illustrated Agent Systems',
+      url: `${siteUrl}/`,
+      inLanguage: 'zh-CN',
+      description: '面向机制解剖与工程落地的免费中文图解书。拆解 16+ 工业级开源框架，配齐 40 组原创手绘 Excalidraw 矢量架构图与 6 组零依赖交互实验台。',
+      author: identity,
+      publisher: { '@type': 'Organization', name: 'Aimake', url: 'https://aimake.cc' },
+      isAccessibleForFree: true
+    }
     const schema = isHome ? book : {
-      '@type': isArticle ? 'Article' : 'WebPage',
+      '@type': isArticle ? 'TechArticle' : 'WebPage',
       headline: title,
       description,
       url: canonical,
       inLanguage: 'zh-CN',
-      isPartOf: { '@id': book['@id'] },
-      ...(isArticle ? { author: identity } : {})
+      isPartOf: { '@id': `${siteUrl}/#book` },
+      author: identity
     }
     pageData.frontmatter.head.push(['script', { type: 'application/ld+json' }, JSON.stringify({ '@context': 'https://schema.org', ...schema }).replace(/</g, '\\u003c')])
   },
@@ -179,6 +190,9 @@ export default defineConfig({
     socialLinks: []
   },
   head: publicMode
-    ? [['meta', { name: 'msvalidate.01', content: 'B543FF67D291AA27F8D470ADEA45F876' }]]
+    ? [
+        ['meta', { name: 'msvalidate.01', content: 'B543FF67D291AA27F8D470ADEA45F876' }],
+        ...(process.env.GOOGLE_SITE_VERIFICATION ? [['meta', { name: 'google-site-verification', content: process.env.GOOGLE_SITE_VERIFICATION }]] : [])
+      ]
     : [['meta', { name: 'robots', content: 'noindex,nofollow' }]]
 })

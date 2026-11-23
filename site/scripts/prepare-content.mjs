@@ -71,4 +71,13 @@ await cp(path.join(repo, 'figures'), path.join(output, 'public', 'assets', 'figu
 })
 await mkdir(path.join(output, 'public', 'assets', 'book', 'assets'), { recursive: true })
 await cp(path.join(repo, 'book/assets/cover-preview.png'), path.join(output, 'public', 'assets', 'book', 'assets', 'cover-preview.png'))
+await mkdir(path.join(output, 'public', 'assets', 'share'), { recursive: true })
+if (existsSync(path.join(site, 'assets', 'book-share.png'))) {
+  await cp(path.join(site, 'assets', 'book-share.png'), path.join(output, 'public', 'assets', 'share', 'book.png'))
+}
+if (existsSync(path.join(repo, 'book/assets/cover-preview.png'))) {
+  await cp(path.join(repo, 'book/assets/cover-preview.png'), path.join(output, 'public', 'assets', 'share', 'cover.png'))
+}
+const indexNowKey = '8d470adea45f876b543ff67d291aa27f'
+await writeFile(path.join(output, 'public', `${indexNowKey}.txt`), indexNowKey)
 console.log(`Prepared ${pages.length} pages; checked ${checkedFallbacks.size} sample-external paths on origin/main ${remoteMain.slice(0, 12)}.`)

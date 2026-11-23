@@ -10,6 +10,17 @@
 
 这些问题单靠“换句提示词”解决不了，因为症结往往出在模型之外的工程链路：**循环靠什么条件推进与停机、上下文怎样筛选装入、工具权限与沙箱怎样拦截爆炸半径、异常中断后靠什么证据恢复**。本书用一张张职责分明的图解与真实流转的数据把黑盒拆开：零基础读者用纸笔跟着日常资料例子就能走通全过程；想深究实现的读者，可以顺着固定 commit 直达 Pi、Codex、OpenCode、LangGraph 等开源项目的关键代码路径。
 
+## 核心特色与差异化定位
+
+面对市面上已有的 Agent 教材与开源读物，本书不走“拼字数、堆大段理论”的路线，而是紧盯初学者的理解痛点与工业级落地的真实瓶颈：
+
+| 对比维度 | 传统教材 / 其他开源书 | 《图解 Agent 系统》独家定位 |
+| --- | --- | --- |
+| **阅读体验** | 30~50 万字长篇大论，通篇代码与文字，容易望而生畏 | **对标《算法图解》**：40 组独创 Excalidraw 原生矢量图，“一图解一问”，初学者看图秒懂 |
+| **真实性与源码** | 偏向教学玩具代码（Toy Example）或抽象概念伪代码 | **全书 109 处源码**全部锁定在 16 个知名开源项目的**固定 40 位 Commit** 上，拒绝空中楼阁 |
+| **动手成本** | 需要配置复杂 GPU、装庞大环境、消耗高昂 API Key | **6 组零外部依赖实验台**：网页端点按单步回放状态机，本地纯 Python 标准库几毫秒跑完账单对比 |
+| **开放可编辑性** | 静态图片、不可二次修改或排版重用 | **40 组 Excalidraw 原生矢量图稿完全开源**，在网页端一键点击即可跳转画板在线自由二次创作 |
+
 ## 翻几张图，看看书里怎么讲
 
 每张图聚焦一个核心工程问题，正文配齐正反案例与数据流转，代码导读供需要深入实现的读者按需翻阅。点击缩略图可查看高清矢量 SVG，每组图均附文字版说明与可编辑 `.excalidraw` 源文件。
@@ -48,7 +59,7 @@
 | **机制图解（16 篇）** | 拆清循环、上下文、前缀缓存、开放协议（AGENTS.md / MCP / A2A）、沙箱与 `pass^k` 评测各自守哪道边界 | [Agent loop](docs/concepts/agent-loop.md) · [前缀缓存经济学](docs/concepts/cache-and-cost-economics.md) · [开放协作协议栈](docs/concepts/open-agent-protocols.md) · [观察与评测](docs/concepts/observation-evaluation.md) |
 | **开源项目讲解（16 套）** | 追踪固定 commit 里的真实调用链，看一线项目如何把概念写成可维护代码 | [Pi](docs/systems/pi/README.md) · [OpenCode](docs/systems/opencode/README.md) · [LangGraph](docs/systems/langgraph/README.md) |
 | **横向对照（6 篇）** | 同一工程难题放在一起比，看清不同架构方案的收益与代价 | [循环与停止](docs/comparisons/loop-and-stop.md) · [持久与可见漏斗](docs/comparisons/persisted-vs-visible.md) · [四种状态](docs/comparisons/four-kinds-of-state.md) · [权限与恢复](docs/comparisons/permission-and-recovery.md) |
-| **交互实验（5 组）** | 网页端直接单步回放状态机，或用零依赖 Python 标准库脚本在本地复现裁剪、越权与幂等查账 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [上下文预算](docs/labs/context-budget.md) · [证据契约](docs/labs/evidence-contract.md) · [本地 HTTP 回执](docs/labs/http-receipt.md) |
+| **交互实验（6 组）** | 网页端直接单步回放状态机，或用零依赖 Python 标准库脚本在本地复现裁剪、越权、幂等查账与前缀缓存击穿 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [上下文预算](docs/labs/context-budget.md) · [证据契约](docs/labs/evidence-contract.md) · [远端副作用](docs/labs/remote-effect.md) · [本地 HTTP 回执](docs/labs/http-receipt.md) · [前缀缓存击穿对比](docs/labs/prefix-cache.md) |
 
 开源系统篇覆盖 Pi、DSH（DeepSeek Harness）、Codex、OpenCode、mini-SWE-agent、OpenHands、Browser Use、Qwen Code、Kimi Code、MiMo Code、Letta Code、Hermes Agent、Mem0、LangGraph、OpenClaw 与 GPT Researcher，横跨编码助手、编排运行时与记忆组件。每篇聚焦项目最具代表性的一条实现主干，完整清单见[系统索引](docs/systems/README.md)，整体规划见[选题地图](docs/program.md)与[扩写计划](docs/curriculum-expansion.md)。
 

@@ -1,0 +1,80 @@
+<section data-tool="aimake-wechat" style="max-width:677px;margin:0 auto;padding:16px 12px;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#1f2937;background:#ffffff;line-height:1.75;word-wrap:break-word;">
+
+      <section style="margin:0 0 28px 0;padding:28px 24px;background:linear-gradient(145deg,#111317 0%,#1d222b 100%);border-radius:14px;color:#f8fafc;">
+        
+        <h1 style="margin:0 0 12px 0;font-size:24px;line-height:1.4;font-weight:800;color:#ffffff;">系统提示词塞了时间戳？</h1>
+        <p style="margin:0;font-size:15px;line-height:1.65;color:#cbd5e1;">月末 Token 账单暴涨 10 倍！图解现代 Agent 的前缀缓存机制</p>
+      </section>
+    
+<ul style="margin:12px 0 18px 0;padding-left:20px;"><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;">为什么输入输出比高达 100:1？</li><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;">动态时间戳如何瞬间废掉显存 KV 缓存？</li><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;">生产级四层排版律：保住 96%+ 缓存命中率</li></ul>
+
+      <section style="margin:32px 0 16px 0;display:flex;align-items:center;">
+        <span style="display:inline-block;width:4px;height:20px;background:#10b981;border-radius:2px;margin-right:10px;"></span>
+        <h2 style="margin:0;font-size:19px;line-height:1.45;font-weight:700;color:#111827;">1. 100:1 的吞吐悬殊</h2>
+      </section>
+    
+<p style="margin:0 0 14px 0;font-size:15px;color:#4b5563;line-height:1.7;">为什么多步 Agent 会吞掉百万 Token？</p>
+<section style="display:flex;flex-wrap:wrap;margin:14px -4px;">
+        <section style="flex:1 1 45%;min-width:130px;background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #10b981;border-radius:8px;padding:12px 14px;margin:4px;">
+          <p style="margin:0 0 4px 0;font-size:12px;color:#64748b;">累计输入 Token</p>
+          <p style="margin:0;font-size:20px;font-weight:800;color:#0f172a;font-family:Menlo,monospace;">475,000 | 膨胀 100 倍</p>
+        </section>
+        <section style="flex:1 1 45%;min-width:130px;background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #10b981;border-radius:8px;padding:12px 14px;margin:4px;">
+          <p style="margin:0 0 4px 0;font-size:12px;color:#64748b;">新生成输出</p>
+          <p style="margin:0;font-size:20px;font-weight:800;color:#0f172a;font-family:Menlo,monospace;">4,000 | 仅占 1%</p>
+        </section>
+        <section style="flex:1 1 45%;min-width:130px;background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #10b981;border-radius:8px;padding:12px 14px;margin:4px;">
+          <p style="margin:0 0 4px 0;font-size:12px;color:#64748b;">首字等待时间</p>
+          <p style="margin:0;font-size:20px;font-weight:800;color:#0f172a;font-family:Menlo,monospace;">4.8s | 显存重复计算</p>
+        </section></section>
+<ul style="margin:12px 0 18px 0;padding-left:20px;"><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;">普通问答输入输出比仅 2:1 至 5:1</li><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;">多步 Agent 每执行一步，都要重新全量打包【系统指令 + 工具声明 + 全量历史 + 刚刚工具的观察结果】</li><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;">跑完 25 步，累积输入 Token 高达 47.5 万，输出仅 4,000 Token！</li></ul>
+
+      <section style="margin:32px 0 16px 0;display:flex;align-items:center;">
+        <span style="display:inline-block;width:4px;height:20px;background:#10b981;border-radius:2px;margin-right:10px;"></span>
+        <h2 style="margin:0;font-size:19px;line-height:1.45;font-weight:700;color:#111827;">2. 摧毁缓存的四大反模式</h2>
+      </section>
+    
+<p style="margin:0 0 14px 0;font-size:15px;color:#4b5563;line-height:1.7;">哪怕只变一个字符，后方几万 Token 瞬间报废！</p>
+
+      <section style="display:flex;gap:10px;margin:16px 0;">
+        <section style="flex:1;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;">
+          <p style="margin:0 0 8px 0;font-weight:700;font-size:14px;color:#991b1b;">致命反模式: 导致 0% 缓存命中</p>
+          
+        </section>
+        <section style="flex:1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;">
+          <p style="margin:0 0 8px 0;font-weight:700;font-size:14px;color:#1e40af;">• 系统提示开头顺手拼了秒级时间戳</p>
+          
+        </section>
+      </section>
+    
+
+      <section style="margin:32px 0 16px 0;display:flex;align-items:center;">
+        <span style="display:inline-block;width:4px;height:20px;background:#10b981;border-radius:2px;margin-right:10px;"></span>
+        <h2 style="margin:0;font-size:19px;line-height:1.45;font-weight:700;color:#111827;">3. 生产级四层排版律</h2>
+      </section>
+    
+<p style="margin:0 0 14px 0;font-size:15px;color:#4b5563;line-height:1.7;">越稳定越靠左（靠前），越鲜活越靠右（靠后）</p>
+<section style="display:flex;flex-wrap:wrap;margin:14px -4px;">
+        <section style="flex:1 1 45%;min-width:130px;background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #10b981;border-radius:8px;padding:12px 14px;margin:4px;">
+          <p style="margin:0 0 4px 0;font-size:12px;color:#64748b;">分层架构缓存命中率</p>
+          <p style="margin:0;font-size:20px;font-weight:800;color:#0f172a;font-family:Menlo,monospace;">96.06% | 节省 90% 成本</p>
+        </section>
+        <section style="flex:1 1 45%;min-width:130px;background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #10b981;border-radius:8px;padding:12px 14px;margin:4px;">
+          <p style="margin:0 0 4px 0;font-size:12px;color:#64748b;">TTFT 首字延迟</p>
+          <p style="margin:0;font-size:20px;font-weight:800;color:#0f172a;font-family:Menlo,monospace;">0.28s | 提速 17 倍</p>
+        </section>
+        <section style="flex:1 1 45%;min-width:130px;background:#f8fafc;border:1px solid #e2e8f0;border-left:3px solid #10b981;border-radius:8px;padding:12px 14px;margin:4px;">
+          <p style="margin:0 0 4px 0;font-size:12px;color:#64748b;">实测单步 Token 成本</p>
+          <p style="margin:0;font-size:20px;font-weight:800;color:#0f172a;font-family:Menlo,monospace;">-89.4% | 极客级优化</p>
+        </section></section>
+<ul style="margin:12px 0 18px 0;padding-left:20px;"><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;"><strong style="color:#10b981;font-weight:700;">第 1 层（全局恒定）</strong>：角色系统指令 + 字母字典序排序的 Tool Schema</li><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;"><strong style="color:#10b981;font-weight:700;">第 2 层（会话稳定）</strong>：项目工作区规范 (<code style="background:#f1f3f7;color:#1e293b;padding:2px 6px;border-radius:4px;font-family:Menlo,Consolas,monospace;font-size:0.9em;">AGENTS.md</code>) + 初始常驻核心记忆</li><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;"><strong style="color:#10b981;font-weight:700;">第 3 层（阶段稳定）</strong>：达到 80% 预算阈值后触发的阶段浓缩摘要块</li><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;"><strong style="color:#10b981;font-weight:700;">第 4 层（瞬态鲜活）</strong>：最近几轮动态对话、工具调用返回值与当前秒级时间戳</li></ul>
+
+      <section style="margin:32px 0 16px 0;display:flex;align-items:center;">
+        <span style="display:inline-block;width:4px;height:20px;background:#10b981;border-radius:2px;margin-right:10px;"></span>
+        <h2 style="margin:0;font-size:19px;line-height:1.45;font-weight:700;color:#111827;">4. 深入源码与开源实验</h2>
+      </section>
+    
+<p style="margin:0 0 14px 0;font-size:15px;color:#4b5563;line-height:1.7;">《图解 Agent 系统》现已完全开源</p>
+<ul style="margin:12px 0 18px 0;padding-left:20px;"><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;">全书 68+ 篇机制解剖，40 幅原创手绘 Excalidraw 原生图稿</li><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;">6 大零依赖交互式实验台（含 KV 前缀缓存命中 vs 击穿单步对比）</li><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;">109 处源码解析锁定在 GitHub 40 位固定 Commit SHA-1 锚点</li><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;">📖 免费在线阅读：https://books.aimake.cc/</li><li style="margin:0 0 10px 0;font-size:15.5px;line-height:1.75;color:#1f2937;">💻 GitHub 开源项目：https://github.com/chicogong/agent-systems</li></ul>
+<section style="margin:36px 0 8px 0;padding-top:16px;border-top:1px solid #e5e7eb;text-align:center;font-size:12px;color:#9ca3af;">Created with <strong style="color:#4b5563;">Aimake.cc</strong> · Template <code>#xhs-neon-tech</code></section>
+</section>

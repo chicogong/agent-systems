@@ -232,6 +232,8 @@ const contents = ordered.map((part) => '## ' + part.text + '\n\n' + part.items.m
 await mkdir(path.join(output, 'public', 'assets', 'share'), { recursive: true })
 await cp(path.join(site, 'assets', 'book-share.png'), path.join(output, 'public', 'assets', 'share', 'book.png'))
 await cp(path.join(repo, 'book', 'assets', 'cover-preview.png'), path.join(output, 'public', 'assets', 'share', 'cover.png'))
+const indexNowKey = '8d470adea45f876b543ff67d291aa27f'
+await writeFile(path.join(output, 'public', `${indexNowKey}.txt`), indexNowKey)
 const home = `---
 title: "AI Agent 入门教程｜图解 Agent 系统：从使用到开源实现"
 titleTemplate: false

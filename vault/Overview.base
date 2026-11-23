@@ -1,0 +1,65 @@
+filters:
+  and:
+    - file.ext == "md"
+    - file.name != "log"
+    - file.name != "README"
+    - file.name != "AGENTS"
+    - file.name != "CLAUDE"
+    - or:
+        - file.inFolder("wiki")
+        - file.inFolder("raw")
+        - file.inFolder("outputs")
+        - file.inFolder("personas")
+        - file.inFolder("收件箱")
+        - file.inFolder("来源")
+        - file.inFolder("知识")
+        - file.inFolder("项目")
+        - file.inFolder("知识地图")
+properties:
+  file.name:
+    displayName: 标题 / Title
+  note.type:
+    displayName: 类型 / Type
+  note.status:
+    displayName: 状态 / Status
+  note.stale_after:
+    displayName: 有效期 / Fresh Until
+  file.tags:
+    displayName: 标签 / Tags
+views:
+  - type: table
+    name: 全部知识 (All Knowledge)
+    order:
+      - file.name
+      - type
+      - status
+      - stale_after
+      - file.tags
+  - type: table
+    name: 长期知识 (Active Wiki)
+    filters:
+      or:
+        - file.inFolder("wiki")
+        - file.inFolder("知识")
+    order:
+      - file.name
+      - status
+      - stale_after
+      - file.tags
+  - type: table
+    name: 来源架 (Sources)
+    filters:
+      or:
+        - file.inFolder("raw")
+        - file.inFolder("来源")
+    order:
+      - file.name
+      - file.tags
+  - type: table
+    name: 交付产物 (Outputs)
+    filters:
+      and:
+        - file.inFolder("outputs")
+    order:
+      - file.name
+      - file.tags

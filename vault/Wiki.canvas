@@ -1,0 +1,2967 @@
+{
+  "nodes": [
+    {
+      "id": "node-85194985e68b",
+      "type": "file",
+      "file": "wiki/log.md",
+      "x": 0,
+      "y": -520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-9dc88c51de0e",
+      "type": "file",
+      "file": "wiki/archive-index.md",
+      "x": 3640,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-28dcee7c6d39",
+      "type": "file",
+      "file": "wiki/index.md",
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "4"
+    },
+    {
+      "id": "node-c26b457d6c24",
+      "type": "file",
+      "file": "wiki/agent-loop-从读资料到给出回答.md",
+      "x": 368,
+      "y": -368,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-dcb43707460a",
+      "type": "file",
+      "file": "wiki/agent-工作流与多-agent-安排任务的三种办法.md",
+      "x": 520,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-5d59bc4a1c78",
+      "type": "file",
+      "file": "wiki/agent-说-完成-时-哪些证据够用.md",
+      "x": 9880,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-dc32360bf8ef",
+      "type": "file",
+      "file": "wiki/browser-use-把杂乱动态网页压成可索引的单步闭环.md",
+      "x": 3640,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-83ea93e43064",
+      "type": "file",
+      "file": "wiki/claude-code-与-codex-同一修复任务如何执行与受控.md",
+      "x": 9880,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-a077000424bb",
+      "type": "file",
+      "file": "wiki/codex-把-批不批-与-关在哪个笼子里跑-彻底拆开.md",
+      "x": 3640,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-35f3ad45a5a2",
+      "type": "file",
+      "file": "wiki/computer-use-与-browser-use-在异步变化的屏幕上闭环操作.md",
+      "x": 368,
+      "y": 368,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-fd09ff3c638b",
+      "type": "file",
+      "file": "wiki/dsh-代码导读-深挖工具批次的并发池-顺序提交与缺省拒绝.md",
+      "x": 3640,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-a2065babbed0",
+      "type": "file",
+      "file": "wiki/dsh-基于插件注入的并发工具池与按序提交关口.md",
+      "x": 3640,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-b13a546c0799",
+      "type": "file",
+      "file": "wiki/gpt-researcher-本地文档与公开网页怎样双路汇合成研究报告.md",
+      "x": 3640,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-e16d7e0955ed",
+      "type": "file",
+      "file": "wiki/hermes-代码导读-追踪经验的读取-暂存-后台复盘与快照刷新.md",
+      "x": 4160,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-1c66dd4f9ca6",
+      "type": "file",
+      "file": "wiki/hermes-把排障经验沉淀成受控的跨会话资产.md",
+      "x": 4160,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-37d84ad35682",
+      "type": "file",
+      "file": "wiki/kimi-code-agent-正忙时-用-steerbuffer-在-step-边界安全转向.md",
+      "x": 4160,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-041ef671d683",
+      "type": "file",
+      "file": "wiki/langgraph-给长流程拍下状态快照-随时从任意节点分叉重走.md",
+      "x": 4160,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-7106ebcf131c",
+      "type": "file",
+      "file": "wiki/letta-code-分层记忆文件系统与提示重编译时序.md",
+      "x": 4160,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-bb1b1741356d",
+      "type": "file",
+      "file": "wiki/mem0-外挂记忆层的事实提炼-混合打分与调用方边界.md",
+      "x": 4160,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-7d9e1df43249",
+      "type": "file",
+      "file": "wiki/mimo-code-用异步检查点与水位线接力跑完超长任务.md",
+      "x": 4680,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-3e1c5788d2c7",
+      "type": "file",
+      "file": "wiki/mini-swe-agent-砍掉一切花哨框架后-agent-最本质的骨架是什么.md",
+      "x": 4680,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-ecd3b1c8b004",
+      "type": "file",
+      "file": "wiki/openclaw-常驻多助手网关怎样守住会话归属与授权关口.md",
+      "x": 4680,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-5a731cc545b5",
+      "type": "file",
+      "file": "wiki/opencode-把-工具零件状态-与-外层会话状态-拆成两层.md",
+      "x": 4680,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-1bbe34fb56a2",
+      "type": "file",
+      "file": "wiki/openhands-先记账再动手-用事件流解耦意图与执行.md",
+      "x": 4680,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-b55fb662ffa4",
+      "type": "file",
+      "file": "wiki/pi-为什么它是极佳的第一套源码读本.md",
+      "x": 4680,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-04c9b64540d2",
+      "type": "file",
+      "file": "wiki/pi-的-extension-skill-与-package-把-做事手册-与-代码插件-彻底分开.md",
+      "x": 5200,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-693b22e08b51",
+      "type": "file",
+      "file": "wiki/qwen-code-连接上百个工具时-用延迟加载守住上下文窗口.md",
+      "x": 5200,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-758ca616c88e",
+      "type": "file",
+      "file": "wiki/skill-mcp-与工具生命周期-从发现能力到安全落地.md",
+      "x": 0,
+      "y": 520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-84f7df75d556",
+      "type": "file",
+      "file": "wiki/一轮工具调用后-谁决定下一步.md",
+      "x": 9880,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-f7bf87beacdb",
+      "type": "file",
+      "file": "wiki/上下文与记忆-资料怎样进入这次回答.md",
+      "x": -368,
+      "y": 368,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-ce468345fb0d",
+      "type": "file",
+      "file": "wiki/中断-重试与恢复-先对账外部世界-再决定怎么续跑.md",
+      "x": -520,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-417bcd0acc75",
+      "type": "file",
+      "file": "wiki/从入门理解到应用实践-选择你的阅读路线.md",
+      "x": 9880,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-d47944f991bb",
+      "type": "file",
+      "file": "wiki/代码导读-steer-何时真正进入模型上下文.md",
+      "x": 5200,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-6e79b3feda93",
+      "type": "file",
+      "file": "wiki/代码导读-九步追踪-gpt-researcher-的-hybrid-上下文流水线.md",
+      "x": 5200,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-71a3469466ad",
+      "type": "file",
+      "file": "wiki/代码导读-追踪-letta-code-local-memfs-v1-的记忆生效链路.md",
+      "x": 5200,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-35999e8ce82f",
+      "type": "file",
+      "file": "wiki/代码导读-追踪-mem0-的事实提炼落库与混合检索漏斗.md",
+      "x": 5200,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-4ec8d56ab583",
+      "type": "file",
+      "file": "wiki/代码执行沙箱-算清文件-网络与生命周期三笔账.md",
+      "x": -368,
+      "y": -368,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-b00b8c224590",
+      "type": "file",
+      "file": "wiki/代码走读-langgraph-的-checkpoint-如何落盘并派生新分支.md",
+      "x": 5720,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-cfb8b96b60ca",
+      "type": "file",
+      "file": "wiki/代码走读-跟着-openclaw-gateway-追踪一次显式-sessionkey-请求.md",
+      "x": 5720,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-9633fe571395",
+      "type": "file",
+      "file": "wiki/会话变长以后-保存记录-压缩内容-取回记忆.md",
+      "x": 0,
+      "y": -1040,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-312029048467",
+      "type": "file",
+      "file": "wiki/前缀缓存-kv-cache-与上下文经济学-为什么乱改提示词会让账单暴涨十倍.md",
+      "x": 735,
+      "y": -735,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-9fbf52a0929a",
+      "type": "file",
+      "file": "wiki/动手-kv-前缀缓存与缓存失效对比.md",
+      "x": 1040,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-5d29d2cacdcd",
+      "type": "file",
+      "file": "wiki/动手-在一条可运行轨迹里分清提案-执行与验收.md",
+      "x": 735,
+      "y": 735,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-fc52b37cf166",
+      "type": "file",
+      "file": "wiki/动手-形成摘要-并逐项核对出处.md",
+      "x": 0,
+      "y": 1040,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-55b82c33f48d",
+      "type": "file",
+      "file": "wiki/动手-把需要的历史选进本轮输入.md",
+      "x": -735,
+      "y": 735,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-900a51040269",
+      "type": "file",
+      "file": "wiki/动手-按原操作-id-找回回执.md",
+      "x": -1040,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-63a67311d77d",
+      "type": "file",
+      "file": "wiki/动手-用本地-http-观察回执与查询.md",
+      "x": -735,
+      "y": -735,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-50dfc69468e2",
+      "type": "file",
+      "file": "wiki/四种常被叫作-记忆-的状态.md",
+      "x": 9880,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-98726b0b761a",
+      "type": "file",
+      "file": "wiki/委派与交接-切分独立上下文-拒绝共享大泥球.md",
+      "x": 0,
+      "y": -1560,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-ac9b23f09dba",
+      "type": "file",
+      "file": "wiki/存下来了-下一轮就一定能看见吗.md",
+      "x": 9880,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-c7577ef66086",
+      "type": "file",
+      "file": "wiki/审批-沙箱与工作目录-管住意图-更要锁住爆炸半径.md",
+      "x": 1103,
+      "y": -1103,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-6e66f6bfdd8d",
+      "type": "file",
+      "file": "wiki/开放协作协议栈-agents-md-mcp-演进与-a2a-跨代理委托.md",
+      "x": 1560,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-c750192c21e7",
+      "type": "file",
+      "file": "wiki/快思考路由与-system-1-模型-小模型做有界判断-宿主握最终执行权.md",
+      "x": 1103,
+      "y": 1103,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-d956772a4ebc",
+      "type": "file",
+      "file": "wiki/扩展能力的四个层次-从提示词约定到宿主代码钩子.md",
+      "x": 0,
+      "y": 1560,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-28686034d959",
+      "type": "file",
+      "file": "wiki/批准过了-超时后能重试吗.md",
+      "x": 10400,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-bbbafee21715",
+      "type": "file",
+      "file": "wiki/把所学用起来-学习-教学与工作中的-ai-实践.md",
+      "x": 10400,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-7eac7221bb0a",
+      "type": "file",
+      "file": "wiki/按开源系统阅读.md",
+      "x": 5720,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-a339fa285818",
+      "type": "file",
+      "file": "wiki/按机制学习.md",
+      "x": -1103,
+      "y": 1103,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-6d428860ba4f",
+      "type": "file",
+      "file": "wiki/术语表-把名字放回具体任务里.md",
+      "x": 10400,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-ababa823bd85",
+      "type": "file",
+      "file": "wiki/模型-harness-cli-skill-与-mcp-一项任务里的分工.md",
+      "x": -1560,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-27a0b122be77",
+      "type": "file",
+      "file": "wiki/横向对照.md",
+      "x": 10400,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-fdd7169ea1ec",
+      "type": "file",
+      "file": "wiki/沿一次-checkpoint-与-rebuild-走读-mimo-code-源码.md",
+      "x": 5720,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-6d66a9598424",
+      "type": "file",
+      "file": "wiki/系统篇写作模板.md",
+      "x": 5720,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-e6d8ae217a5b",
+      "type": "file",
+      "file": "wiki/观察-测试与评测-别信-已完成-要看全链路证据.md",
+      "x": -1103,
+      "y": -1103,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-473bf4d2f939",
+      "type": "file",
+      "file": "wiki/读懂-defaultagent-不到两百行代码如何把消息列表变成状态机.md",
+      "x": 5720,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-c58fe96a2974",
+      "type": "file",
+      "file": "wiki/跟着-browser-use-的-agent-step-走一轮.md",
+      "x": 6240,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-ea088e3728a3",
+      "type": "file",
+      "file": "wiki/跟着-codex-代码走一次-exec-command-从策略判准到沙箱升权重试.md",
+      "x": 6240,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-944023b94f8b",
+      "type": "file",
+      "file": "wiki/跟着-opencode-代码走一轮-流式占位-死循环熔断与中断兜底.md",
+      "x": 6240,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-ff3c7ffd319f",
+      "type": "file",
+      "file": "wiki/跟着-openhands-sdk-走完一条事件闭环.md",
+      "x": 6240,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-948f27a79ac4",
+      "type": "file",
+      "file": "wiki/跟着-pi-代码走一轮-从-prompt-到会话树投影.md",
+      "x": 6240,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-ab2b3504bf6c",
+      "type": "file",
+      "file": "wiki/跟着-qwen-code-看延迟工具怎样检索与脱壳执行.md",
+      "x": 6240,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-88399b98970d",
+      "type": "file",
+      "file": "raw/2026-11-22-agent-loop-从读资料到给出回答.md",
+      "x": 0,
+      "y": -2080,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-fe7b431ee628",
+      "type": "file",
+      "file": "raw/2026-11-22-agent-工作流与多-agent-安排任务的三种办法.md",
+      "x": 1471,
+      "y": -1471,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-8c77bd1e3911",
+      "type": "file",
+      "file": "raw/2026-11-22-agent-说-完成-时-哪些证据够用.md",
+      "x": 10400,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-4a97dfc3b41b",
+      "type": "file",
+      "file": "raw/2026-11-22-browser-use-把杂乱动态网页压成可索引的单步闭环.md",
+      "x": 6760,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-ca3c131cca29",
+      "type": "file",
+      "file": "raw/2026-11-22-claude-code-与-codex-同一修复任务如何执行与受控.md",
+      "x": 10400,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-3a8ef2cceed8",
+      "type": "file",
+      "file": "raw/2026-11-22-codex-把-批不批-与-关在哪个笼子里跑-彻底拆开.md",
+      "x": 6760,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-609b0d22d32d",
+      "type": "file",
+      "file": "raw/2026-11-22-computer-use-与-browser-use-在异步变化的屏幕上闭环操作.md",
+      "x": 2080,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-0a83fb7ebe15",
+      "type": "file",
+      "file": "raw/2026-11-22-dsh-代码导读-深挖工具批次的并发池-顺序提交与缺省拒绝.md",
+      "x": 6760,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-a552c5fe5d95",
+      "type": "file",
+      "file": "raw/2026-11-22-dsh-基于插件注入的并发工具池与按序提交关口.md",
+      "x": 6760,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-23669d01a639",
+      "type": "file",
+      "file": "raw/2026-11-22-gpt-researcher-本地文档与公开网页怎样双路汇合成研究报告.md",
+      "x": 6760,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-4a1e724cc3a7",
+      "type": "file",
+      "file": "raw/2026-11-22-hermes-代码导读-追踪经验的读取-暂存-后台复盘与快照刷新.md",
+      "x": 6760,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-88ccbc741050",
+      "type": "file",
+      "file": "raw/2026-11-22-hermes-把排障经验沉淀成受控的跨会话资产.md",
+      "x": 7280,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-9ee236b82ef8",
+      "type": "file",
+      "file": "raw/2026-11-22-kimi-code-agent-正忙时-用-steerbuffer-在-step-边界安全转向.md",
+      "x": 7280,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-ea0925d87794",
+      "type": "file",
+      "file": "raw/2026-11-22-langgraph-给长流程拍下状态快照-随时从任意节点分叉重走.md",
+      "x": 7280,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-a53b862fc01e",
+      "type": "file",
+      "file": "raw/2026-11-22-letta-code-分层记忆文件系统与提示重编译时序.md",
+      "x": 7280,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-e7e2a3d7da14",
+      "type": "file",
+      "file": "raw/2026-11-22-mem0-外挂记忆层的事实提炼-混合打分与调用方边界.md",
+      "x": 7280,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-a3f03c7266e4",
+      "type": "file",
+      "file": "raw/2026-11-22-mimo-code-用异步检查点与水位线接力跑完超长任务.md",
+      "x": 7280,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-50595dccf789",
+      "type": "file",
+      "file": "raw/2026-11-22-mini-swe-agent-砍掉一切花哨框架后-agent-最本质的骨架是什么.md",
+      "x": 7800,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-6d63a80a2d60",
+      "type": "file",
+      "file": "raw/2026-11-22-openclaw-常驻多助手网关怎样守住会话归属与授权关口.md",
+      "x": 7800,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-169da48399ca",
+      "type": "file",
+      "file": "raw/2026-11-22-opencode-把-工具零件状态-与-外层会话状态-拆成两层.md",
+      "x": 7800,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-22c2bd3e6a06",
+      "type": "file",
+      "file": "raw/2026-11-22-openhands-先记账再动手-用事件流解耦意图与执行.md",
+      "x": 7800,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-7802aff9b95d",
+      "type": "file",
+      "file": "raw/2026-11-22-pi-为什么它是极佳的第一套源码读本.md",
+      "x": 7800,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-6ecce7a16367",
+      "type": "file",
+      "file": "raw/2026-11-22-pi-的-extension-skill-与-package-把-做事手册-与-代码插件-彻底分开.md",
+      "x": 7800,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-1b5c1e3225b6",
+      "type": "file",
+      "file": "raw/2026-11-22-qwen-code-连接上百个工具时-用延迟加载守住上下文窗口.md",
+      "x": 8320,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-c529d8721013",
+      "type": "file",
+      "file": "raw/2026-11-22-skill-mcp-与工具生命周期-从发现能力到安全落地.md",
+      "x": 1471,
+      "y": 1471,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-2d926e117e8e",
+      "type": "file",
+      "file": "raw/2026-11-22-一轮工具调用后-谁决定下一步.md",
+      "x": 10920,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-11a12c127d70",
+      "type": "file",
+      "file": "raw/2026-11-22-上下文与记忆-资料怎样进入这次回答.md",
+      "x": 0,
+      "y": 2080,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-a07ba0d50503",
+      "type": "file",
+      "file": "raw/2026-11-22-中断-重试与恢复-先对账外部世界-再决定怎么续跑.md",
+      "x": -1471,
+      "y": 1471,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-cae169775502",
+      "type": "file",
+      "file": "raw/2026-11-22-从入门理解到应用实践-选择你的阅读路线.md",
+      "x": 10920,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-5bcca61ccfb8",
+      "type": "file",
+      "file": "raw/2026-11-22-代码导读-steer-何时真正进入模型上下文.md",
+      "x": 8320,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-44bd763a3abf",
+      "type": "file",
+      "file": "raw/2026-11-22-代码导读-九步追踪-gpt-researcher-的-hybrid-上下文流水线.md",
+      "x": 8320,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-f2643654fee3",
+      "type": "file",
+      "file": "raw/2026-11-22-代码导读-追踪-letta-code-local-memfs-v1-的记忆生效链路.md",
+      "x": 8320,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-36e87734a0cf",
+      "type": "file",
+      "file": "raw/2026-11-22-代码导读-追踪-mem0-的事实提炼落库与混合检索漏斗.md",
+      "x": 8320,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-263c6de4c5cb",
+      "type": "file",
+      "file": "raw/2026-11-22-代码执行沙箱-算清文件-网络与生命周期三笔账.md",
+      "x": -2080,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-e81d1e56b58f",
+      "type": "file",
+      "file": "raw/2026-11-22-代码走读-langgraph-的-checkpoint-如何落盘并派生新分支.md",
+      "x": 8320,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-9c91e727d405",
+      "type": "file",
+      "file": "raw/2026-11-22-代码走读-跟着-openclaw-gateway-追踪一次显式-sessionkey-请求.md",
+      "x": 8840,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-168c0cafb226",
+      "type": "file",
+      "file": "raw/2026-11-22-会话变长以后-保存记录-压缩内容-取回记忆.md",
+      "x": -1471,
+      "y": -1471,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-fdf5e39a1d66",
+      "type": "file",
+      "file": "raw/2026-11-22-前缀缓存-kv-cache-与上下文经济学-为什么乱改提示词会让账单暴涨十倍.md",
+      "x": 0,
+      "y": -2600,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-11128b6f4938",
+      "type": "file",
+      "file": "raw/2026-11-22-动手-kv-前缀缓存与缓存失效对比.md",
+      "x": 1838,
+      "y": -1838,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-b1d258268d39",
+      "type": "file",
+      "file": "raw/2026-11-22-动手-在一条可运行轨迹里分清提案-执行与验收.md",
+      "x": 2600,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-f852274a72f3",
+      "type": "file",
+      "file": "raw/2026-11-22-动手-形成摘要-并逐项核对出处.md",
+      "x": 1838,
+      "y": 1838,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-e8484911303c",
+      "type": "file",
+      "file": "raw/2026-11-22-动手-把需要的历史选进本轮输入.md",
+      "x": 0,
+      "y": 2600,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-2eda411f7194",
+      "type": "file",
+      "file": "raw/2026-11-22-动手-按原操作-id-找回回执.md",
+      "x": -1838,
+      "y": 1838,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-47db636edfab",
+      "type": "file",
+      "file": "raw/2026-11-22-动手-用本地-http-观察回执与查询.md",
+      "x": -2600,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-7ed5fb3ac2cb",
+      "type": "file",
+      "file": "raw/2026-11-22-四种常被叫作-记忆-的状态.md",
+      "x": 10920,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-2863ca74409c",
+      "type": "file",
+      "file": "raw/2026-11-22-委派与交接-切分独立上下文-拒绝共享大泥球.md",
+      "x": -1838,
+      "y": -1838,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-a62aee4283e5",
+      "type": "file",
+      "file": "raw/2026-11-22-存下来了-下一轮就一定能看见吗.md",
+      "x": 10920,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-dc73b52faca7",
+      "type": "file",
+      "file": "raw/2026-11-22-审批-沙箱与工作目录-管住意图-更要锁住爆炸半径.md",
+      "x": 0,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-51feb5e6da12",
+      "type": "file",
+      "file": "raw/2026-11-22-开放协作协议栈-agents-md-mcp-演进与-a2a-跨代理委托.md",
+      "x": 2206,
+      "y": -2206,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-d05c51491514",
+      "type": "file",
+      "file": "raw/2026-11-22-快思考路由与-system-1-模型-小模型做有界判断-宿主握最终执行权.md",
+      "x": 3120,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-28db4135f6f9",
+      "type": "file",
+      "file": "raw/2026-11-22-扩展能力的四个层次-从提示词约定到宿主代码钩子.md",
+      "x": 2206,
+      "y": 2206,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-3bc94d8aff00",
+      "type": "file",
+      "file": "raw/2026-11-22-批准过了-超时后能重试吗.md",
+      "x": 10920,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-2d5f1bee5ba9",
+      "type": "file",
+      "file": "raw/2026-11-22-把所学用起来-学习-教学与工作中的-ai-实践.md",
+      "x": 10920,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-b208f7ab4613",
+      "type": "file",
+      "file": "raw/2026-11-22-按开源系统阅读.md",
+      "x": 8840,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-014b22eff5c0",
+      "type": "file",
+      "file": "raw/2026-11-22-按机制学习.md",
+      "x": 0,
+      "y": 3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-32230c4ed6f9",
+      "type": "file",
+      "file": "raw/2026-11-22-术语表-把名字放回具体任务里.md",
+      "x": 11440,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-9414f64eb277",
+      "type": "file",
+      "file": "raw/2026-11-22-模型-harness-cli-skill-与-mcp-一项任务里的分工.md",
+      "x": -2206,
+      "y": 2206,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-f1bcc951f1f3",
+      "type": "file",
+      "file": "raw/2026-11-22-横向对照.md",
+      "x": 11440,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-0275cb076471",
+      "type": "file",
+      "file": "raw/2026-11-22-沿一次-checkpoint-与-rebuild-走读-mimo-code-源码.md",
+      "x": 8840,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-390e6bc8694c",
+      "type": "file",
+      "file": "raw/2026-11-22-系统篇写作模板.md",
+      "x": 8840,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-0a4657d61afc",
+      "type": "file",
+      "file": "raw/2026-11-22-观察-测试与评测-别信-已完成-要看全链路证据.md",
+      "x": -3120,
+      "y": 0,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-6d3aa38fb769",
+      "type": "file",
+      "file": "raw/2026-11-22-读懂-defaultagent-不到两百行代码如何把消息列表变成状态机.md",
+      "x": 8840,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-277952085048",
+      "type": "file",
+      "file": "raw/2026-11-22-跟着-browser-use-的-agent-step-走一轮.md",
+      "x": 8840,
+      "y": -1620,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-6820edfce1d6",
+      "type": "file",
+      "file": "raw/2026-11-22-跟着-codex-代码走一次-exec-command-从策略判准到沙箱升权重试.md",
+      "x": 9360,
+      "y": -3120,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-47838bf2ec1e",
+      "type": "file",
+      "file": "raw/2026-11-22-跟着-opencode-代码走一轮-流式占位-死循环熔断与中断兜底.md",
+      "x": 9360,
+      "y": -2820,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-5a0cb07058ca",
+      "type": "file",
+      "file": "raw/2026-11-22-跟着-openhands-sdk-走完一条事件闭环.md",
+      "x": 9360,
+      "y": -2520,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-58af6ef776f6",
+      "type": "file",
+      "file": "raw/2026-11-22-跟着-pi-代码走一轮-从-prompt-到会话树投影.md",
+      "x": 9360,
+      "y": -2220,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "node-49b9a5149a6c",
+      "type": "file",
+      "file": "raw/2026-11-22-跟着-qwen-code-看延迟工具怎样检索与脱壳执行.md",
+      "x": 9360,
+      "y": -1920,
+      "width": 360,
+      "height": 220,
+      "color": "2"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-5441ff57d13a",
+      "fromNode": "node-c26b457d6c24",
+      "toNode": "node-88399b98970d",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-agent-loop-从读资料到给出回答.md"
+    },
+    {
+      "id": "edge-62ee1a0009c1",
+      "fromNode": "node-dcb43707460a",
+      "toNode": "node-fe7b431ee628",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-agent-工作流与多-agent-安排任务的三种办法.md"
+    },
+    {
+      "id": "edge-ed7534f22a29",
+      "fromNode": "node-5d59bc4a1c78",
+      "toNode": "node-8c77bd1e3911",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-agent-说-完成-时-哪些证据够用.md"
+    },
+    {
+      "id": "edge-319c389b5879",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-041ef671d683",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "LangGraph：给长流程拍下状态快照，随时从任意节点分叉重走"
+    },
+    {
+      "id": "edge-c6a6df10628a",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-d47944f991bb",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "代码导读：`steer` 何时真正进入模型上下文"
+    },
+    {
+      "id": "edge-4dce1c554302",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-37d84ad35682",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Kimi Code：Agent 正忙时，用 steerBuffer 在 step 边界安全转向"
+    },
+    {
+      "id": "edge-cdf11cf642c4",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-e16d7e0955ed",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Hermes 代码导读：追踪经验的读取、暂存、后台复盘与快照刷新"
+    },
+    {
+      "id": "edge-cc5cf9bc87fc",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-1c66dd4f9ca6",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Hermes：把排障经验沉淀成受控的跨会话资产"
+    },
+    {
+      "id": "edge-2f4da16c53a3",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-fd09ff3c638b",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "DSH 代码导读：深挖工具批次的并发池、顺序提交与缺省拒绝"
+    },
+    {
+      "id": "edge-eaf1a9fc21b2",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-a2065babbed0",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "DSH：基于插件注入的并发工具池与按序提交关口"
+    },
+    {
+      "id": "edge-911fe72543f2",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-6e79b3feda93",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "代码导读：九步追踪 GPT Researcher 的 Hybrid 上下文流水线"
+    },
+    {
+      "id": "edge-5186e22c1858",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-b13a546c0799",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "GPT Researcher：本地文档与公开网页怎样双路汇合成研究报告"
+    },
+    {
+      "id": "edge-aca63970c66a",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-ea088e3728a3",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "跟着 Codex 代码走一次 `exec_command`：从策略判准到沙箱升权重试"
+    },
+    {
+      "id": "edge-d418151d7cd5",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-a077000424bb",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Codex：把「批不批」与「关在哪个笼子里跑」彻底拆开"
+    },
+    {
+      "id": "edge-3614874c114e",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-c58fe96a2974",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "跟着 browser-use 的 `Agent.step()` 走一轮"
+    },
+    {
+      "id": "edge-64c5672a34cd",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-dc32360bf8ef",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "browser-use：把杂乱动态网页压成可索引的单步闭环"
+    },
+    {
+      "id": "edge-165e9fa1f234",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-6d66a9598424",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "系统篇写作模板"
+    },
+    {
+      "id": "edge-311003993115",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-7eac7221bb0a",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "按开源系统阅读"
+    },
+    {
+      "id": "edge-2686d43c0669",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-900a51040269",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "动手：按原操作 ID 找回回执"
+    },
+    {
+      "id": "edge-f9ea78c429bd",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-9fbf52a0929a",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "动手：KV 前缀缓存与缓存失效对比"
+    },
+    {
+      "id": "edge-327379a2b8d0",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-63a67311d77d",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "动手：用本地 HTTP 观察回执与查询"
+    },
+    {
+      "id": "edge-8c71b960ff2a",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-5d29d2cacdcd",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "动手：在一条可运行轨迹里分清提案、执行与验收"
+    },
+    {
+      "id": "edge-78dd3d2aceca",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-fc52b37cf166",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "动手：形成摘要，并逐项核对出处"
+    },
+    {
+      "id": "edge-afbbe45bc0a2",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-55b82c33f48d",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "动手：把需要的历史选进本轮输入"
+    },
+    {
+      "id": "edge-26bb588c1f49",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-9633fe571395",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "会话变长以后：保存记录、压缩内容、取回记忆"
+    },
+    {
+      "id": "edge-e7075fe38745",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-4ec8d56ab583",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "代码执行沙箱：算清文件、网络与生命周期三笔账"
+    },
+    {
+      "id": "edge-d11804023119",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-6e66f6bfdd8d",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "开放协作协议栈：AGENTS.md、MCP 演进与 A2A 跨代理委托"
+    },
+    {
+      "id": "edge-747d31d82034",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-e6d8ae217a5b",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "观察、测试与评测：别信“已完成”，要看全链路证据"
+    },
+    {
+      "id": "edge-20be77c7762e",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-ababa823bd85",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "模型、Harness、CLI、Skill 与 MCP：一项任务里的分工"
+    },
+    {
+      "id": "edge-efb62e20f242",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-758ca616c88e",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Skill、MCP 与工具生命周期：从发现能力到安全落地"
+    },
+    {
+      "id": "edge-fb733d55b95d",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-c750192c21e7",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "快思考路由与 System-1 模型：小模型做有界判断，宿主握最终执行权"
+    },
+    {
+      "id": "edge-1e8a2eceb0be",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-ce468345fb0d",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "中断、重试与恢复：先对账外部世界，再决定怎么续跑"
+    },
+    {
+      "id": "edge-73671ca22fc1",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-d956772a4ebc",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "扩展能力的四个层次：从提示词约定到宿主代码钩子"
+    },
+    {
+      "id": "edge-1d27d84ee535",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-98726b0b761a",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "委派与交接：切分独立上下文，拒绝共享大泥球"
+    },
+    {
+      "id": "edge-2257a62c3de7",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-f7bf87beacdb",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "上下文与记忆：资料怎样进入这次回答"
+    },
+    {
+      "id": "edge-756a9f83aacd",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-35f3ad45a5a2",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Computer Use 与 Browser Use：在异步变化的屏幕上闭环操作"
+    },
+    {
+      "id": "edge-2d53c0de607f",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-312029048467",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "前缀缓存（KV Cache）与上下文经济学：为什么乱改提示词会让账单暴涨十倍"
+    },
+    {
+      "id": "edge-a7dca9f5f5fa",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-c7577ef66086",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "审批、沙箱与工作目录：管住意图，更要锁住爆炸半径"
+    },
+    {
+      "id": "edge-87996d9dc563",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-dcb43707460a",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Agent、工作流与多 Agent：安排任务的三种办法"
+    },
+    {
+      "id": "edge-fb143f6dfb1e",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-c26b457d6c24",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Agent loop：从读资料到给出回答"
+    },
+    {
+      "id": "edge-37cf04479c9a",
+      "fromNode": "node-9dc88c51de0e",
+      "toNode": "node-a339fa285818",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "按机制学习"
+    },
+    {
+      "id": "edge-e3d3cdaf1bf2",
+      "fromNode": "node-dc32360bf8ef",
+      "toNode": "node-4a97dfc3b41b",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-browser-use-把杂乱动态网页压成可索引的单步闭环.md"
+    },
+    {
+      "id": "edge-b32ae358fed0",
+      "fromNode": "node-83ea93e43064",
+      "toNode": "node-ca3c131cca29",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-claude-code-与-codex-同一修复任务如何执行与受控.md"
+    },
+    {
+      "id": "edge-2dac05a7d159",
+      "fromNode": "node-a077000424bb",
+      "toNode": "node-3a8ef2cceed8",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-codex-把-批不批-与-关在哪个笼子里跑-彻底拆开.md"
+    },
+    {
+      "id": "edge-2da2fa6af773",
+      "fromNode": "node-35f3ad45a5a2",
+      "toNode": "node-609b0d22d32d",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-computer-use-与-browser-use-在异步变化的屏幕上闭环操作.md"
+    },
+    {
+      "id": "edge-9052fa808064",
+      "fromNode": "node-fd09ff3c638b",
+      "toNode": "node-0a83fb7ebe15",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-dsh-代码导读-深挖工具批次的并发池-顺序提交与缺省拒绝.md"
+    },
+    {
+      "id": "edge-19b5d43378d2",
+      "fromNode": "node-a2065babbed0",
+      "toNode": "node-a552c5fe5d95",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-dsh-基于插件注入的并发工具池与按序提交关口.md"
+    },
+    {
+      "id": "edge-a058db7a197b",
+      "fromNode": "node-b13a546c0799",
+      "toNode": "node-23669d01a639",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-gpt-researcher-本地文档与公开网页怎样双路汇合成研究报告.md"
+    },
+    {
+      "id": "edge-1082e889bd04",
+      "fromNode": "node-e16d7e0955ed",
+      "toNode": "node-4a1e724cc3a7",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-hermes-代码导读-追踪经验的读取-暂存-后台复盘与快照刷新.md"
+    },
+    {
+      "id": "edge-7be6a3cdedb7",
+      "fromNode": "node-1c66dd4f9ca6",
+      "toNode": "node-88ccbc741050",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-hermes-把排障经验沉淀成受控的跨会话资产.md"
+    },
+    {
+      "id": "edge-d2d6bc51f784",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-6d428860ba4f",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "术语表：把名字放回具体任务里"
+    },
+    {
+      "id": "edge-63df84a9978e",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-bbbafee21715",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "把所学用起来：学习、教学与工作中的 AI 实践"
+    },
+    {
+      "id": "edge-d94d9bd5928e",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-417bcd0acc75",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "从入门理解到应用实践：选择你的阅读路线"
+    },
+    {
+      "id": "edge-4dcfdabc5b3a",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-ac9b23f09dba",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "存下来了，下一轮就一定能看见吗？"
+    },
+    {
+      "id": "edge-8f9f802ad16c",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-28686034d959",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "批准过了，超时后能重试吗？"
+    },
+    {
+      "id": "edge-991906de498b",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-84f7df75d556",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "一轮工具调用后，谁决定下一步？"
+    },
+    {
+      "id": "edge-0cf0bb540000",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-50dfc69468e2",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "四种常被叫作“记忆”的状态"
+    },
+    {
+      "id": "edge-4b39f0e8a190",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-5d59bc4a1c78",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Agent 说“完成”时，哪些证据够用？"
+    },
+    {
+      "id": "edge-721f8c4fade3",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-83ea93e43064",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Claude Code 与 Codex：同一修复任务如何执行与受控？"
+    },
+    {
+      "id": "edge-6ee452fce3a2",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-27a0b122be77",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "横向对照"
+    },
+    {
+      "id": "edge-cd80e86ad43a",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-ab2b3504bf6c",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "跟着 Qwen Code 看延迟工具怎样检索与脱壳执行"
+    },
+    {
+      "id": "edge-8b2343b4383d",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-693b22e08b51",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Qwen Code：连接上百个工具时，用延迟加载守住上下文窗口"
+    },
+    {
+      "id": "edge-702374b5172d",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-04c9b64540d2",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Pi 的 Extension、Skill 与 Package：把「做事手册」与「代码插件」彻底分开"
+    },
+    {
+      "id": "edge-f398672e8dd0",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-948f27a79ac4",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "跟着 Pi 代码走一轮：从 `prompt()` 到会话树投影"
+    },
+    {
+      "id": "edge-756ce2f05fb7",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-b55fb662ffa4",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Pi：为什么它是极佳的第一套源码读本"
+    },
+    {
+      "id": "edge-9eeb5821ebb4",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-ff3c7ffd319f",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "跟着 OpenHands SDK 走完一条事件闭环"
+    },
+    {
+      "id": "edge-7a3a99107915",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-1bbe34fb56a2",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "OpenHands：先记账再动手，用事件流解耦意图与执行"
+    },
+    {
+      "id": "edge-c22d289e08f6",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-944023b94f8b",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "跟着 OpenCode 代码走一轮：流式占位、死循环熔断与中断兜底"
+    },
+    {
+      "id": "edge-f3699fee7896",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-5a731cc545b5",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "OpenCode：把「工具零件状态」与「外层会话状态」拆成两层"
+    },
+    {
+      "id": "edge-82847a65f143",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-cfb8b96b60ca",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "代码走读：跟着 OpenClaw Gateway 追踪一次显式 `sessionKey` 请求"
+    },
+    {
+      "id": "edge-7ef89ae671b1",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-ecd3b1c8b004",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "OpenClaw：常驻多助手网关怎样守住会话归属与授权关口"
+    },
+    {
+      "id": "edge-4cc563fddd00",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-fdd7169ea1ec",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "沿一次 checkpoint 与 rebuild 走读 MiMo Code 源码"
+    },
+    {
+      "id": "edge-9833c865f6d6",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-7d9e1df43249",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "MiMo Code：用异步检查点与水位线接力跑完超长任务"
+    },
+    {
+      "id": "edge-8d11159d0f5d",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-473bf4d2f939",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "读懂 `DefaultAgent`：不到两百行代码如何把消息列表变成状态机"
+    },
+    {
+      "id": "edge-b27fb4224c63",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-3e1c5788d2c7",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "mini-SWE-agent：砍掉一切花哨框架后，Agent 最本质的骨架是什么"
+    },
+    {
+      "id": "edge-0a73cba4f23b",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-35999e8ce82f",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "代码导读：追踪 Mem0 的事实提炼落库与混合检索漏斗"
+    },
+    {
+      "id": "edge-336aab847a34",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-bb1b1741356d",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Mem0：外挂记忆层的事实提炼、混合打分与调用方边界"
+    },
+    {
+      "id": "edge-b63f4359fcd4",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-71a3469466ad",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "代码导读：追踪 Letta Code local MemFS v1 的记忆生效链路"
+    },
+    {
+      "id": "edge-893c1b0c2f08",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-7106ebcf131c",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "Letta Code：分层记忆文件系统与提示重编译时序"
+    },
+    {
+      "id": "edge-2c6c4fb804f8",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-b00b8c224590",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "代码走读：LangGraph 的 Checkpoint 如何落盘并派生新分支"
+    },
+    {
+      "id": "edge-1a4c280ad53a",
+      "fromNode": "node-28dcee7c6d39",
+      "toNode": "node-9dc88c51de0e",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-6e305d3a0d0f",
+      "fromNode": "node-37d84ad35682",
+      "toNode": "node-9ee236b82ef8",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-kimi-code-agent-正忙时-用-steerbuffer-在-step-边界安全转向.md"
+    },
+    {
+      "id": "edge-8b90866a3cee",
+      "fromNode": "node-041ef671d683",
+      "toNode": "node-ea0925d87794",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-langgraph-给长流程拍下状态快照-随时从任意节点分叉重走.md"
+    },
+    {
+      "id": "edge-70eb9d6b7ea5",
+      "fromNode": "node-7106ebcf131c",
+      "toNode": "node-a53b862fc01e",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-letta-code-分层记忆文件系统与提示重编译时序.md"
+    },
+    {
+      "id": "edge-10edf66023d7",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-a339fa285818",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-de9d5cf37f3f",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-c26b457d6c24",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-d793cb6afe8f",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-dcb43707460a",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-c313f38ab725",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-c7577ef66086",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-ce4f63f6b8ad",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-312029048467",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-48d6e075a623",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-35f3ad45a5a2",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-ed3bbce5f9a1",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-f7bf87beacdb",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-f01483027f74",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-98726b0b761a",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-d46c23380dbe",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-d956772a4ebc",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-369e3ca69128",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-ce468345fb0d",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-0034c18a303b",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-c750192c21e7",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-faffb0ddd571",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-758ca616c88e",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-af577b19e0fe",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-ababa823bd85",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-d75d9d8214b9",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-e6d8ae217a5b",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-fb028eb596a6",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-6e66f6bfdd8d",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-d416d59acdd0",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-4ec8d56ab583",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-7b70b7d7de2b",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-9633fe571395",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-f39dd7f43610",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-55b82c33f48d",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-7784328e8a18",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-fc52b37cf166",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-81c28bf54aae",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-5d29d2cacdcd",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-c1cd2452287d",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-63a67311d77d",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-280b805bf76e",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-9fbf52a0929a",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-88126e7a6148",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-900a51040269",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-0cafceff9b58",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-7eac7221bb0a",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-b8511ff69ae7",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-6d66a9598424",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-66ff76a0da74",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-dc32360bf8ef",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-ff39f178efd1",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-c58fe96a2974",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-72360b589d57",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-a077000424bb",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-b488f2371646",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-ea088e3728a3",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-f52603ddf444",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-b13a546c0799",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-ee19cc923c9f",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-6e79b3feda93",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-1e92b667dd16",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-a2065babbed0",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-63bd38ca73cc",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-fd09ff3c638b",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-dab4a6f35a62",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-1c66dd4f9ca6",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-461ce8e63208",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-e16d7e0955ed",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-2b999d3695b1",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-37d84ad35682",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-7ac81fa64eb2",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-d47944f991bb",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-769bd1573973",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-041ef671d683",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-c042e67755ff",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-b00b8c224590",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-4ac6ba68da0f",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-7106ebcf131c",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-8930b49c8daa",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-71a3469466ad",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-bad7b832a6e5",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-bb1b1741356d",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-f3b4cc15291d",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-35999e8ce82f",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-8c1f44e7c650",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-3e1c5788d2c7",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-0d629301a27d",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-473bf4d2f939",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-7de0c28122bc",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-7d9e1df43249",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-6648cf10a78b",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-fdd7169ea1ec",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-6119d01f421c",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-ecd3b1c8b004",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-baf4a48e4c65",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-cfb8b96b60ca",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-2472f4337451",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-5a731cc545b5",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-d5e6119bca38",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-944023b94f8b",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-eb61a75e8065",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-1bbe34fb56a2",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-c59f0c9ab786",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-ff3c7ffd319f",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-ed2eeba4ee14",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-b55fb662ffa4",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-774441af4ecf",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-948f27a79ac4",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-565c7779e723",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-04c9b64540d2",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-b35eea0ee603",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-693b22e08b51",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-9388752429d9",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-ab2b3504bf6c",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-663ee1c48203",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-27a0b122be77",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-3760c064daa2",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-83ea93e43064",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-4ba05e36c57d",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-5d59bc4a1c78",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-3da7cbd2d860",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-50dfc69468e2",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-25fd16d4035b",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-84f7df75d556",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-7ed02cad0dcd",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-28686034d959",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-503239ea3d0b",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-ac9b23f09dba",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-1f45e4a51a95",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-417bcd0acc75",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-410b5e9414e7",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-bbbafee21715",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-0303296fd265",
+      "fromNode": "node-85194985e68b",
+      "toNode": "node-6d428860ba4f",
+      "fromEnd": "none",
+      "toEnd": "arrow"
+    },
+    {
+      "id": "edge-0a756f59be52",
+      "fromNode": "node-bb1b1741356d",
+      "toNode": "node-e7e2a3d7da14",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-mem0-外挂记忆层的事实提炼-混合打分与调用方边界.md"
+    },
+    {
+      "id": "edge-1e63a8254c7e",
+      "fromNode": "node-7d9e1df43249",
+      "toNode": "node-a3f03c7266e4",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-mimo-code-用异步检查点与水位线接力跑完超长任务.md"
+    },
+    {
+      "id": "edge-41de2e8889b4",
+      "fromNode": "node-3e1c5788d2c7",
+      "toNode": "node-50595dccf789",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-mini-swe-agent-砍掉一切花哨框架后-agent-最本质的骨架是什么.md"
+    },
+    {
+      "id": "edge-22ba4ae53492",
+      "fromNode": "node-ecd3b1c8b004",
+      "toNode": "node-6d63a80a2d60",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-openclaw-常驻多助手网关怎样守住会话归属与授权关口.md"
+    },
+    {
+      "id": "edge-effff0c9f507",
+      "fromNode": "node-5a731cc545b5",
+      "toNode": "node-169da48399ca",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-opencode-把-工具零件状态-与-外层会话状态-拆成两层.md"
+    },
+    {
+      "id": "edge-f0ba123e7bbb",
+      "fromNode": "node-1bbe34fb56a2",
+      "toNode": "node-22c2bd3e6a06",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-openhands-先记账再动手-用事件流解耦意图与执行.md"
+    },
+    {
+      "id": "edge-5392ae1a5563",
+      "fromNode": "node-b55fb662ffa4",
+      "toNode": "node-7802aff9b95d",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-pi-为什么它是极佳的第一套源码读本.md"
+    },
+    {
+      "id": "edge-d60b7e6b4ca7",
+      "fromNode": "node-04c9b64540d2",
+      "toNode": "node-6ecce7a16367",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-pi-的-extension-skill-与-package-把-做事手册-与-代码插件-彻底分开.md"
+    },
+    {
+      "id": "edge-23830332ccfc",
+      "fromNode": "node-693b22e08b51",
+      "toNode": "node-1b5c1e3225b6",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-qwen-code-连接上百个工具时-用延迟加载守住上下文窗口.md"
+    },
+    {
+      "id": "edge-fbc4aa76dbcc",
+      "fromNode": "node-758ca616c88e",
+      "toNode": "node-c529d8721013",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-skill-mcp-与工具生命周期-从发现能力到安全落地.md"
+    },
+    {
+      "id": "edge-7d111dc45bf0",
+      "fromNode": "node-84f7df75d556",
+      "toNode": "node-2d926e117e8e",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-一轮工具调用后-谁决定下一步.md"
+    },
+    {
+      "id": "edge-9e31ac263b63",
+      "fromNode": "node-f7bf87beacdb",
+      "toNode": "node-11a12c127d70",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-上下文与记忆-资料怎样进入这次回答.md"
+    },
+    {
+      "id": "edge-cb298da739bb",
+      "fromNode": "node-ce468345fb0d",
+      "toNode": "node-a07ba0d50503",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-中断-重试与恢复-先对账外部世界-再决定怎么续跑.md"
+    },
+    {
+      "id": "edge-19b3bd33e9df",
+      "fromNode": "node-417bcd0acc75",
+      "toNode": "node-cae169775502",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-从入门理解到应用实践-选择你的阅读路线.md"
+    },
+    {
+      "id": "edge-a2dce5465481",
+      "fromNode": "node-d47944f991bb",
+      "toNode": "node-5bcca61ccfb8",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-代码导读-steer-何时真正进入模型上下文.md"
+    },
+    {
+      "id": "edge-add0e79f2794",
+      "fromNode": "node-6e79b3feda93",
+      "toNode": "node-44bd763a3abf",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-代码导读-九步追踪-gpt-researcher-的-hybrid-上下文流水线.md"
+    },
+    {
+      "id": "edge-034504a64531",
+      "fromNode": "node-71a3469466ad",
+      "toNode": "node-f2643654fee3",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-代码导读-追踪-letta-code-local-memfs-v1-的记忆生效链路.md"
+    },
+    {
+      "id": "edge-ca73f0d761d2",
+      "fromNode": "node-35999e8ce82f",
+      "toNode": "node-36e87734a0cf",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-代码导读-追踪-mem0-的事实提炼落库与混合检索漏斗.md"
+    },
+    {
+      "id": "edge-cb5c992f5f56",
+      "fromNode": "node-4ec8d56ab583",
+      "toNode": "node-263c6de4c5cb",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-代码执行沙箱-算清文件-网络与生命周期三笔账.md"
+    },
+    {
+      "id": "edge-61871d1f3622",
+      "fromNode": "node-b00b8c224590",
+      "toNode": "node-e81d1e56b58f",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-代码走读-langgraph-的-checkpoint-如何落盘并派生新分支.md"
+    },
+    {
+      "id": "edge-2681921a7aa9",
+      "fromNode": "node-cfb8b96b60ca",
+      "toNode": "node-9c91e727d405",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-代码走读-跟着-openclaw-gateway-追踪一次显式-sessionkey-请求.md"
+    },
+    {
+      "id": "edge-026a2c9d8798",
+      "fromNode": "node-9633fe571395",
+      "toNode": "node-168c0cafb226",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-会话变长以后-保存记录-压缩内容-取回记忆.md"
+    },
+    {
+      "id": "edge-ee45648fa759",
+      "fromNode": "node-312029048467",
+      "toNode": "node-fdf5e39a1d66",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-前缀缓存-kv-cache-与上下文经济学-为什么乱改提示词会让账单暴涨十倍.md"
+    },
+    {
+      "id": "edge-db8b8b126175",
+      "fromNode": "node-9fbf52a0929a",
+      "toNode": "node-11128b6f4938",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-动手-kv-前缀缓存与缓存失效对比.md"
+    },
+    {
+      "id": "edge-2684367940f4",
+      "fromNode": "node-5d29d2cacdcd",
+      "toNode": "node-b1d258268d39",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-动手-在一条可运行轨迹里分清提案-执行与验收.md"
+    },
+    {
+      "id": "edge-f5d54ad9268b",
+      "fromNode": "node-fc52b37cf166",
+      "toNode": "node-f852274a72f3",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-动手-形成摘要-并逐项核对出处.md"
+    },
+    {
+      "id": "edge-b4b80765d317",
+      "fromNode": "node-55b82c33f48d",
+      "toNode": "node-e8484911303c",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-动手-把需要的历史选进本轮输入.md"
+    },
+    {
+      "id": "edge-7c09acf93a9d",
+      "fromNode": "node-900a51040269",
+      "toNode": "node-2eda411f7194",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-动手-按原操作-id-找回回执.md"
+    },
+    {
+      "id": "edge-de79be4a20db",
+      "fromNode": "node-63a67311d77d",
+      "toNode": "node-47db636edfab",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-动手-用本地-http-观察回执与查询.md"
+    },
+    {
+      "id": "edge-2be09e21afeb",
+      "fromNode": "node-50dfc69468e2",
+      "toNode": "node-7ed5fb3ac2cb",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-四种常被叫作-记忆-的状态.md"
+    },
+    {
+      "id": "edge-604cd28a8992",
+      "fromNode": "node-98726b0b761a",
+      "toNode": "node-2863ca74409c",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-委派与交接-切分独立上下文-拒绝共享大泥球.md"
+    },
+    {
+      "id": "edge-6286cf46b310",
+      "fromNode": "node-ac9b23f09dba",
+      "toNode": "node-a62aee4283e5",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-存下来了-下一轮就一定能看见吗.md"
+    },
+    {
+      "id": "edge-8ab934c1e0ef",
+      "fromNode": "node-c7577ef66086",
+      "toNode": "node-dc73b52faca7",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-审批-沙箱与工作目录-管住意图-更要锁住爆炸半径.md"
+    },
+    {
+      "id": "edge-727e3bace6f6",
+      "fromNode": "node-6e66f6bfdd8d",
+      "toNode": "node-51feb5e6da12",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-开放协作协议栈-agents-md-mcp-演进与-a2a-跨代理委托.md"
+    },
+    {
+      "id": "edge-62df74ac5b1f",
+      "fromNode": "node-c750192c21e7",
+      "toNode": "node-d05c51491514",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-快思考路由与-system-1-模型-小模型做有界判断-宿主握最终执行权.md"
+    },
+    {
+      "id": "edge-ab56c83af102",
+      "fromNode": "node-d956772a4ebc",
+      "toNode": "node-28db4135f6f9",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-扩展能力的四个层次-从提示词约定到宿主代码钩子.md"
+    },
+    {
+      "id": "edge-c541147b7628",
+      "fromNode": "node-28686034d959",
+      "toNode": "node-3bc94d8aff00",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-批准过了-超时后能重试吗.md"
+    },
+    {
+      "id": "edge-099e59007aeb",
+      "fromNode": "node-bbbafee21715",
+      "toNode": "node-2d5f1bee5ba9",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-把所学用起来-学习-教学与工作中的-ai-实践.md"
+    },
+    {
+      "id": "edge-e803a9f61485",
+      "fromNode": "node-7eac7221bb0a",
+      "toNode": "node-b208f7ab4613",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-按开源系统阅读.md"
+    },
+    {
+      "id": "edge-7409abbc04b6",
+      "fromNode": "node-a339fa285818",
+      "toNode": "node-014b22eff5c0",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-按机制学习.md"
+    },
+    {
+      "id": "edge-23098cb60942",
+      "fromNode": "node-6d428860ba4f",
+      "toNode": "node-32230c4ed6f9",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-术语表-把名字放回具体任务里.md"
+    },
+    {
+      "id": "edge-07f119659f9e",
+      "fromNode": "node-ababa823bd85",
+      "toNode": "node-9414f64eb277",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-模型-harness-cli-skill-与-mcp-一项任务里的分工.md"
+    },
+    {
+      "id": "edge-53c79468275b",
+      "fromNode": "node-27a0b122be77",
+      "toNode": "node-f1bcc951f1f3",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-横向对照.md"
+    },
+    {
+      "id": "edge-03da5d2e38a5",
+      "fromNode": "node-fdd7169ea1ec",
+      "toNode": "node-0275cb076471",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-沿一次-checkpoint-与-rebuild-走读-mimo-code-源码.md"
+    },
+    {
+      "id": "edge-b6555a630f26",
+      "fromNode": "node-6d66a9598424",
+      "toNode": "node-390e6bc8694c",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-系统篇写作模板.md"
+    },
+    {
+      "id": "edge-8e7873f79805",
+      "fromNode": "node-e6d8ae217a5b",
+      "toNode": "node-0a4657d61afc",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-观察-测试与评测-别信-已完成-要看全链路证据.md"
+    },
+    {
+      "id": "edge-1747b0573857",
+      "fromNode": "node-473bf4d2f939",
+      "toNode": "node-6d3aa38fb769",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-读懂-defaultagent-不到两百行代码如何把消息列表变成状态机.md"
+    },
+    {
+      "id": "edge-4ed42a9233a5",
+      "fromNode": "node-c58fe96a2974",
+      "toNode": "node-277952085048",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-跟着-browser-use-的-agent-step-走一轮.md"
+    },
+    {
+      "id": "edge-4da60d2d4fb9",
+      "fromNode": "node-ea088e3728a3",
+      "toNode": "node-6820edfce1d6",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-跟着-codex-代码走一次-exec-command-从策略判准到沙箱升权重试.md"
+    },
+    {
+      "id": "edge-9093cb66af76",
+      "fromNode": "node-944023b94f8b",
+      "toNode": "node-47838bf2ec1e",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-跟着-opencode-代码走一轮-流式占位-死循环熔断与中断兜底.md"
+    },
+    {
+      "id": "edge-f264012c0063",
+      "fromNode": "node-ff3c7ffd319f",
+      "toNode": "node-5a0cb07058ca",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-跟着-openhands-sdk-走完一条事件闭环.md"
+    },
+    {
+      "id": "edge-0cbb6fd71f30",
+      "fromNode": "node-948f27a79ac4",
+      "toNode": "node-58af6ef776f6",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-跟着-pi-代码走一轮-从-prompt-到会话树投影.md"
+    },
+    {
+      "id": "edge-1157aaae0640",
+      "fromNode": "node-ab2b3504bf6c",
+      "toNode": "node-49b9a5149a6c",
+      "fromEnd": "none",
+      "toEnd": "arrow",
+      "label": "2026-11-22-跟着-qwen-code-看延迟工具怎样检索与脱壳执行.md"
+    }
+  ]
+}

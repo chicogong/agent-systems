@@ -1,0 +1,29 @@
+{
+  "title": "系统提示词塞了时间戳？月末账单暴涨10倍！",
+  "category": "人工智能",
+  "tags": [
+    "人工智能",
+    "架构",
+    "AI 编程"
+  ],
+  "topics": [
+    "人工智能",
+    "大语言模型 (LLM)",
+    "软件架构",
+    "后端开发"
+  ],
+  "sourcePath": "/Users/haorangong/Github/chicogong/products/open-source/agent-systems/docs/promotions/prefix-cache-breakdown.deck.md",
+  "createdAt": "2026-11-23T11:25:59.138Z",
+  "platforms": [
+    "wechat",
+    "zhihu",
+    "juejin",
+    "xiaohongshu"
+  ],
+  "files": {
+    "wechat": "wechat.html",
+    "zhihu": "zhihu.md",
+    "juejin": "juejin.md",
+    "xiaohongshu": "xiaohongshu.txt"
+  }
+}
