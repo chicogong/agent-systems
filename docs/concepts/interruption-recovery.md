@@ -6,6 +6,11 @@ Agent 调用外部接口创建故障工单或发起客户退款时，第 10 秒�
 
 为什么“回滚本地检查点重跑”会闯下大祸？因为分布式系统里有一条绕不过去的物理铁律：**网络超时不等于操作失败，只代表结果未知**。请求可能死在去程半路，也可能远端服务器早已落库扣款，仅仅是回执报文断在了归途。**本地进程的内存与状态机可以随时回滚或续跑，但已经飞出宿主的外部副作用无法时光倒流——恢复之前，必须先凭幂等键或原业务单号向外部系统对账**。
 
+> [!TIP] **10 秒心智模型（Mental Model）**
+> - **一句话直觉**：网络超时就像寄挂号信丢了回执——信可能早送到了，只是邮递员没回来说。绝不能以为信没送到就立刻重寄三封，而是先去收件人信箱查证（对账）。
+> - **核心守则**：$\text{Timeout} \ne \text{Failure}$。$\text{Safe Recovery} = \text{Idempotency Key} \to \text{Remote Status Query} \to \text{Branch Decision}$。
+> - **致命反模式**：对包含外部副作用（发钱、发帖、落库）的写接口配置盲目重试（retry），造成灾难性重复执行。
+
 ![工具调用中断后的结果对账与恢复决策](../../figures/interruption-recovery/diagram.svg)
 
 [单独打开 SVG](../../figures/interruption-recovery/diagram.svg) · [可编辑图源](../../figures/interruption-recovery/scene.excalidraw) · [PNG 预览](../../figures/interruption-recovery/preview.png) · [图的文字版](../../figures/interruption-recovery/README.md)

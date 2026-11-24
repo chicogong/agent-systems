@@ -68,3 +68,4 @@
 - `2026-11-22T15:46:03.642Z` **INGEST** [[从入门理解到应用实践-选择你的阅读路线]] from `/Users/haorangong/Github/chicogong/experiments/agent-systems/docs/learning-path.md` (`sha256:588d9dddcf2c`)
 - `2026-11-22T15:46:03.652Z` **INGEST** [[把所学用起来-学习-教学与工作中的-ai-实践]] from `/Users/haorangong/Github/chicogong/experiments/agent-systems/docs/learning-and-practice.md` (`sha256:e0ce58d8d7e5`)
 - `2026-11-22T15:46:03.662Z` **INGEST** [[术语表-把名字放回具体任务里]] from `/Users/haorangong/Github/chicogong/experiments/agent-systems/docs/glossary.md` (`sha256:c98116cff29f`)
+- `2026-11-24T02:06:30.869Z` **INGEST** [[业界前沿名著与开源读物全景导读-在整个生态里-如何根据你的需求选书]] from `/Users/haorangong/Github/chicogong/products/open-source/agent-systems/docs/comparisons/recommended-reading-and-ecosystem.md` (`sha256:1727661d79e0`)

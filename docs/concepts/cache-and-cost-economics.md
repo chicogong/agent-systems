@@ -6,6 +6,11 @@
 
 在单轮问答里，这种写法无关痛痒；但在 Agent 循环里，它会直接废掉现代大模型推理底座最重要的一项硬件级红利——**前缀缓存**（Prefix Caching / Prompt Caching）。
 
+> [!TIP] **10 秒心智模型（Mental Model）**
+> - **一句话直觉**：前缀缓存就像中央厨房的“老汤底料”，只要中间不小心洒进了一滴变质的调料（动态时间戳或乱序工具），整锅底料都得倒掉重熬。
+> - **核心守则**：$\text{Cache Hit Rate} \approx \frac{\text{Stable Prefix Tokens}}{\text{Total Context Tokens}}$。前缀按“静态系统设定 $\to$ 稳定工具 Schema $\to$ 只读材料 $\to$ 纯追加对话”由冷到热严格单向分层。
+> - **致命反模式**：在 System 提示词开头动态插入时间戳，或者每轮滑动窗口丢弃最前一条消息，导致全量 KV 状态雪崩重算，账单暴涨 20 倍。
+
 ![前缀缓存命中与雪崩失效对比](../../figures/prefix-cache-mechanics/diagram.svg)
 
 [图的文字版](../../figures/prefix-cache-mechanics/README.md)逐条拆解了上排失效链路与下排高命中拼装顺序。看懂这张图背后的物理机制，是区分“玩具提示词拼接”与“生产级 Harness 上下文工程”的分水岭。

@@ -16,6 +16,7 @@
 | 每天在终端用编码助手修 Bug，想弄清项目规则文件、Skill、MCP、命令审批与 OS 沙箱各自管哪一段 | [Claude Code 与 Codex：同一修复任务如何执行与受控？](claude-code-codex.md) | Claude Code（公开文档）、Codex（Rust 源码与文档） | 软指令（`CLAUDE.md` / `AGENTS.md`）与硬边界（审批策略 + 进程沙箱 + 外部连接权限）如何分工 |
 | 外部写操作已经获批，请求发出后却遇到网络超时，不敢盲目重发也不敢直接放弃 | [批准过了，超时后能重试吗？](permission-and-recovery.md) | Codex、OpenHands、OpenCode、LangGraph | 超时背后的三种远端未知态，以及本地进度快照为什么替代不了幂等键与远端对账 |
 | Agent 信誓旦旦回复“已完成、测试全绿”，点开代码却发现顺手改坏了原有配置或漏跑关键断言 | [Agent 说“完成”时，哪些证据够用？](completion-and-evidence.md) | Pi、mini-SWE-agent、OpenCode、Kimi Code | 把口头宣告拆成可审计的三件套核验：工作区实际 diff、可复现测试断言与过程状态记录 |
+| 市面上开源书与教程繁多，想弄清李博杰、清华《御舆》、Jay Alammar 等名著各自的特色与适用场景 | [业界前沿名著与开源读物全景导读](recommended-reading-and-ecosystem.md) | 李博杰书、清华《御舆》、Jay Alammar 图解书、Vasilyev 手册、Anthropic 手册 | 全景对照矩阵、各书独门绝技、避坑指南与读者选读路线 |
 
 ## 这组文章围绕的四条主线
 

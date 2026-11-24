@@ -14,6 +14,11 @@
 | **Skill**（工作手册） | 按需加载的 SOP | 把特定领域的步骤规范与配套脚本做成模块化文档，用到才加载 | 所有规范全塞系统提示词会挤爆窗口；完全不给又容易漏步骤 |
 | **MCP**（连接协议） | 标准化外部插座 | 用统一协议让 Harness 发现并调用工单、数据库、监控等外部服务 | 每接一个内部系统都要给不同产品重造一套私有胶水代码 |
 
+> [!TIP] **10 秒心智模型（Mental Model）**
+> - **一句话直觉**：模型是“司机的脑子”，Harness 是“汽车的底盘与刹车”，CLI/UI 是“方向盘与仪表盘”，Skill 是“车载导航路线”，MCP 是“USB 充电扩展坞”。
+> - **核心守则**：$\text{Agent System} = \text{Model} + \text{Harness (Controller \& Guard)} + \text{Surface (CLI/UI)} + \text{Knowledge (Skill)} + \text{Interconnect (MCP)}$。
+> - **致命反模式**：把换模型当成万灵丹；底盘刹车（Harness）没做好，换个 1000 匹马力的引擎只会让车更快冲出悬崖。
+
 ![一项任务中，界面、运行器、模型、指导与工具连接的分工](../../figures/agent-stack/diagram.svg)
 
 注意图中虚线框的包络关系：**模型并不是统管全局的“总司令”，它始终是被 Harness 按轮调用的推理组件**。逐步拆解可对照[图的文字版](../../figures/agent-stack/README.md)，也可直接打开[可编辑图源](../../figures/agent-stack/scene.excalidraw)查看分层关系。

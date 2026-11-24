@@ -6,6 +6,11 @@
 
 多 Agent 协作最容易翻车的地方就在这里：**委派不是当甩手掌柜拉大群，而是切分独立的上下文窗口（Context Isolation）并立下严格的输入输出契约**。子任务翻阅几十个文件产生的中间噪音应当锁死在子窗口里就地销毁，交回协调者的只有经过提炼的结构化结论与证据坐标。
 
+> [!TIP] **10 秒心智模型（Mental Model）**
+> - **一句话直觉**：委派不是“拉微信大群”，而是“派发工单”。子智能体在自己独立的房间查阅海量资料，出屋时只带回一张薄薄的结构化核验结论表。
+> - **核心守则**：$\text{Collaboration Health} = \text{Context Isolation} \times \text{Schema Contract}$。入参最小化、窗口隔离化、交付结构化，拒绝共享大泥球。
+> - **致命反模式**：把主会话全量历史原封不动广播给所有子 Agent，导致中间噪声几何级数放大、并发脏写覆写彼此代码。
+
 ![从分派任务到检查合并的协作过程](../../figures/delegation-and-handoff/diagram.svg)
 
 [图的文字版](../../figures/delegation-and-handoff/README.md)逐条拆解了图中的派发、执行与合并连线。下面先厘清两种核心协作拓扑的取舍，再深入 LangGraph 源码看状态分发与归并如何落地。

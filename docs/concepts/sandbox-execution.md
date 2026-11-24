@@ -6,6 +6,11 @@
 
 真正兜得住风险的**沙箱**（Sandbox），绝不只是套一层容器外壳，而必须在创建之初就算清三笔硬账：**文件系统边界、网络与凭据出入口控制、进程生命周期与状态清理**；同时还要看清容器、gVisor 与 microVM 各自挡在操作系统内核的哪一层，以及为什么**销毁本地沙箱永远撤不回已经发往远端的外部 API 请求**。
 
+> [!TIP] **10 秒心智模型（Mental Model）**
+> - **一句话直觉**：沙箱就像医院的“传染病负压隔离室”，不仅要锁住进出大门（只读挂载），还要封死排气管道（默认禁连外网），任务结束立刻全室消毒焚烧（强杀回收）。
+> - **核心守则**：算清三笔账：$\text{Sandbox Contract} = \text{Read-Only Mounts} + \text{Egress Network Deny} + \text{Strict Lifecycle Hard-Kill}$。
+> - **致命反模式**：直接 `-v $HOME:/workspace` 把整机根目录挂进容器，还放开公网访问，导致恶意依赖窃取密钥并外传。
+
 ![运行设置、隔离执行、结果记录与远端操作](../../figures/sandbox-execution/diagram.svg)
 
 [可编辑图源](../../figures/sandbox-execution/scene.excalidraw) · [PNG 预览](../../figures/sandbox-execution/preview.png) · [图的文字版](../../figures/sandbox-execution/README.md)

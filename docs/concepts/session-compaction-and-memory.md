@@ -6,6 +6,11 @@
 
 很多自研 Agent 一旦进入长任务就彻底失控，根源在于企图用**同一个 `messages` 数组**或**同一座向量数据库**包打天下。事实上，“回溯对话分支”“给当前窗口腾地方”“跨会话记住事实”和“断点续跑流程状态”解决的是四类正交的工程矛盾。
 
+> [!TIP] **10 秒心智模型（Mental Model）**
+> - **一句话直觉**：会话树是“行车记录仪”（全量记录），滚动摘要是“工作简报”（有损脱水），长期记忆是“员工手册”（跨天复用），检查点是“游戏存盘点”（断点续跑）。
+> - **核心守则**：四轨分离。$\text{Memory Architecture} = \text{Branch Tree} \oplus \text{Lossy Compaction} \oplus \text{Fact Retrieval} \oplus \text{Graph Checkpoint}$。千万不要用一个 messages 数组揉成一团。
+> - **致命反模式**：把带有精确代码行号和报错堆栈的现场，直接压成一段模糊的纯文字摘要，导致下一轮模型因为缺乏精确证据而胡乱猜测。
+
 ![长会话不迷路：四种状态各管一事，按需装入下一轮窗口](../../figures/compaction-and-memory/diagram.svg)
 
 [图的文字版](../../figures/compaction-and-memory/README.md) · [可编辑图源](../../figures/compaction-and-memory/scene.excalidraw) · [PNG 预览](../../figures/compaction-and-memory/preview.png)
