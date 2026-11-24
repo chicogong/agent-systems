@@ -6,7 +6,7 @@
 
 从“单次问答”跨入“Agent”的本质分水岭，不在于换了一颗更聪明的模型，而在于引入了一条**受控的反馈循环**（Agent loop），并把职责一刀切成两半：**大模型只负责提议下一步想做什么；外层的宿主程序（Harness）负责真正调用工具、拿回真实世界的反馈，并决定何时踩下刹车**。
 
-> [!TIP] **10 秒心智模型（Mental Model）**
+> [!TIP] 10 秒心智模型（Mental Model）
 > - **一句话直觉**：模型就像坐在无菌室里的军师，只能写纸条提议“派谁去侦察”；外壳（Harness）是传令兵，负责真正跑腿探路，并决定什么时候该鸣金收兵。
 > - **核心守则**：$\text{Agent Loop} = \text{Proposal (LLM)} \to \text{Execution (Harness)} \to \text{Observation} \to \text{Termination Check}$。提议权在模型，决策与刹车权在宿主。
 > - **致命反模式**：把模型当成全能神，不设最大步数或没有结果验收断言，导致死循环烧穿 Token。

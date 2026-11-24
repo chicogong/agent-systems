@@ -84,16 +84,17 @@
 63. [动手：按原操作 ID 找回回执](../docs/labs/remote-effect.md)
 64. [动手：用本地 HTTP 观察回执与查询](../docs/labs/http-receipt.md)
 65. [Agent 说“完成”时，哪些证据够用？](../docs/comparisons/completion-and-evidence.md)
+66. [业界前沿名著与开源读物全景导读：在整个生态里，如何根据你的需求选书？](../docs/comparisons/recommended-reading-and-ecosystem.md)
 
 ## 附录 · 术语与核验方法
 
-66. [术语表：把名字放回具体任务里](../docs/glossary.md)
+67. [术语表：把名字放回具体任务里](../docs/glossary.md)
 
 ## 卷末
 
-67. [结语：把一项理解带回自己的生活](../book/backmatter/afterword.md)
-68. [致谢与贡献](../book/backmatter/acknowledgments.md)
-69. [作者简介](../book/backmatter/about-author.md)
+68. [结语：把一项理解带回自己的生活](../book/backmatter/afterword.md)
+69. [致谢与贡献](../book/backmatter/acknowledgments.md)
+70. [作者简介](../book/backmatter/about-author.md)
 
 ---
 

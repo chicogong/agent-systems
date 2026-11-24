@@ -6,7 +6,7 @@
 
 这两个坑本质上是一回事：**没有看清扩展机制的能力层级与信任代价**。给 Agent 增加本领，沿着一条“控制力越强，权限与隔离负担也越重”的阶梯展开——依次是**提示词约定**、**Skill 文件包**、**协议级 MCP 服务**与**宿主进程内 Extension 代码钩子**。理解这四层阶梯，再加上原子执行单元 **Tool** 与分发载体 **Package**，面对任何新需求都能一秒选对位置。
 
-> [!TIP] **10 秒心智模型（Mental Model）**
+> [!TIP] 10 秒心智模型（Mental Model）
 > - **一句话直觉**：扩展能力就像装备外挂：Prompt 是贴在显示器旁的便签，Skill 是按需翻阅的操作手册，MCP 是外接拓展坞，Extension 是直接插进主板的芯片。越深入底层，威力越大，爆炸风险越高。
 > - **核心守则**：按最小特权阶梯提升：$\text{Prompt} \to \text{Skill (On-Demand SOP)} \to \text{MCP (Isolated Protocol)} \to \text{Extension (In-Process Hook)}$。
 > - **致命反模式**：把可以用 Skill 说明书解决的活，随便写成 Extension 加载进宿主进程，造成内存脏写与密钥被窃。

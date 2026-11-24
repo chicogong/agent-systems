@@ -68,6 +68,7 @@ docs/comparisons/permission-and-recovery.md
 docs/labs/remote-effect.md
 docs/labs/http-receipt.md
 docs/comparisons/completion-and-evidence.md
+docs/comparisons/recommended-reading-and-ecosystem.md
 @part 附录 · 术语与核验方法
 docs/glossary.md
 @back book/backmatter/afterword.md

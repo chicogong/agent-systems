@@ -6,7 +6,7 @@
 
 之所以会选错架构，是因为很多人把“**下一步由谁决定**”和“**有几个独立执行窗口**”混成了一件事。只要把这两个正交维度拆开看，工作流（Workflow）、单 Agent 与多执行者（Multi-Agent）各自的甜点区一目了然。
 
-> [!TIP] **10 秒心智模型（Mental Model）**
+> [!TIP] 10 秒心智模型（Mental Model）
 > - **一句话直觉**：工作流是“流水线传送带”，单 Agent 是“全能修理工”，多 Agent 是“分工明确的项目组”。能用传送带稳定搞定的事，千万别请三个人天天开会协商。
 > - **核心守则**：$\text{Architecture Complexity} \propto \text{State Discretion} \times \text{Actor Count}$。优先选受控 Workflow；当下一步完全不可预知时选单 Agent；当上下文超出单窗口极限且可扇出时才选 Multi-Agent。
 > - **致命反模式**：把可以用确定性脚本搞定的发票提取或代码 Lint，包装成一群多 Agent 自由聊天协商，导致高延迟、高费用、随机翻车。

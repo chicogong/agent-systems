@@ -141,7 +141,7 @@ for (const file of expected) {
   const structuredData = html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)?.[1]
   if (!structuredData) throw new Error(`${file}: missing JSON-LD payload`)
   const schema = JSON.parse(structuredData)
-  const expectedType = file === 'index.html' ? 'WebSite' : indexPages.has(file) ? 'WebPage' : 'Article'
+  const expectedType = file === 'index.html' ? 'Book' : indexPages.has(file) ? 'WebPage' : 'TechArticle'
   if (schema['@type'] !== expectedType || schema.url !== `${origin}${pathname}` || schema.inLanguage !== 'zh-CN') {
     throw new Error(`${file}: structured data does not match the canonical page`)
   }

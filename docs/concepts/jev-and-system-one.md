@@ -6,7 +6,7 @@
 
 认知心理学把人的思维拆成直觉迅速的“快思考”（System 1）与审慎推演的“慢思考”（System 2）。TypeSafe 提出的 **Jev** 模型正是把这一分工搬进了 Agent 架构：在昂贵的主推理模型（System 2）启动前，先让一个轻快、输出严格受限的 **System-1 小模型**做有界分类或是非打分；而**走哪条分支、挂不挂 Skill、要不要转人工、允不允许执行工具，最终拍板权始终握在确定性的宿主代码（Harness）手里**。
 
-> [!TIP] **10 秒心智模型（Mental Model）**
+> [!TIP] 10 秒心智模型（Mental Model）
 > - **一句话直觉**：System-1 是医院急诊门口的“预检分诊护士”（只做 5 秒快速量体温分流），System-2 是诊室里的“专家医生”（专心看复杂病历），宿主代码是“医院管理条例”（握有最终处方放行权）。
 > - **核心守则**：$\text{Fast Triage} = \text{Bounded Decision (Small Model)} \to \text{Threshold Gate (Harness)} \to \text{Deep Reasoning (Big Model)}$。小模型做选择题，大模型做大题。
 > - **致命反模式**：让几毛钱一次的大模型去猜用户每一个字是不是在闲聊，既拖慢首字延迟，又白白烧掉几百倍算力。
