@@ -132,7 +132,62 @@ LLM 的上下文窗口虽然越来越大，但**越长的上下文意味着越�
 
 ---
 
-## 问题三：开发一个 Coding Agent（如 Claude Code / Cursor）需要了解哪些底层机制？
+## 问题四：为什么长上下文模型（如 100 万 Token）依然会出现「上下文腐化（Context Rot）」？
+
+**目标知乎问题**：
+- [大模型的长上下文（Long Context）真的解决问题了吗？](https://www.zhihu.com/search?type=content&q=%E5%A4%A7%E6%A8%A1%E5%9E%8B%E7%9A%84%E9%95%BF%E4%B8%8A%E4%B8%8B%E6%96%87%E7%9C%9F%E7%9A%84%E8%A7%A3%E5%86%B3%E9%97%AE%E9%A2%98%E4%BA%86%E5%90%97)
+- [如何解决多轮 Agent 对话中模型遗忘关键指令和推理能力退化的问题？](https://www.zhihu.com/search?type=content&q=Agent+%E4%B8%8A%E4%B8%8B%E6%96%87%E8%85%90%E5%8C%96+%E6%8C%87%E4%BB%A4%E9%81%97%E5%BF%98)
+
+### 回答正文（可直接复制）：
+
+很多人被各大模型宣传的「100 万 Token 超大上下文」与大海捞针（Needle in a Haystack）测试中 99%+ 的召回率所迷惑，误以为长任务就是“把所有文件、长日志、全部历史原封不动塞进窗口”。
+
+然而在生产实践中：**简单信息检索（Retrieval）与多步链式推理（Multi-Step Reasoning）遵循截然不同的物理规律**。
+
+随着上下文持续膨胀，多步 Agent 会迅速出现指令遗忘、幻觉重复与执行力衰退，这种现象被称为**上下文腐化（Context Rot）**。
+
+#### 1. 导致上下文腐化的三大物理诱因
+1. **注意力权重数学级稀释（Attention Dispersion）**：Softmax 自回归注意力的权重总和恒等于 1。单步内填入数千行未经截断的终端日志，分配给顶层 System Prompt 安全红线的注意力权重必然被严重冲淡；
+2. **迷失在中间（Lost in the Middle）与近因偏置（Recency Bias）**：模型对最前缀（Prompt）和最新消息最敏感，而在 20k~100k 中段发生的关键变量变更极易被忽略；
+3. **错误假设的复利滚雪球（Negative Compounding）**：模型在第 3 步凭空臆造的一个无效路径，一旦沉淀在上下文里，就会成为第 15 步推理时的“已知事实基线”，导致偏航持续放大。
+
+#### 2. 量化监控指标：有效信号密度（Signal Density）
+$$\text{Signal Density} = \frac{\text{Decision-Relevant Tokens（与当前决策直接相关的关键事实/约束）}}{\text{Total Context Tokens（当前发送的全量上下文）}}$$
+实测表明：**当有效信号密度低于 10% 时，复杂编码任务的单步决策失误率会呈指数级攀升**。
+
+#### 3. 生产级三大工程解法
+- **源头首尾截断（Head-Tail Truncation）**：单测或终端日志输出超过 40 行时，宿主工具拦截器强制截取前 15 行与后 15 行核心堆栈，中间以结构化行数摘要替代；
+- **工作台（Scratchpad）与档案库解耦**：中间排查过程标记为瞬态，阶段收工后自动移入后台压缩；
+- **水位线主动压缩（Watermark Compaction）**：不要用逐条滑动窗口（会步步击穿 KV 缓存），而是在 80% 水位线时一次性生成定态事实摘要重新锚定。
+
+详见《图解 Agent 系统》机制篇：[前缀缓存与上下文经济学](https://books.aimake.cc/concepts/cache-and-cost-economics)。
+
+---
+
+## 问题五：如何用纯 Python 标准库搭建一个生产级 Agent 调度脚手架？
+
+**目标知乎问题**：
+- [如何从零手写一个高效且省 Token 的 Agent 框架？](https://www.zhihu.com/search?type=content&q=%E4%BB%8E%E9%9B%B6%E6%89%8B%E5%86%99+Agent+%E6%A1%86%E6%9E%B6)
+- [有哪些适合用于生产环境的轻量级 AI Agent 设计模式？](https://www.zhihu.com/search?type=content&q=%E7%94%9F%E4%BA%A7%E7%BA%A7+Agent+%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F)
+
+### 回答正文（可直接复制）：
+
+不需要重度依赖庞大臃肿的三方编排框架。遵循五层稳定度递减排版与宿主门禁，用不到 200 行 Python 3.10+ 标准库即可搭建生产级 Agent 骨架：
+
+```python
+# 核心架构：五层稳定度递减排版（保障 90%+ 前缀缓存命中）
+# 1. Global Invariable (Role + Sorted Tool Schemas)
+# 2. Session Constant (AGENTS.md + Pinned Memory)
+# 3. Milestone Summary (Watermark Compaction)
+# 4. Append-Only Turns (Historical Interactions)
+# 5. Transient Tail (Step Budget + Dynamic State)
+```
+
+完整可运行参考实现已开源在《图解 Agent 系统》官方仓库中：
+- **工程脚手架**：[examples/production-starter/](https://github.com/chicogong/agent-systems/tree/main/examples/production-starter)
+- **在线图解与机制**：[https://books.aimake.cc/](https://books.aimake.cc/)
+包含完整的工具权限门禁（Host Approval Gate）、日志源头截断（Anti Context-Rot）与前缀缓存账单计算器，支持开箱即用。
+
 
 **目标知乎问题**：
 - [开发一个类似 Claude Code 或 Cursor 的 Coding Agent 需要哪些核心技术？](https://www.zhihu.com/search?type=content&q=%E5%BC%80%E5%8F%91%E4%B8%80%E4%B8%AA+Coding+Agent+%E9%9C%80%E8%A6%81%E5%93%AA%E4%BA%9B%E6%A0%B8%E5%BF%83%E6%8A%80%E6%9C%AF)

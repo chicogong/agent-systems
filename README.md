@@ -58,8 +58,9 @@
 | **学习与应用** | 把“明确约束、锚定出处、单列待查”落回学习、备课与日常工作交接 | [把所学用起来](docs/learning-and-practice.md) · [阅读路线](docs/learning-path.md) · [AI 陪读](book/frontmatter/reading-guide.md#和-ai-一起读) |
 | **机制图解（16 篇）** | 拆清循环、上下文、前缀缓存、开放协议（AGENTS.md / MCP / A2A）、沙箱与 `pass^k` 评测各自守哪道边界 | [Agent loop](docs/concepts/agent-loop.md) · [前缀缓存经济学](docs/concepts/cache-and-cost-economics.md) · [开放协作协议栈](docs/concepts/open-agent-protocols.md) · [观察与评测](docs/concepts/observation-evaluation.md) |
 | **开源项目讲解（16 套）** | 追踪固定 commit 里的真实调用链，看一线项目如何把概念写成可维护代码 | [Pi](docs/systems/pi/README.md) · [OpenCode](docs/systems/opencode/README.md) · [LangGraph](docs/systems/langgraph/README.md) |
-| **横向对照（6 篇）** | 同一工程难题放在一起比，看清不同架构方案的收益与代价 | [循环与停止](docs/comparisons/loop-and-stop.md) · [持久与可见漏斗](docs/comparisons/persisted-vs-visible.md) · [四种状态](docs/comparisons/four-kinds-of-state.md) · [权限与恢复](docs/comparisons/permission-and-recovery.md) |
+| **横向对照（7 篇）** | 同一工程难题放在一起比，看清不同架构方案的收益与代价 | [循环与停止](docs/comparisons/loop-and-stop.md) · [持久与可见漏斗](docs/comparisons/persisted-vs-visible.md) · [四种状态](docs/comparisons/four-kinds-of-state.md) · [权限与恢复](docs/comparisons/permission-and-recovery.md) · [生态著作与阅读地图](docs/comparisons/recommended-reading-and-ecosystem.md) |
 | **交互实验（6 组）** | 网页端直接单步回放状态机，或用零依赖 Python 标准库脚本在本地复现裁剪、越权、幂等查账与前缀缓存击穿 | [第一轮 Agent](docs/labs/first-agent-loop.md) · [上下文预算](docs/labs/context-budget.md) · [证据契约](docs/labs/evidence-contract.md) · [远端副作用](docs/labs/remote-effect.md) · [本地 HTTP 回执](docs/labs/http-receipt.md) · [前缀缓存击穿对比](docs/labs/prefix-cache.md) |
+| **工程脚手架与周边** | 零外部依赖 Python 生产脚手架参考实现与社区高频 Q&A 问答物料 | [生产级最小脚手架](examples/production-starter/README.md) · [社区精选问答物料](docs/promotions/community-qa-seeds.md) · [全渠道宣发包](docs/promotions/launch-pack.md) |
 
 开源系统篇覆盖 Pi、DSH（DeepSeek Harness）、Codex、OpenCode、mini-SWE-agent、OpenHands、Browser Use、Qwen Code、Kimi Code、MiMo Code、Letta Code、Hermes Agent、Mem0、LangGraph、OpenClaw 与 GPT Researcher，横跨编码助手、编排运行时与记忆组件。每篇聚焦项目最具代表性的一条实现主干，完整清单见[系统索引](docs/systems/README.md)，整体规划见[选题地图](docs/program.md)与[扩写计划](docs/curriculum-expansion.md)。
 
