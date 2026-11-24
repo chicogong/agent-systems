@@ -69,6 +69,35 @@ MCP 允许工具在元数据里附带结构化的**行为注解**（Tool Annotat
 - **表单模式（Form Mode）**：服务端下发简明 JSON Schema，由宿主界面渲染成输入框或下拉单请用户补齐，不污染模型自由猜测；
 - **带外 URL 模式（URL Mode）**：遇到第三方 OAuth 授权、支付确认或高敏凭据输入时，服务端返回安全外部链接（或触发 `-32042` 要求带外确认），让用户在浏览器独立完成敏感动作，避免机密凭据流经大模型上下文或 MCP 消息通道。
 
+### 5. 工具蔓延（Tool Sprawl）与渐进式发现（Progressive Tool Loading）
+
+随着团队接入的外部 MCP Server 越来越多（如同时挂载 GitHub、Jira、Postgres、Kubernetes、Sentry 等），Agent 面临的工具总数往往会从最初的 5 个迅速激增至 100 个以上。这种现象被称为**工具蔓延（Tool Sprawl）**。
+
+#### 工具蔓延带来的三大生产隐患
+
+1. **每轮上下文与计费的“固定人头税”**：
+   每个工具的 JSON Schema（名称、参数结构、字段描述）平均占 200 ~ 400 Token。100 个工具静态塞进 `tools` 列表，意味着每轮哪怕只问一句“在吗”，都要硬生生消耗 20,000 ~ 40,000 Token 的常驻前缀。
+2. **选择瘫痪与语义混淆（Tool Choice Paralysis）**：
+   在大模型视野里，`read_file`、`fs_read`、`workspace_get_file`、`storage_get` 语义极度接近。工具越密集，模型越容易混淆参数签名、凭空编造不存在的参数，甚至选错调用目标。
+3. **安全注入攻击面（Security Attack Surface）**：
+   恶意或不可信的第三方 MCP Server 可以通过编写带有 Prompt Injection 倾向的工具描述（Description），在模型选择工具时实施隐蔽劫持。暴露的工具越多，审计与防护防线就越脆弱。
+
+#### 三级渐进式解决方案
+
+为解开工具广度与上下文精度的矛盾，现代 Agent 架构演进出三级阶梯治理模型：
+
+```text
+Level 1: 命名空间与分页 ──► Level 2: 两阶段检索（延迟加载） ──► Level 3: 分级子代理隔离
+(MCP tools/list cursor)      (Qwen Code tool_search + call)      (A2A / Multi-Agent Subagent)
+```
+
+- **Level 1：命名空间与游标分页（Namespace & Cursor Pagination）**：
+  MCP 原生支持 `tools/list` 的游标分页机制，服务端不要一次性倾泻全量定义；宿主端按 Server 命名空间（如 `github__*`、`k8s__*`）逻辑分块管理。
+- **Level 2：两阶段检索与借壳延迟加载（Two-Stage Discovery & Deferred Loading）**：
+  正如我们在 **[Qwen Code 系统拆解](../systems/qwen-code/README.md)** 中看到的最优范式：顶层模型接口只暴露一个极简的元工具 `tool_search` 与通用信封 `tool_call`。当主任务需要某项能力时，先按意图用关键词搜取对应工具的 Schema 文本并作为增量结果挂入历史，绝不频繁修改顶层 `tools` 声明数组，从而既避免了 3 万 Token 的静态压迫，又死死保住了[前缀缓存命中率](cache-and-cost-economics.md)。
+- **Level 3：分级子代理域隔离（Hierarchical Sub-agent Routing）**：
+  对于极度专业或高危的工具簇（如直接操作线上数据库的 SQL 工具、运维集群的 Kubectl 工具），宿主将其彻底剥离出根 Agent 的可见范围，改由专职子智能体（如 Database Sub-agent）闭门操作，主 Agent 仅保留[委派与交接](delegation-and-handoff.md)的委托通道。
+
 规范参考：[MCP Transports (Streamable HTTP)](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports) · [MCP Authorization (OAuth 2.1)](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) · [MCP Tools & Annotations](https://modelcontextprotocol.io/specification/2025-11-25/server/tools) · [MCP Elicitation](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation)
 
 ## 第三层：A2A（Agent2Agent）——跨边界委托一个“独立黑盒搭档”
