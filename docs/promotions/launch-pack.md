@@ -1,6 +1,6 @@
 # 《图解 Agent 系统》全渠道推广与冷启动弹药库 (Launch Pack)
 
-[返回首页](../../README.md) · [当前状态与路线](../roadmap.md) · [写作与出版方案](../editorial-plan.md) · [读者试读题](../reader-trial.md)
+[返回首页](../../README.md) · [当前状态与路线](../roadmap.md) · [写作与出版方案](../editorial-plan.md) · [读者试读题](../reader-trial.md) · [多平台物料包 (Platform Packs)](./platform-packs/README.md)
 
 本文件为《图解 Agent 系统》提供可直接复用的多渠道宣发文案、社交媒体切片矩阵、海外社区发布模版及种子读者试读招募工单。
 

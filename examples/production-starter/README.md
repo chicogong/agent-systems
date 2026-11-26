@@ -42,7 +42,18 @@
 ### 1. 运行自包含演示
 
 ```bash
+# 默认高速 Mock 模式（离线运行，0 外部依赖，毫秒级验证）
 python3 examples/production-starter/demo.py
+
+# 实时大模型模式（零第三方库，使用标准库 urllib.request 兼容 OpenAI / DeepSeek / Gemini）
+export OPENAI_API_KEY="sk-..."
+python3 examples/production-starter/demo.py --live
+
+# 自定义端点、模型与 JSON 模式
+python3 examples/production-starter/demo.py --live \
+  --base-url https://api.deepseek.com \
+  --model deepseek-chat \
+  --json-mode
 ```
 
 终端将打印 5 轮交互的完整单步 Token 消耗、缓存读取量与命中率账本：
@@ -50,20 +61,21 @@ python3 examples/production-starter/demo.py
 ```text
 ======================================================================
   Illustrated Agent Systems - Production Starter Harness Demo
+  Mode: MOCK INFERENCE
 ======================================================================
 
-[Turn 1] Input Tokens: 235 | Cache Read: 0 | Hit Rate: 0.0%
-[Turn 2] Input Tokens: 295 | Cache Read: 235 | Hit Rate: 79.66%
-[Turn 3] Input Tokens: 432 | Cache Read: 295 | Hit Rate: 68.29%
+[Turn 1] Input Tokens: 297 | Cache Read: 0 | Hit Rate: 0.0%
+[Turn 2] Input Tokens: 355 | Cache Read: 277 | Hit Rate: 78.03%
+[Turn 3] Input Tokens: 557 | Cache Read: 332 | Hit Rate: 59.61%
          (Tool output truncated from 81 lines to 21 lines to prevent Context Rot)
-[Turn 4] Input Tokens: 512 | Cache Read: 432 | Hit Rate: 84.38%
-[Turn 5] Input Tokens: 540 | Cache Read: 512 | Hit Rate: 94.81%
+[Turn 4] Input Tokens: 636 | Cache Read: 533 | Hit Rate: 83.81%
+[Turn 5] Input Tokens: 658 | Cache Read: 615 | Hit Rate: 93.47%
 ----------------------------------------------------------------------
 Overall Statistics:
-  Cumulative Input Tokens:   2014
-  Cumulative Cached Tokens:  1474
-  Cumulative Uncached Tokens:540
-  Overall Cache Hit Rate:    73.19%
+  Cumulative Input Tokens:   2503
+  Cumulative Cached Tokens:  1757
+  Cumulative Uncached Tokens:746
+  Overall Cache Hit Rate:    70.2%
   Final Gate Verdict:        candidate_ready
 ======================================================================
 ```
@@ -71,7 +83,7 @@ Overall Statistics:
 ### 2. 运行单元测试套件
 
 ```bash
-python3 -m unittest examples/production-starter/test_starter.py
+python3 -m unittest discover -s examples/production-starter -p 'test_*.py'
 ```
 
 ---
@@ -84,6 +96,7 @@ python3 -m unittest examples/production-starter/test_starter.py
 from agent_starter import (
     ContextAssembler,
     HostApprovalGate,
+    LiveLLMClient,
     ToolDefinition,
     ToolRiskLevel,
     Turn,
@@ -106,7 +119,7 @@ tools = [
     ),
 ]
 
-# 2. 初始化上下文组装器
+# 2. 初始化上下文组装器（遵循 5 层稳定度排版）
 assembler = ContextAssembler(
     system_role="你是一个专业的运维支持 Agent。",
     tools=tools,
@@ -115,4 +128,11 @@ assembler = ContextAssembler(
 
 # 3. 每轮请求组装
 prompt = assembler.assemble_prompt(transient_tail="[剩余步数: 10]")
+
+# 4. 零外部依赖调用 Live LLM（自动感知 OPENAI_API_KEY / DEEPSEEK_API_KEY / GEMINI_API_KEY）
+client = LiveLLMClient(model="gpt-4o-mini", temperature=0.0)
+response = client.complete(prompt, json_mode=True)
+print("模型输出:", response["content"])
+print(f"Token账单: 输入={response['usage']['prompt_tokens']}, 缓存命中={response['usage']['cached_tokens']} ({response['usage']['hit_rate_percent']}%)")
+```
 ```
