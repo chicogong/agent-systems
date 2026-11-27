@@ -1,6 +1,6 @@
 # 开放协作协议栈：AGENTS.md、MCP 演进与 A2A 跨代理委托
 
-[返回机制目录](README.md) · [Skill、MCP 与工具生命周期](mcp-skill-tool-lifecycle.md) · [委派与交接](delegation-and-handoff.md) · [可编辑图源](../../figures/open-agent-protocols/scene.excalidraw) · [PNG 预览](../../figures/open-agent-protocols/preview.png)
+[返回机制目录](README.md) · [Skill、MCP 与工具生命周期](mcp-skill-tool-lifecycle.md) · [代码执行沙箱](sandbox-execution.md) · [可编辑图源](../../figures/open-agent-protocols/scene.excalidraw) · [PNG 预览](../../figures/open-agent-protocols/preview.png)
 
 当团队从“个人在本地装个编码插件”走向“多工具、跨服务、跨团队 Agent 协同”时，往往会接连撞上三堵生态墙：
 
@@ -123,13 +123,13 @@ submitted（已受理） ──► working（推理执行中） ──► comple
                             └─► failed / canceled / rejected（报错 / 主动取消 / 超出职责拒单）
 ```
 
-调用方既可以通过 SSE 流式订阅进度事件，也可以在超长任务里注册推送通知（Webhook）异步收货。回顾我们在[中断与恢复](interruption-recovery.md)以及[委派与交接](delegation-and-handoff.md)中讲过的原则：一旦通过 A2A 向外部代理派发了带有真实业务副作用的任务，客户端同样必须妥善保管该 `Task` 的唯一 ID——网络闪断后先查询原 `Task` 当前停在哪个状态，绝不盲目新建第二个重复任务。
+调用方既可以通过 SSE 流式订阅进度事件，也可以在超长任务里注册推送通知（Webhook）异步收货。正如我们在后续第四模块[委派与交接](delegation-and-handoff.md)以及[中断与恢复](interruption-recovery.md)中将要展开的核心原则：一旦通过 A2A 向外部代理派发了带有真实业务副作用的任务，客户端同样必须妥善保管该 `Task` 的唯一 ID——网络闪断后先查询原 `Task` 当前停在哪个状态，绝不盲目新建第二个重复任务。
 
 协议参考：[A2A 官方协议文档](https://a2a-protocol.org/latest/) · [A2A 开源规范仓](https://github.com/a2aproject/A2A)
 
 ## 一张表做好架构选型：四种扩展载体怎么选？
 
-面对一项新需求，顺着下面四个问题对号入座，就能选出最干净的工程落地层：
+面对一项新需求，顺着下面四个问题对号入座，就能选出最干净的工程落地层。需要特别厘清它与[扩展能力的四个层次](extensibility-layers.md)中 **Extension（宿主进程内代码钩子）** 的关系：**Extension** 是同进程的深度控制手段（共享内存与生命周期，适合 AST 校验、强制参数拦截与内建工具扩展）；而 **A2A Agent** 则是跨出进程与安全域的横向黑盒智能体委派（双方各自拥有私有提示词与独立循环，凭契约交接）。两者一个向内深入宿主进程，一个向外跨出系统边界：
 
 | 你要解决的具体问题 | 最佳载体 | 核心原因 |
 | --- | --- | --- |
@@ -137,6 +137,9 @@ submitted（已受理） ──► working（推理执行中） ──► comple
 | 把团队某类任务的固定排查套路（如“按五步法做发版回归”）按需教给同一个 Agent | **`SKILL.md`** | 平时只占一行简述省上下文，命中场景才读入完整步骤与本地辅助脚本 |
 | 让你的 Agent 读写数据库、查工单、操作浏览器或拉取内部知识库接口 | **MCP Server** | 纵向连接确定性工具与结构化资源，输入输出遵循严格 Schema，控制权留在当前 Agent |
 | 把一项长耗时、需自主多步推理的子目标，委托给另一套不共享内部实现与权限的专业系统 | **A2A Agent** | 横向黑盒委托，天然支持 `input-required` 多轮补料、长任务状态追踪与独立安全域隔离 |
+| （对比进程内扩展）需直接监听生命周期事件、硬性拦截改写工具参数或增加原生 UI | **Extension 钩子** | 宿主同一运行时内深度侵入（详见[扩展层级](extensibility-layers.md)）；与 A2A 跨系统黑盒隔离互为镜像 |
+
+厘清了开放协议与协作边界后，当 Agent 需要进一步在宿主上真正运行未知脚本，或者直接操控图形桌面与网页时，系统的防御重心将进一步收紧至操作系统隔离与动态界面感知：关于文件、网络与进程生命周期的强隔离见[代码执行沙箱](sandbox-execution.md)；关于视觉坐标、DOM 树与带外人工刹车见 [Computer Use 与 Browser Use](computer-and-browser-use.md)。
 
 ## 来源与边界
 

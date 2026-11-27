@@ -11,12 +11,12 @@ send_message() → MessageEvent → _on_event() [先 append_event 落账，再�
 LocalConversation.run() 循环调用 Agent.step()
   ├─ 分支 A：当前分支存在未配对 ActionEvent → 直接 _execute_actions() 清偿待办
   └─ 分支 B：无待办动作 → Agent._step() 从 state.view 构造消息请求模型
-       ├─ 工具名或参数格式非法 → 发出 AgentErrorEvent
+       ├─ 工具名或参数格式非法 → 发出 AgentErrorEvent（通过 tool_call_id 配对）
        └─ 校验通过 → _get_action_event() 发出 ActionEvent
             ├─ 需要确认 → 状态设为 WAITING_FOR_CONFIRMATION，本次 run() 立即退出
             │    ├─ 宿主获批后再次调用 run() → 清除等待状态，下一轮走分支 A 执行动作
-            │    └─ 宿主调用 reject_pending_actions() → 发出 UserRejectObservation，跳过执行
-            └─ 无需确认 → _execute_actions() 调工具 → 按原动作顺序发出 ObservationEvent / AgentErrorEvent
+            │    └─ 宿主调用 reject_pending_actions() → 发出 UserRejectObservation（通过 action_id 配对），跳过执行
+            └─ 无需确认 → _execute_actions() 调工具（在 FinishTool 处截断批次后并行执行） → 按原动作顺序发出 ObservationEvent（通过 action_id 配对） / AgentErrorEvent
 ```
 
 ## 1. 事件入账：为什么先写存储、再发通知
@@ -40,9 +40,9 @@ LocalConversation.run() 循环调用 Agent.step()
 
 ## 4. 批次执行与循环终止：事件保序，副作用未必保序
 
-进入 `_execute_actions()` 后，每个动作连同当前 `conversation` 上下文交给对应工具执行。正常返回的 `Observation` 被包装为 `ObservationEvent`；若执行期抛出 `ValueError`，则捕获并转为 `AgentErrorEvent`。
+进入 `_execute_actions()` 后，每个动作连同当前 `conversation` 上下文交给对应工具执行。正常返回的 `Observation` 被包装为 `ObservationEvent`（通过 `action_id` 与原动作配对）；若执行期抛出 `ValueError`，则捕获并转为 `AgentErrorEvent`（通过 `tool_call_id` 与模型调用配对）。
 
-当模型一次提出多个可并行工具调用时，SDK 允许并发执行工具，但在**写回结果事件时严格按原 `ActionEvent` 的顺序依次发出**。这样事件流与模型上下文的因果配对永远整洁有序；但排查问题时要注意，如果两个并发工具同时读写外部磁盘文件，真实文件系统的修改先后仍取决于操作系统调度。[执行一批动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L229-L365) · [执行并整理单个结果](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L1384-L1446)
+在将批次动作投入并发执行池之前，OpenHands 会先对动作列表进行**截断处理**：如果模型在一次响应中返回了多个工具调用，且其中包含了结束任务的 `FinishTool`，执行器会在 `FinishTool` 处立即截断批次，直接忽略排在 `FinishTool` 之后的任何多余工具调用，然后再把保留下来的动作派发给底层并发执行。当模型一次提出多个可并行工具调用时，SDK 允许并发执行工具，但在**写回结果事件时严格按原 `ActionEvent` 的顺序依次发出**。这样事件流与模型上下文的因果配对永远整洁有序；但排查问题时要注意，如果两个并发工具同时读写外部磁盘文件，真实文件系统的修改先后仍取决于操作系统调度。[执行一批动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L229-L365) · [执行并整理单个结果](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L1384-L1446)
 
 除等待确认外，`run()` 还会在每轮边界检查其余停止条件：外部请求暂停、死循环卡住检测（stuck）、触达费用预算或最大轮数上限都会让循环停下；未预期异常会将状态置为 `ERROR` 并记录 `ConversationErrorEvent`。有意思的是，即便 Agent 自己宣布 `FINISHED`，结束钩子（stop hook）仍有机会做最后验收——如果验收未过并注入新反馈，会话状态会被拉回 `RUNNING` 继续下一轮修复。[查看停止条件](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1933-L2059)
 

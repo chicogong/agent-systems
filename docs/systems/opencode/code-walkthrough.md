@@ -2,7 +2,7 @@
 
 [返回 OpenCode 首页](README.md) · 固定源码 [`18ef3cc7`](https://github.com/anomalyco/opencode/tree/18ef3cc7c5a25b82114c953a80ccc09f4988f74e)
 
-如果让你手写一个接收大模型流式工具事件的状态机，最容易漏掉三个边界：流式参数分十几个增量分片到达时怎么避免重复建单？模型鬼打墙连续五次用一模一样的参数调同一个工具时怎么刹住车？网络断流或用户强退的那一瞬间，卡在半空中的 `pending` 和 `running` 调用由谁来善后？
+如果让你手写一个接收大模型流式工具事件的状态机，最容易漏掉三个边界：流式参数分十几个增量分片到达时怎么避免重复建单？模型鬼打墙连续三次（DOOM_LOOP_THRESHOLD = 3）用一模一样的参数调同一个工具时怎么刹住车？网络断流或用户强退的那一瞬间，卡在半空中的 `pending` 和 `running` 调用由谁来善后？
 
 下面我们沿着 `packages/opencode/src/session` 里的真实事件流向，把这整条状态机链路从头拆到尾：
 
@@ -16,7 +16,7 @@ SessionProcessor.handleEvent(流事件分发)：
   ├─ tool-call                  ──► updateToolCall(callID)   ──► 写入完整参数 + doom_loop 检查 [running]
   ├─ tool-result (成功)         ──► completeToolCall(callID) ──► 仅匹配 running 记录落定 [completed]
   ├─ tool-result (失败)/error   ──► failToolCall(callID)     ──► 仅匹配 running 记录落定 [error]
-  └─ 流结束收尾                 ──► cleanup() + 外层兜底清扫 ──► 未完成记录统一盖戳 [error, interrupted: true]
+  └─ 流结束收尾                 ──► cleanup() 中断收敛       ──► 未完成记录统一盖戳 [error, interrupted: true]
 ```
 
 ## 1. 会话循环拉起与洋葱钩子包装
@@ -40,10 +40,10 @@ SessionProcessor.handleEvent(流事件分发)：
 
 因此无论是成功分支 `completeToolCall` 还是失败分支 `failToolCall`，源码都加上了严格的前置状态守卫：**只有根据 `callID` 找到对应记录、且该记录当前确实处于 `running` 状态时**，才允许落定为 `completed`（写入输出、附件、元数据与结束时间）或 `error`（写入错误信息与结束时间；若遇到明确的权限拒绝等硬错误，还会通知处理器提前终止本轮）（见[分发结果](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L383-L420)与[更新成功或错误记录](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L160-L204)）。
 
-更关键的是「流突然断了怎么办」。OpenCode 设了里外两道清扫保险：
+更关键的是「流突然断了怎么办」。未完成工具调用的中断收敛全部由处理器的 `cleanup()` 统一负责：
 
-1. **处理器收尾清扫**：单次流处理结束进入 [`cleanup()`](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L585-L610) 时，程序会给在途调用留一个短暂宽限窗口；窗口过后仍未拿到结果的零件单，一律强制转为 `error` 并打上 `interrupted: true` 标记。
-2. **外层循环兜底检查**：在 `runLoop` 退出处还有一道针对历史遗留未完成工具零件的[循环结束检查](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/prompt.ts#L1100-L1129)，确保无论异常从哪一层炸开，持久化的消息树里绝不会残留永恒卡在 `pending` 或 `running` 的死账。排查故障日志时，先看 `interrupted` 字段就能一秒分清「工具自己执行挂了」还是「工具还没跑完就被迫中断了」。
+1. **处理器收尾清扫与中断标记**：单次流处理结束进入 [`cleanup()`](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/processor.ts#L585-L610) 时，程序会给在途调用留一个短暂宽限窗口；窗口过后仍未拿到结果的在途 `pending` 或 `running` 零件单，一律强制转为 `error` 并打上 `interrupted: true` 标记。排查故障日志时，先看 `interrupted` 字段就能一秒分清「工具自己执行挂了」还是「工具还没跑完就被迫中断了」。
+2. **外层循环退出条件判定**：需要澄清的是，外层 `runLoop` 中调用的 [`prompt.ts` L1100-L1129](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/prompt.ts#L1100-L1129)（以及主调度循环 [`prompt.ts` L1221-L1286](https://github.com/anomalyco/opencode/blob/18ef3cc7c5a25b82114c953a80ccc09f4988f74e/packages/opencode/src/session/prompt.ts#L1221-L1286)）是用来判定本轮会话是否已满足循环退出条件（例如是否无需进一步工具调用或用户交互），而不是在循环结束后去二次清扫未完成的 `pending`/`running` 状态；在途零件的中断善后完全由内层 `cleanup()` 严格盖戳收敛。
 
 ## 4. 外层 `SessionStatus` 的小巧思：空闲即删键
 

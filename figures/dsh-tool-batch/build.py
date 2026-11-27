@@ -9,7 +9,7 @@ s = Scene()
 s.text('hint', 'DSH：允许并行时，结果按原顺序交回', 25, 15, 940, 30, font=6)
 for name, x, title, code, color, fill in [
     ('calls', 25, '记录调用顺序', '请求 A → B → C', BLUE, '#a5d8ff'),
-    ('dispatch', 355, '按并发上限执行', '完成 B → A → C', PURPLE, '#d0bfff'),
+    ('dispatch', 355, '按并发上限执行', '完成 B → C → A', PURPLE, '#d0bfff'),
     ('commit', 715, '连续就绪才交回', '交回 A → B → C', GREEN, '#b2f2bb'),
 ]:
     s.box(name, x, 130, 280, 150, color, fill)

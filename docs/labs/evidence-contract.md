@@ -23,15 +23,15 @@ python3 examples/evidence-contract/demo.py --case forged
 python3 examples/evidence-contract/demo.py --case injection
 ```
 
-第一条命令正常通过（退出码 `0`），后两条均触发预期拦截（退出码 `2`）。每次输出都严格按时间线展开四段记录：`observation → proposal → host_decision → audit`。对比三者的拦截位置：
+第一条命令正常通过（退出码 `0`），后两条均触发预期拦截（退出码 `2`）。每次输出都严格按时间线展开记录：`observation → proposal → host_decision → (tool_result) → audit`（注意：当宿主批准执行时，在 `host_decision` 与 `audit` 之间会包含工具实际执行的 `tool_result` 事件；若被宿主事前门禁直接拦截拒止，则不产生 `tool_result` 直达 `audit`）。对比三者的拦截位置：
 
 | 场景 | 提案与执行层发生了什么 | 最终 `audit` 怎么判 | 拦在了哪道防线 |
 | --- | --- | --- | --- |
 | `valid` | 获准调用 `write_summary`，逐字引用已成功获取的 `s1`、`s2` 片段 | `accepted=true`，合同通过 | 全链路闭环通过 |
 | `forged` | `write_summary` 获准执行且 `tool_result.ok=true`，但内容里硬塞了抓取失败的 `s3` 引用 | `accepted=false`，报 `source_not_verified:s3` | **事后证据审计防线**（写成功了也不算数） |
-| `injection` | `s1` 混入 `[REQUEST_EXPORT]` 诱导提案器改调 `export_credentials` | 宿主直接拒绝执行；内存未改，且 `accepted=false` | **事前宿主权限防线**（外部数据不能升级工具权限） |
+| `injection` | `s1` 混入 `[REQUEST_EXPORT]` 诱导提案器改调 `export_credentials` | 宿主直接拒绝执行；`accepted=false`，精确报 `not_executed`、`operation_out_of_scope`、`missing_verified_source:s1` 与 `missing_verified_source:s2` | **事前宿主权限防线**（外部数据不能升级工具权限） |
 
-尤其值得细品的是 `injection` 的双重结论：第一，越权导出请求被宿主白名单一刀切断，没有任何 `tool_result` 产生；第二，因为模型跑偏去干别的了，原本要求的摘要根本没写，`audit` 不会糊里糊涂算它过关，而是明确告诉你“攻击拦住了，但正事还没干完”。这就点透了一条核心安全原则：**网页、文档或工具观察只能提供待核实的信息，绝不能赋予新的工具执行许可**。
+尤其值得细品的是 `injection` 的双重结论：第一，越权导出请求被宿主白名单一刀切断，没有任何 `tool_result` 产生；第二，因为模型跑偏去干别的了，原本要求的摘要根本没写，`audit` 绝不会糊里糊涂算它过关，而是精准返回四项失败原因代码：`not_executed`（未获准执行）、`operation_out_of_scope`（动作超出白名单范围）、以及 `missing_verified_source:s1` 和 `missing_verified_source:s2`（两项必需的核验来源完全缺失）。这就点透了一条核心安全原则：**网页、文档或工具观察只能提供待核实的信息，绝不能赋予新的工具执行许可**。
 
 ## 第二步：顺着三个函数看清“建议—放行—查账”三权分立
 
@@ -59,4 +59,4 @@ python3 examples/evidence-contract/demo.py --case valid
 
 ## 来源与边界
 
-本实验用确定性规则与 `[REQUEST_EXPORT]` 教学触发器演示“事前动作白名单 + 事后逐字出处核验”的双层合同机制，不包含真实大模型语义改写判定、复杂提示注入攻防或操作系统级隔离。将这套思路搬进真实生产环境时，界面交互风险可配读 [Computer / Browser Use](../concepts/computer-and-browser-use.md)，进程与网络围栏见[沙箱执行环境](../concepts/sandbox-execution.md)，工程交付验收全景见[完成证据对照](../comparisons/completion-and-evidence.md)。
+本实验用确定性规则与 `[REQUEST_EXPORT]` 教学触发器演示“事前动作白名单 + 事后逐字出处核验”的双层合同机制，不包含真实大模型语义改写判定、复杂提示注入攻防或操作系统级隔离。将这套思路搬进真实生产环境时，进程与网络围栏见[代码执行沙箱](../concepts/sandbox-execution.md)，界面交互风险可配读 [Computer / Browser Use](../concepts/computer-and-browser-use.md)，工程交付验收全景见[完成证据对照](../comparisons/completion-and-evidence.md)。

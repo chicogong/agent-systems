@@ -32,7 +32,7 @@ python3 examples/http-receipt/demo.py --mode timeout_then_lookup
 | --- | --- | --- |
 | `host.events` | 客户端收到的真实网络事件 | 第一次 `submit` 报 `transport=timeout`、`http_status=null`；第二次 `lookup` 拿到 `GET 200` |
 | `host.status` | 宿主仅凭网络证据做出的裁决 | `confirmed_lookup`——没重发 `POST`，靠查询回执确认了原请求早已落账 |
-| `observer_after_cleanup` | 收尾后直接翻看服务端内存账本 | 登记条数确为 `1`，与宿主的对账结论完全吻合 |
+| `observer_after_cleanup` | 收尾后直接翻看服务端内存账本快照 | `registered_effects` 确为 `1`，与宿主的对账结论完全吻合 |
 
 ![服务先登记，客户端超时后用另一条连接按原 ID 对账](../../figures/http-receipt-timeline/diagram.svg)
 
@@ -55,13 +55,13 @@ python3 examples/http-receipt/demo.py --mode payload_conflict
 
 前三种确认成功的路径进程退出码为 `0`；后四种未确认、冲突或错误重试路径退出码均为 `2`：
 
-| 模式 | 客户端做决定时看到了什么 | 宿主最终 `status` | 收尾后真实账本条数 | 背后的分布式真相 |
+| 模式 | 客户端做决定时看到了什么 | 宿主最终 `host.status` | 收尾后 `registered_effects` | 背后的分布式真相 |
 | --- | --- | --- | --- | --- |
 | `normal` | `POST 201`，ID 与内容匹配 | `confirmed_receipt` | `1` | 最顺畅的一次性闭环 |
 | `timeout_then_lookup` | 读超时 → 原 ID `GET 200` | `confirmed_lookup` | `1` | 回执丢在回程，靠查询对账找回 |
 | `same_id_retry` | 读超时 → 原 ID 原内容再 `POST` 得 `200`（`replayed=true`） | `confirmed_replay` | `1` | 服务端认出同一幂等键，直接返回首次登记结果 |
 | `lookup_lag` | 读超时 → 第一次 `GET 404` | `unknown_stop` | `1` | **假 404 之一**：其实早落账了，只是读接口暂时滞后没查到 |
-| `late_commit` | 读超时 → `GET 404` | `unknown_stop` | `1` | **假 404 之二**：查询那一刻旧请求还卡在半路，等宿主停机后它才落盘生效 |
+| `late_commit` | 读超时 → `GET 404` | `unknown_stop` | `1` | **假 404 之二**：查询时在途请求卡在落账闸门前（`GET 404`），宿主保守停机（`host.status = unknown_stop`）后收尾清理触发释放闸门（cleanup release gate），请求才真正落账写入（`registered_effects = 1`） |
 | `unsafe_new_id` | 读超时 → 查明已生效却仍换新 ID `POST` | `duplicate_effect` | `2` | 换号绕过服务端去重，硬生生造出双倍副作用 |
 | `payload_conflict` | 读超时 → 原 ID 改换内容 `POST` 得 `409` | `conflict_stop` | `1` | 服务端发现同号不同参，拒绝覆盖原 `publish-v1` |
 
@@ -77,8 +77,8 @@ python3 examples/http-receipt/demo.py --mode payload_conflict
 
 想追看这五处精确的时序卡点，打开 [`demo.py`](../../examples/http-receipt/demo.py) 按顺序扫一遍即可：
 
-1. `running_service()`：启动本机回环服务，并在 `finally` 块里先放开阻塞闸门让在途请求走完，再优雅关闭服务——注意**关闭连接池只是清理资源，绝不会回滚已执行的业务**。
-2. `Handler.do_POST()`：控制故障注入点——`late_commit` 卡在落账之前等闸门，其余超时模式卡在 `Ledger.register()` 落账之后、发响应之前。
+1. `running_service()`：启动本机回环服务，并在 `finally` 块里先放开阻塞闸门（`ledger.release.set()`）让在途请求走完，再优雅关闭服务——注意**关闭连接池只是清理资源，绝不会回滚已执行的业务**。
+2. `Handler.do_POST()`：控制故障注入点——`late_commit` 的精确时序是：客户端发 `POST` 后卡在落账前等待闸门；客户端读超时并发起 `GET` 查账返回 `404`；宿主据此定格为 `unknown_stop` 停机；宿主主流程退出触发收尾清理（cleanup release gate，即 `ledger.release.set()`）；卡住的 `POST` 线程被释放并调用 `Ledger.register()` 成功落盘，导致事后观察器统计出 `registered_effects = 1`。其余超时模式则卡在 `Ledger.register()` 落账之后、发响应之前。
 3. `Ledger.register()`：在互斥锁内原子完成查重、比对 `payload` 与写入。
 4. `request()`：基于标准库 [`HTTPConnection` 的超时与响应读取](https://docs.python.org/3/library/http.client.html) 捕获真实 `socket.timeout`（为保证每次必现确定性时序，发送后借本地同步事件 `fixture_before_read` 对齐服务端状态后再开始读超时计时）。
 5. `run()`：严格只按客户端收到的 HTTP 状态码与报文决定 `host.status`，事后才读取内部账本生成 `observer_after_cleanup` 供读者对照。

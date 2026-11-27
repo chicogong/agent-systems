@@ -30,8 +30,8 @@
 2. **拉取外部工单与按需加载做法**（MCP 与 Skill）：模型通过 MCP 工具拉取 `#731` 工单详情，同时按需读取 TDD Skill 里的测试编写规范。为什么要把 Skill 与 `CLAUDE.md` / `AGENTS.md` 分开？因为项目主指令每轮常驻窗口，塞太多专项流程会白白烧掉上下文预算；Skill 则是“用到这类任务时才翻开的专项手册”。至于 MCP，它能读到哪张工单、能不能改工单状态，完全取决于你给该 MCP Server 配置的凭据与工具许可；如果连接失败，正确的处理是把“工单正文待核对”明确记入交付缺口，而不是靠猜需求硬写代码。[Claude Code MCP](https://code.claude.com/docs/en/mcp) · [Claude Code Skills](https://code.claude.com/docs/en/skills) · [Codex MCP](https://developers.openai.com/codex/mcp) · [Codex Skills](https://developers.openai.com/codex/skills)
 3. **模型提出工具动作提案**：拿到复现条件后，模型依次提议搜索代码、修改测试文件、执行 `npm test -- orders`。在 Claude Code 官方文档中，这一闭环被归纳为“收集上下文 → 采取行动 → 验证结果”；而在 Codex 的开源 Rust 核心里，一条 Shell 命令提案会精确进入 `exec_command` 通道：先由 Handler 解析参数，再交给 Unified Exec 查询策略判定，最后由 `ToolOrchestrator`（执行编排器）串联审批与沙箱运行。[Claude Code 循环](https://code.claude.com/docs/en/how-claude-code-works) · [Codex 代码导读](../systems/codex/code-walkthrough.md)
 4. **过审批闸口与进 OS 沙箱执行**：这是日常实操体感差异最明显的一步！
-   - 在 **Claude Code** 中，当前权限模式、`allow / ask / deny` 规则、可选 Hook 与沙箱开关共同决定命令命运。为什么很多人开了沙箱后觉得弹窗变少了？因为启用沙箱且 `autoAllowBashIfSandboxed` 生效时，系统用“OS 级文件系统与网络隔离”兜住了爆炸半径，从而省掉一部分笼统的整工具 Bash 询问；但针对特定高危命令内容的 `ask` 规则和显式 `deny` 黑名单依然生效，绝不会被沙箱开关绕过。
-   - 在 **Codex** 的固定源码路径中，策略层先对普通命令给出三选一裁决：`Skip`（免除常规人工询问）、`NeedsApproval`（挂起请求你拍板）或 `Forbidden`（直接拦截拒绝）。**注意 `Skip` 跳过的只是人工弹窗，不是沙箱隔离**——获准放行后，`ToolOrchestrator` 依然会为进程挑选首次执行沙箱；只有当首次运行因沙箱限制失败且满足严格重试条件时，才会进入受控的升级询问或二次尝试分支。[Claude Code 权限与沙箱交互](https://code.claude.com/docs/en/permissions#how-permissions-interact-with-sandboxing) · [Codex 策略映射](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/exec_policy.rs#L394-L460) · [Codex 编排器执行](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L151-L309)
+   - 在 **Claude Code** 中，当前权限模式、`allow / ask / deny` 规则、可选 Hook 与沙箱开关共同决定命令命运。为什么很多人开了沙箱后觉得弹窗变少了？因为启用沙箱且 `autoAllowBashIfSandboxed` 生效时，系统用“OS 级文件系统与网络隔离”兜住了爆炸半径，从而省掉一部分笼统的整工具 Bash 询问；但针对特定高危命令内容的 `ask` 规则和显式 `deny` 黑名单依然生效，绝不会被沙箱开关绕过。**特别需要注意的是：Claude Code 沙箱默认的文件只读权限（read permissions）仍包含用户主目录下的敏感凭据，包括 `~/.ssh` 与 `~/.aws/credentials`**；沙箱主要拦截未放行的写操作和网络外联，若要阻断敏感文件读取，必须在权限配置中显式添加 deny 规则。
+   - 在 **Codex** 的固定源码路径中，策略层先对普通命令给出三选一裁决：`Skip`（免除常规人工询问）、`NeedsApproval`（挂起请求你拍板）或 `Forbidden`（直接拦截拒绝）。**注意 `Skip` 的精细行为差异**：常规 `Skip` 跳过的只是人工弹窗，而不是沙箱隔离——获准放行后，`ToolOrchestrator` 依然会为进程挑选首次执行沙箱；**但当 `ExecPolicy` 规则显式将所有命令段均裁决为 `Allow` 时，`bypass_sandbox` 计算为 true，此时 Codex 在首次尝试时将直接绕过沙箱执行，除非策略中另外配置了 `deny-read`（此时仍受沙箱约束以保护读安全）**。若首次运行因沙箱限制失败且满足严格重试条件，才会进入受控的升级询问或二次尝试分支。[Claude Code 权限与沙箱交互](https://code.claude.com/docs/en/permissions#how-permissions-interact-with-sandboxing) · [Codex 策略映射](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/exec_policy.rs#L394-L460) · [Codex 首次沙箱约束](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/sandboxing.rs#L239-L279) · [Codex 编排器执行](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L151-L309)
 5. **依据测试回执迭代并收口交付**：第一次跑 `npm test -- orders` 应当如期失败（证明回归测试真能抓到重复建单 Bug），改完幂等校验逻辑后再跑一次应当变绿。最终交付物不是一句“修好了”，而是工作区真实 diff、测试命令原始输出，以及“未执行 `commit` / `push`、远端工单未改动”的边界确认。
 
 ## 多级子 Agent 编排：探索、规划与执行的上下文分水岭
@@ -57,7 +57,7 @@
 ```
 
 这种多级编排带来了两大核心工程确定性：
-- **上下文预算与 KV 缓存保护**：Explorer 在排查 Bug 时执行 30 次文件读取，产生 50,000 Token 的过程垃圾。子 Agent 任务结束后，这 50,000 Token **随子会话直接销毁**，只给 Coordinator 交回一份两百字的结构化 JSON 证据包。Coordinator 的历史前缀得以保持纯净递增，在整个任务周期内维持 **95% 以上的前缀缓存命中率**。
+- **上下文预算与 KV 缓存保护**：以一个教学用假想示例切片说明（注：此处 50,000 Token 与 95% 命中率仅为阐释架构机制的**教学假想示例**，非端到端实测跑分基准）：Explorer 在排查 Bug 时执行 30 次文件读取，产生约 50,000 Token 的过程垃圾。子 Agent 任务结束后，这 50,000 Token **随子会话直接销毁**，只给 Coordinator 交回一份两百字的结构化 JSON 证据包。Coordinator 的历史前缀得以保持纯净递增，在假想的理想稳定前缀下可维持高达 **95% 以上的前缀缓存命中率**。
 - **工具权限降级与防踩踏**：在派发子 Agent 时，宿主从协议层实施权限裁剪——给 Explorer 注册的工具集彻底剔除 `Bash` 和 `Write`，杜绝其在搜索过程中意外改动文件；多个 Coder 并发时，通过工作区目录前缀进行领地切分，或统一以 `git diff` 补丁提议交由 Coordinator 汇总结算，从根源消除并发写入覆盖冲突。
 
 ## 一张表对齐两边的控制边界
@@ -65,8 +65,8 @@
 | 核心控制问题 | Claude Code（基于官方文档公开行为） | Codex（基于固定 Rust 源码与官方文档） |
 | --- | --- | --- |
 | **项目级指令写在哪** | `CLAUDE.md`；随工作目录与会话加载为指令上下文 | `AGENTS.md`；按目录规则加载为指令上下文，同样不自动授予底层工具权限 |
-| **命令什么时候弹窗或被拦** | 由权限模式、`allow / ask / deny` 规则、Hook 与沙箱配置联合裁决；沙箱模式下可减少常规 Bash 整工具询问，显式 `deny` 始终兜底 | 普通 `exec_command` 经 `exec_policy` 判出 `Forbidden`（拒止）、`NeedsApproval`（求批）或 `Skip`（免询），再交 `ToolOrchestrator` 执行 |
-| **沙箱到底关住了谁** | Sandboxed Bash 对本地 Shell 命令及其子进程施加文件系统与网络访问限制，**不覆盖非 Bash 的外部工具通道** | 审批与沙箱分步决策：获准后先在选定沙箱内执行首次尝试，受限失败后按条件决定是否升级或重试 |
+| **命令什么时候弹窗或被拦** | 由权限模式、`allow / ask / deny` 规则、Hook 与沙箱配置联合裁决；沙箱模式下可减少常规 Bash 整工具询问，显式 `deny` 始终兜底 | 普通 `exec_command` 经 `exec_policy` 判出 `Forbidden`（拒止）、`NeedsApproval`（求批）或 `Skip`（免询）。常规 `Skip` 仅免除弹窗仍进沙箱；但当策略显式 `Allow` 全部命令时 `bypass_sandbox` 为 true，首次尝试直接绕过沙箱（除非配置了 `deny-read`） |
+| **沙箱到底关住了谁** | Sandboxed Bash 对本地 Shell 命令及其子进程施加写入与网络访问限制（**默认只读权限仍包含 `~/.ssh` 与 `~/.aws/credentials`**，需显式规则拦截敏感读取），**不覆盖非 Bash 的外部工具通道** | 审批与沙箱分步决策：获准后先在选定沙箱内执行首次尝试（显式 Allow 且无 deny-read 时可直出）；受限失败后按条件决定是否升级或重试 |
 | **Skill 与 MCP 如何分工** | Skill 提供按需读取的任务做法说明；MCP 接入外部服务工具，受连接身份与工具权限控制 | 同样在产品层分别支持 Skills 与 MCP（独立于上述 `exec_command` 本地命令调用栈） |
 | **长任务怎么防丢约束** | 会话支持保存续接，长上下文会自动压缩（compaction），早期口头细节可能被概括稀释 | 官方提供[长周期任务实践说明](https://developers.openai.com/blog/run-long-horizon-tasks-with-codex)；高危红线同样不能只靠早期对话口头叮嘱 |
 
@@ -84,7 +84,7 @@
   ──► 经过 MCP 工具权限检查 ──► 由宿主向远端 API 发起请求 ──► 绕开本地 Bash 沙箱直接改写线上数据！
 ```
 
-无论是 Claude Code 文档对工具权限与 Bash 沙箱的区分，还是 Codex 在策略放行后单独为 `exec_command` 选择首次沙箱，都印证了同一条铁律：**本地 Shell 沙箱防不住拥有写权限的远端 MCP 连接**。外部写工具必须单独配置 ask 确认或只读 Token。[Claude Code 权限边界](https://code.claude.com/docs/en/permissions#how-permissions-interact-with-sandboxing) · [Codex 首次沙箱选择](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L222-L309)
+无论是 Claude Code 文档对工具权限与 Bash 沙箱的区分，还是 Codex 在策略放行后单独为 `exec_command` 选择首次沙箱，都印证了同一条铁律：**本地 Shell 沙箱防不住拥有写权限的远端 MCP 连接**。外部写工具必须单独配置 ask 确认或只读 Token；同时需留意本地沙箱的读权限边界——例如在 Claude Code 中，沙箱默认读取权限覆盖了用户主目录下的敏感凭据（如 `~/.ssh` 与 `~/.aws/credentials`），防范读取泄漏必须配合显式 deny 规则收口。[Claude Code 权限边界](https://code.claude.com/docs/en/permissions#how-permissions-interact-with-sandboxing) · [Codex 首次沙箱选择](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L222-L309)
 
 ### 误区二：命令跑失败了，分不清是“代码 Bug”还是“沙箱拦路”
 
@@ -99,11 +99,11 @@
 想顺着[五层职责模型](../concepts/model-harness-cli-mcp-skill.md)继续深挖源码与官方接口，可以沿两条主线对照阅读：
 
 - **Codex Rust 核心主线**：从 [`ExecCommandHandler::handle_call`](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/handlers/unified_exec/exec_command.rs#L170-L245) 切入，依次追踪 [`UnifiedExecProcessManager::open_session_with_sandbox`](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/unified_exec/process_manager.rs#L1435-L1535)、[`exec_policy` 策略求值](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/exec_policy.rs#L394-L460)与 [`ToolOrchestrator::run`](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L116-L220)，完整串联可配读 [Codex 逐步代码导读](../systems/codex/code-walkthrough.md)。
-- **Claude Code 官方文档主线**：依次对照[工作方式](https://code.claude.com/docs/en/how-claude-code-works)、[权限规则](https://code.claude.com/docs/en/permissions)、[沙箱机制](https://code.claude.com/docs/en/sandboxing)、[MCP 集成](https://code.claude.com/docs/en/mcp)与 [Skills 配置](https://code.claude.com/docs/en/skills)，重点核对当前配置下“哪类动作免询、哪类动作弹窗、哪类子进程受沙箱隔离”。
+- **Claude Code 官方文档主线**：依次对照[工作方式](https://code.claude.com/docs/en/how-claude-code-works)，[权限规则](https://code.claude.com/docs/en/permissions)、[沙箱机制](https://code.claude.com/docs/en/sandboxing)、[MCP 集成](https://code.claude.com/docs/en/mcp)与 [Skills 配置](https://code.claude.com/docs/en/skills)，重点核对当前配置下“哪类动作免询、哪类动作弹窗、哪类子进程受沙箱隔离”。
 
 ## 来源与边界
 
 本文于 2026-09-23 核对，两边证据粒度不同，阅读时需注意各自边界：
 
 - **Codex**：命令执行、审批与沙箱编排依据官方开源仓库固定提交 [`openai/codex@c44deff7b1083e9660ac55d02122481f1cdf139b`](https://github.com/openai/codex/tree/c44deff7b1083e9660ac55d02122481f1cdf139b) 的 Rust `core` 源码（`apply_patch` 专用补丁通道及各操作系统底层沙箱原语需另行查阅），CLI、Skills 与 MCP 用法结合官方文档。
-- **Claude Code**：因其核心 Harness 未以同等粒度开源，本文严格依据官方公开产品文档描述外部可配置与可观察行为，不反推或猜测未公开的内部函数与提示词结构。两边未做同一缺陷仓库下的耗时或修复成功率跑分对比。
+- **Claude Code**：因其核心 Harness 未以同等粒度开源，本文严格依据官方公开产品文档描述外部可配置与可观察行为，不反推或猜测未公开的内部函数与提示词结构。两边未做同一缺陷仓库下的耗时或修复成功率跑分对比；文中多级子 Agent 讨论中的 50k Token 与 95% 缓存命中率为阐释机制的教学假想参数，并非特定真实代码库上的实证基准测试。

@@ -17,7 +17,7 @@ OpenHands（核心引擎位于独立拆出的 `software-agent-sdk`）借用了�
 1. **先记录动作意图**：模型输出工具调用后，Agent 先校验工具名与参数结构，把「准备执行的动作」封装成 `ActionEvent` 追加进会话事件流。
 2. **审批挂起零线程阻塞**：如果确认策略判定该动作需要人工确认，管理会话的 `LocalConversation` 直接把状态切到 `WAITING_FOR_CONFIRMATION`，当前 `run()` 干净退出。因为待执行的 `ActionEvent` 已经躺在事件流里，系统不需要挂起任何协程或线程。
 3. **重入时优先清偿未配对动作**：宿主拿到用户批准后再次调用 `run()`，`Agent.step()` 第一件事不是请求模型，而是扫描当前分支上「还没有结果配对」的 `ActionEvent`，先把它们执行完，再去问模型下一步。
-4. **用 ID 闭合每一笔动作**：工具正常返回生成 `ObservationEvent`，参数或运行报错生成 `AgentErrorEvent`，用户拒绝则生成 `UserRejectObservation`——三者都通过动作编号与原 `ActionEvent` 精确配对。
+4. **用 ID 闭合每一笔动作**：工具正常返回生成 `ObservationEvent`，用户拒绝则生成 `UserRejectObservation`，两者均通过 `action_id` 与原 `ActionEvent` 精确配对；而若是模型输出的工具名或参数校验报错，生成的 `AgentErrorEvent` 则通过 `tool_call_id` 与模型原始调用关联配对。
 
 源码入口：[创建动作记录](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L1227-L1382) · [检查确认条件](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L163-L190) · [先处理待办动作](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/agent.py#L645-L661)
 

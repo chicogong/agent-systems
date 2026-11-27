@@ -1,6 +1,8 @@
 # Pi 的 Extension、Skill 与 Package：把「做事手册」与「代码插件」彻底分开
 
-[返回 Pi 首页](README.md) · 固定源码版本 [`898ab804`](https://github.com/earendil-works/pi/tree/898ab804050730e9dcefb4443875d5a932aa6a32)
+[返回 Pi 首页](README.md) · [概念篇第 8 章：扩展能力的四个层次](../../concepts/extensibility-layers.md) · 固定源码版本 [`898ab804`](https://github.com/earendil-works/pi/tree/898ab804050730e9dcefb4443875d5a932aa6a32)
+
+我们在[概念篇第 8 章：扩展能力的四个层次](../../concepts/extensibility-layers.md)中讨论了从「提示词约定」、「Skill 文件包」、「协议级 MCP 服务」到「宿主代码钩子」的四层能力阶梯。开源编码代理 Pi（`earendil-works/pi`）正是这一四层扩展栈在工业级编码 Agent 中的具体实现落地——它将核心机制聚焦在第 2 层 Skill、第 4 层 Extension 与分发单元 Package 上，把「翻手册」与「跑代码」的边界切得极为干净。
 
 给编码 Agent 加能力时，工程团队很容易掉进两个极端的坑里：要么把二十份内部运维手册、数据库迁移规范全塞进启动时的系统提示词（System Prompt），结果用户哪怕只问一句「当前在哪个分支」，每次请求都要白白烧掉上万个上下文 Token；要么试图靠写纯文本提示词去「模拟」一个需要鉴权与状态管理的新工具，逼着模型在命令行里拼凑脆弱的脚本。
 
@@ -8,7 +10,7 @@ Pi 在 `pi-coding-agent` 层把扩展机制利落地一分为三：**Skill** 管
 
 ![Pi 的 Skill 与 Extension 分层](../../../figures/pi-extensions/diagram.svg)
 
-[图源](../../../figures/pi-extensions/scene.excalidraw) · [PNG 预览](../../../figures/pi-extensions/preview.png) · [不看图的说明](../../../figures/pi-extensions/README.md)
+[图源](../../../figures/pi-extensions/scene.excalidraw) · [PNG 预览](../../../figures/pi-extensions/preview.png) · [不看图的说明](../../../figures/pi-extensions/README.md)（注：本架构图与概念篇第 8 章共享同一图景）
 
 ## Skill：目录常驻、正文懒加载的渐进式披露
 

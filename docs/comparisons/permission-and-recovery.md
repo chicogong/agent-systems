@@ -1,12 +1,14 @@
 # 批准过了，超时后能重试吗？
 
-[返回横向对照](README.md) · [批准与沙箱](../concepts/approval-vs-sandbox.md) · [四种状态](four-kinds-of-state.md)
+[返回横向对照](README.md) · [概念篇：中断与恢复](../concepts/interruption-recovery.md) · [批准与沙箱](../concepts/approval-vs-sandbox.md) · [四种状态](four-kinds-of-state.md)
 
-设想这样一个让人后背发凉的线上瞬间：Agent 准备好了一次生产补丁发布请求，终端弹出确认框，你仔细核对参数后按下了“批准”。请求发出去 15 秒后，网络抖了一下，工具调用抛出一行 `TimeoutError`。紧接着，急于完成任务的 Agent 捕获异常准备“自动重试”——顺手生成了一个新的请求编号再发一次。三分钟后监控报警炸响：生产集群同时拉起了两套发布任务，把数据库迁移锁死。
+关于网络超时为什么不等于操作失败（`Timeout ≠ Failure`）、以及发包前必须预写意图账本的底层逻辑，我们在 [概念篇：中断、重试与恢复](../concepts/interruption-recovery.md) 中已做过系统性论证。
 
-很多人在做 Agent 权限设计时，只盯着前半场——“高危动作执行前一定要让人点批准”。却忽略了分布式系统里最凶险的后半场：**一旦写操作跨出本机网络遇到超时，“已经批准过”不仅不是无脑重发的通行证，反而是最容易酿成重复执行事故的陷阱**。
+在很多 Agent 系统的实战设计中，团队往往只盯紧了前半场——“高危动作执行前一定要让人点批准”；却忽略了后半场里最凶险的工程陷阱：**一旦外部写操作跨出网络遭遇中断或超时，“已经批准过”不仅不能当作盲目换号重发的通行证，反而常常成为重复执行事故的放大器**。
 
-本篇把 Codex、OpenHands、OpenCode 和 LangGraph 四套源码摆在一起，拆解一个核心工程问题：**当外部动作中断或超时后，本地 Agent 框架究竟帮我们记住了什么，又有哪些生死攸关的对账步骤必须由应用与目标服务联手兜底**？
+本篇横向对照把 Codex、OpenHands、OpenCode 和 LangGraph 四套源码摆在同一张工作台上，聚焦两项硬核实现细节：
+1. **四系统本地账本矩阵**：当外部动作发生中断或超时，各框架在动作前放行与中断后恢复分别守住了哪一段数据？
+2. **OpenHands 审批挂起时的控制流陷阱**：在等待人工批准（`WAITING_FOR_CONFIRMATION`）状态下，宿主代码若未经确认直接再次调用 `run()`，为什么会被 SDK 默认视为“隐式批准”？
 
 ![超时后先查询原操作，再决定是否重试](../../figures/permission-and-recovery/diagram.svg)
 
@@ -59,7 +61,19 @@ Agent 框架并不能替远端部署系统实现幂等接口，但它们各自�
 
 最理想的中断发生在刀落下之前。Codex 的 `Forbidden` 与未获批的 `NeedsApproval` 都在拉起子进程前直接收口；OpenHands 在用户明确拒绝时，会往事件流里补一条 `UserRejectObservation` 与先前的 `ActionEvent` 完成配对，工具函数一行都不会跑。
 
-但读 OpenHands 源码时有一个极易踩坑的细节：**当会话停在 `WAITING_FOR_CONFIRMATION` 等待人工拍板时，一旦宿主代码再次调用 `run()`，SDK 会直接清除等待标志并捞起那条挂起的动作去执行**（相当于隐式批准）！因此宿主界面必须先拿到人类明确的“同意 / 拒绝”指令，拒绝时显式走拒绝逻辑，绝不能在崩溃重启后闭着眼睛自动调 `run()`。[Codex 策略与审批](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L151-L220) · [OpenHands 确认挂起分支](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L163-L190) · [OpenHands 拒绝事件配对](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2610-L2648) · [OpenHands 再次 `run()` 隐式放行](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1977-L1995)
+#### 警惕 OpenHands 审批挂起时的“隐式批准”陷阱
+
+在深入阅读 OpenHands 源码时，有一个直接关乎生产安全的致命控制流细节：
+
+1. **审批挂起时机**：当一个高危 `ActionEvent` 触发了确认策略时，SDK 在 [`response_dispatch.py`](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L163-L190) 中将状态置为 `state.confirmation_state = ConfirmationState.WAITING_FOR_CONFIRMATION`，并主动中断当前回合，把控制权交还给宿主。
+2. **显式拒绝路径**：如果人类用户在界面上明确点击“拒绝”，宿主应调用拒绝逻辑，向事件流中追加一条带有相同 `action_id` 的 [`UserRejectObservation`](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2610-L2648)。下次循环唤醒时，Agent 看到该动作已有对应被拒观察，直接进入下一轮思考，不会触发底层命令。
+3. **致命的隐式批准**：然而，如果宿主应用发生崩溃重启、网络断线重连，或者外层编排器写了一个未经检查的重试循环，**在会话仍停在 `WAITING_FOR_CONFIRMATION` 时直接再次调用了 `conversation.run()`**——SDK 在 [`local_conversation.py` L1977-L1995](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1977-L1995) 中会直接将 `confirmation_state` 重置为 `IDLE` 并进入执行循环！紧接着，`Agent.step()` 扫描当前分支中“尚未产生观察结果的悬空动作”，立即捞起那个本在等待人类确认的高危动作发送给运行时执行！
+
+也就是说：**再次调用 `run()` 本身会被 SDK 视为默认的隐式批准（Implicit Approval）**。
+
+因此，宿主外层封装绝不能在重启或恢复后无脑调 `run()`，必须先检查 `state.confirmation_state` 是否为 `WAITING_FOR_CONFIRMATION`；如果是，必须等待人类在 UI 明确点击“确认”或“拒绝”，只有用户明确同意或补齐拒绝事件后，才允许继续推进状态机。
+
+[Codex 策略与审批](https://github.com/openai/codex/blob/c44deff7b1083e9660ac55d02122481f1cdf139b/codex-rs/core/src/tools/orchestrator.rs#L151-L220) · [OpenHands 确认挂起分支](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/agent/response_dispatch.py#L163-L190) · [OpenHands 拒绝事件配对](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L2610-L2648) · [OpenHands 再次 `run()` 隐式放行](https://github.com/OpenHands/software-agent-sdk/blob/6ebd820d10794f1b52bb06ef6c19512888a1401b/openhands-sdk/openhands/sdk/conversation/impl/local_conversation.py#L1977-L1995)
 
 ### 分岔二：调用明确报错返回——保留原始错误类别，分清“重试模型”还是“重试工具”
 
